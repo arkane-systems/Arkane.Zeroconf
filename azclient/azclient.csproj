@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{F3ECDCA4-7DD3-4A9E-B21E-BA1A4921F469}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>azclient</RootNamespace>
+    <RootNamespace>ArkaneSystems.Arkane.Zeroconf.Client</RootNamespace>
     <AssemblyName>azclient</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

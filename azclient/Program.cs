@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace azclient
+namespace ArkaneSystems.Arkane.Zeroconf.Client
 {
     class Program
     {

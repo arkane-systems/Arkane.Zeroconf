@@ -7,7 +7,7 @@
     <ProjectGuid>{89E0233E-2723-43F7-9398-8F234BC57942}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Arkane.Zeroconf</RootNamespace>
+    <RootNamespace>ArkaneSystems.Arkane.Zeroconf</RootNamespace>
     <AssemblyName>Arkane.Zeroconf</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
