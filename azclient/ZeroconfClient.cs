@@ -9,6 +9,7 @@
 
 using System ;
 using System.Collections ;
+using System.Linq ;
 using System.Text.RegularExpressions ;
 using System.Threading ;
 
@@ -259,7 +260,8 @@ public class MZClient
         Console.Write ("*** Resolved name = '{0}', host ip = '{1}', hostname = {2}, port = '{3}', " +
                        "interface = '{4}', address type = '{5}'",
                        service.FullName,
-                       service.HostEntry.AddressList[0],
+                       // service.HostEntry.AddressList[0],
+                       string.Join (", ", service.HostEntry.AddressList.Select (s => s.ToString()).ToArray ()),
                        service.HostEntry.HostName,
                        service.Port,
                        service.NetworkInterface,

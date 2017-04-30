@@ -220,9 +220,9 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                         this.hostentry.AddressList = new[] {address} ;
                     }
 
-                    ServiceResolvedEventHandler handler = this.Resolved ;
-                    if (handler != null)
-                        handler (this, new ServiceResolvedEventArgs (this)) ;
+                    //ServiceResolvedEventHandler handler = this.Resolved ;
+                    //if (handler != null)
+                    //    handler (this, new ServiceResolvedEventArgs (this)) ;
 
                     break ;
                 case ServiceType.TXT:
