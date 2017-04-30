@@ -32,7 +32,7 @@
     <!-- Set this to false if you don't need to support a license -->
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <releaseNotes></releaseNotes>
-    <tags>utility library arkane-systems</tags>
+    <tags>zeroconf bonjour</tags>
 
     <dependencies>
       <!-- Ignore, all referenced NuGet packages will be added here at compile time -->
