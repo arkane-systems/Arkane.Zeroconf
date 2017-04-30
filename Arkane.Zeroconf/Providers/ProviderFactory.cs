@@ -10,6 +10,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.IO ;
+using System.Linq ;
 using System.Reflection ;
 
 #endregion
@@ -50,6 +51,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers
 
             var providers_list = new List <IZeroconfProvider> () ;
             var directories = new List <string> () ;
+
             Assembly asm = Assembly.GetExecutingAssembly () ;
 
             string env_path = Environment.GetEnvironmentVariable ("MONO_ZEROCONF_PROVIDERS") ;
@@ -63,23 +65,35 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers
             string this_asm_path = asm.Location ;
             directories.Add (Path.GetDirectoryName (this_asm_path)) ;
 
-            if (Assembly.GetExecutingAssembly ().GlobalAssemblyCache)
+            //! We aren't a signed assembly. Ain't no GAC here.
+
+            //if (Assembly.GetExecutingAssembly ().GlobalAssemblyCache)
+            //{
+            //    string[] path_parts = directories[0].Split (Path.DirectorySeparatorChar) ;
+            //    string new_path = Path.DirectorySeparatorChar.ToString () ;
+            //    string root = Path.GetPathRoot (this_asm_path) ;
+            //    if (root.StartsWith (path_parts[0]))
+            //        path_parts[0] = root ;
+
+            //    for (var i = 0; i < path_parts.Length - 4; i++)
+            //        new_path = Path.Combine (new_path, path_parts[i]) ;
+
+            //    directories.Add (Path.Combine (new_path, "mono-zeroconf")) ;
+            //}
+
+            //! Addition since we built in the Bonjour provider.
+
+            foreach (var provider in asm.GetCustomAttributes (false).OfType <ZeroconfProviderAttribute> ().Select (attr => attr.ProviderType).Select (type => (IZeroconfProvider) Activator.CreateInstance (type)))
             {
-                string[] path_parts = directories[0].Split (Path.DirectorySeparatorChar) ;
-                string new_path = Path.DirectorySeparatorChar.ToString () ;
-                string root = Path.GetPathRoot (this_asm_path) ;
-                if (root.StartsWith (path_parts[0]))
-                    path_parts[0] = root ;
-
-                for (var i = 0; i < path_parts.Length - 4; i++)
-                    new_path = Path.Combine (new_path, path_parts[i]) ;
-
-                directories.Add (Path.Combine (new_path, "mono-zeroconf")) ;
+                provider.Initialize ();
+                providers_list.Add (provider);
             }
+
+            //! -- AJRY 2017/04/30
 
             foreach (string directory in directories)
             {
-                foreach (string file in Directory.GetFiles (directory, "Mono.Zeroconf.Providers.*.dll"))
+                foreach (string file in Directory.GetFiles (directory, "Arkane.Zeroconf.Providers.*.dll"))
                 {
                     if (Path.GetFileName (file) != Path.GetFileName (this_asm_path))
                     {
