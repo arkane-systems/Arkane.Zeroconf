@@ -35,13 +35,21 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         public event ServiceResolvedEventHandler Resolved ;
 
-        public void Resolve () { this.Resolve (false) ; }
+        public void Resolve ()
+        {
+            // If people call this in a ServiceAdded event handler (which they generally do), we need to
+            // invoke onto another thread, otherwise we block processing any more results.
+            this.resolveAction.BeginInvoke (false, null, null) ;
+        }
 
         private void SetupCallbacks ()
         {
             this.resolve_reply_handler = this.OnResolveReply ;
             this.query_record_reply_handler = this.OnQueryRecordReply ;
+            this.resolveAction = this.Resolve;
         }
+
+        private Action <bool> resolveAction ;
 
         public void Resolve (bool requery)
         {
