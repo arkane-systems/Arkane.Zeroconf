@@ -10,6 +10,7 @@
 using System ;
 using System.Net ;
 using System.Runtime.InteropServices ;
+using System.Text;
 using System.Threading ;
 
 #endregion
@@ -96,7 +97,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             ServiceError error = Native.DNSServiceRegister (out this.sd_ref,
                                                             this.AutoRename ? ServiceFlags.None : ServiceFlags.NoAutoRename,
                                                             this.InterfaceIndex,
-                                                            this.Name,
+                                                            Encoding.UTF8.GetBytes(this.Name),
                                                             this.RegType,
                                                             this.ReplyDomain,
                                                             this.HostTarget,
@@ -115,7 +116,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
         private void OnRegisterReply (ServiceRef sdRef,
                                       ServiceFlags flags,
                                       ServiceError errorCode,
-                                      string name,
+                                      IntPtr name,
                                       string regtype,
                                       string domain,
                                       IntPtr context)
@@ -128,7 +129,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
             if (errorCode == ServiceError.NoError)
             {
-                this.Name = name ;
+                this.Name = Native.Utf8toString(name) ;
                 this.RegType = regtype ;
                 this.ReplyDomain = domain ;
                 args.IsRegistered = true ;

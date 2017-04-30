@@ -9,6 +9,7 @@
 
 using System ;
 using System.Runtime.InteropServices ;
+using System.Text ;
 
 #endregion
 
@@ -24,7 +25,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                                     ServiceFlags flags,
                                                     uint interfaceIndex,
                                                     ServiceError errorCode,
-                                                    string serviceName,
+                                                    IntPtr serviceName,
                                                     string regtype,
                                                     string replyDomain,
                                                     IntPtr context) ;
@@ -56,7 +57,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
         public delegate void DNSServiceRegisterReply (ServiceRef sdRef,
                                                       ServiceFlags flags,
                                                       ServiceError errorCode,
-                                                      string name,
+                                                      IntPtr name,
                                                       string regtype,
                                                       string domain,
                                                       IntPtr context) ;
@@ -71,7 +72,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                                      ServiceFlags flags,
                                                      uint interfaceIndex,
                                                      ServiceError errorCode,
-                                                     string fullname,
+                                                     IntPtr fullname,
                                                      string hosttarget,
                                                      ushort port,
                                                      ushort txtLen,
@@ -107,7 +108,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
         public static extern ServiceError DNSServiceResolve (out ServiceRef sdRef,
                                                              ServiceFlags flags,
                                                              uint interfaceIndex,
-                                                             string name,
+                                                             byte[] name,
                                                              string regtype,
                                                              string domain,
                                                              DNSServiceResolveReply callBack,
@@ -117,7 +118,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
         public static extern ServiceError DNSServiceRegister (out ServiceRef sdRef,
                                                               ServiceFlags flags,
                                                               uint interfaceIndex,
-                                                              string name,
+                                                              byte[] name,
                                                               string regtype,
                                                               string domain,
                                                               string host,
@@ -171,5 +172,17 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         [DllImport ("dnssd.dll")]
         public static extern ushort TXTRecordGetCount (ushort txtLen, IntPtr txtRecord) ;
+
+        public static string Utf8toString(IntPtr ptr)
+        {
+            int len = 0;
+            while (Marshal.ReadByte (ptr, len) != 0)
+            {
+                len++;
+            }
+            byte[] raw = new byte[len];
+            Marshal.Copy (ptr, raw, 0, len);
+            return Encoding.UTF8.GetString (raw);
+        }
     }
 }

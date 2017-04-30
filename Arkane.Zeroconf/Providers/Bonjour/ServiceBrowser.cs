@@ -143,14 +143,16 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                     ServiceFlags flags,
                                     uint interfaceIndex,
                                     ServiceError errorCode,
-                                    string serviceName,
+                                    IntPtr serviceName,
                                     string regtype,
                                     string replyDomain,
                                     IntPtr context)
         {
+            string name = Native.Utf8toString (serviceName) ;
+
             var service = new BrowseService () ;
             service.Flags = flags ;
-            service.Name = serviceName ;
+            service.Name = name ;
             service.RegType = regtype ;
             service.ReplyDomain = replyDomain ;
             service.InterfaceIndex = interfaceIndex ;
@@ -164,10 +166,10 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             {
                 lock (this.service_table)
                 {
-                    if (this.service_table.ContainsKey (serviceName))
-                        this.service_table[serviceName] = service ;
+                    if (this.service_table.ContainsKey (name))
+                        this.service_table[name] = service ;
                     else
-                        this.service_table.Add (serviceName, service) ;
+                        this.service_table.Add (name, service) ;
                 }
 
                 ServiceBrowseEventHandler handler = this.ServiceAdded ;
@@ -178,8 +180,8 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             {
                 lock (this.service_table)
                 {
-                    if (this.service_table.ContainsKey (serviceName))
-                        this.service_table.Remove (serviceName) ;
+                    if (this.service_table.ContainsKey (name))
+                        this.service_table.Remove (name) ;
                 }
 
                 ServiceBrowseEventHandler handler = this.ServiceRemoved ;

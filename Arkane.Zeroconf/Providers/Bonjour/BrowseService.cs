@@ -11,6 +11,7 @@ using System ;
 using System.Collections ;
 using System.Net ;
 using System.Runtime.InteropServices ;
+using System.Text ;
 
 #endregion
 
@@ -57,7 +58,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             ServiceError error = Native.DNSServiceResolve (out sd_ref,
                                                            ServiceFlags.None,
                                                            this.InterfaceIndex,
-                                                           this.Name,
+                                                           Encoding.UTF8.GetBytes(this.Name),
                                                            this.RegType,
                                                            this.ReplyDomain,
                                                            this.resolve_reply_handler,
@@ -93,7 +94,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                      ServiceFlags flags,
                                      uint interfaceIndex,
                                      ServiceError errorCode,
-                                     string fullname,
+                                     IntPtr fullname,
                                      string hosttarget,
                                      ushort port,
                                      ushort txtLen,
@@ -104,7 +105,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             this.resolve_pending = false ;
 
             this.InterfaceIndex = interfaceIndex ;
-            this.FullName = fullname ;
+            this.FullName = Native.Utf8toString(fullname) ;
             this.port = (ushort)IPAddress.NetworkToHostOrder((short)port) ;
             this.TxtRecord = new TxtRecord (txtLen, txtRecord) ;
             this.hosttarget = hosttarget ;
