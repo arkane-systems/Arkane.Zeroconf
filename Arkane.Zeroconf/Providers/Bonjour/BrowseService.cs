@@ -107,6 +107,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             this.FullName = fullname ;
             this.port = (ushort)IPAddress.NetworkToHostOrder((short)port) ;
             this.TxtRecord = new TxtRecord (txtLen, txtRecord) ;
+            this.hosttarget = hosttarget ;
 
             sdRef.Deallocate () ;
 
