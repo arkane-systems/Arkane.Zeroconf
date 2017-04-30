@@ -156,6 +156,12 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
                 sd_ref.Process () ;
             }
+
+            if (this.hostentry.AddressList != null)
+            {
+                ServiceResolvedEventHandler handler = this.Resolved ;
+                handler?.Invoke(this, new ServiceResolvedEventArgs(this));
+            }
         }
 
         private void OnQueryRecordReply (ServiceRef sdRef,
@@ -173,6 +179,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             switch (rrtype)
             {
                 case ServiceType.A:
+                case ServiceType.AAAA:
                     IPAddress address ;
 
                     if (rdlen == 4)
@@ -224,11 +231,10 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
                     this.TxtRecord = new TxtRecord (rdlen, rdata) ;
                     break ;
-                default:
-                    break ;
             }
 
-            sdRef.Deallocate () ;
+            if ((flags & ServiceFlags.MoreComing) != ServiceFlags.MoreComing)
+                sdRef.Deallocate () ;
         }
     }
 }
