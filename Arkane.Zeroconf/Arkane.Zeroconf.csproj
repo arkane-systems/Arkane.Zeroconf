@@ -29,6 +29,12 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>zeroconf.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -81,6 +87,7 @@
   <ItemGroup>
     <None Include="Arkane.Zeroconf.nuspec" />
     <None Include="packages.config" />
+    <None Include="zeroconf.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\MsBuild.NuGet.Pack.2.1.0-nuspecbasepath0001\tools\MsBuild.NuGet.Pack.targets" Condition="Exists('..\packages\MsBuild.NuGet.Pack.2.1.0-nuspecbasepath0001\tools\MsBuild.NuGet.Pack.targets')" />
