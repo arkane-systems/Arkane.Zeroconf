@@ -11,6 +11,7 @@ using System ;
 using System.IO;
 using System.Runtime.InteropServices ;
 using System.Text ;
+// ReSharper disable InconsistentNaming
 
 #endregion
 
@@ -100,7 +101,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         public static ServiceError DNSServiceProcessResult(IntPtr sdRef)
         {
-            switch (GetCurrentOperatingSystem())
+            switch (Native.GetCurrentOperatingSystem())
             {
                 case OperatingSystem.Windows:
                     return NativeWindows.DNSServiceProcessResult(sdRef);
@@ -113,7 +114,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         public static int DNSServiceRefSockFD(IntPtr sdRef)
         {
-            switch (GetCurrentOperatingSystem())
+            switch (Native.GetCurrentOperatingSystem())
             {
                 case OperatingSystem.Windows:
                     return NativeWindows.DNSServiceRefSockFD(sdRef);
@@ -126,7 +127,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         public static ServiceError DNSServiceCreateConnection(out ServiceRef sdRef)
         {
-            switch (GetCurrentOperatingSystem())
+            switch (Native.GetCurrentOperatingSystem())
             {
                 case OperatingSystem.Windows:
                     return NativeWindows.DNSServiceCreateConnection(out sdRef);  
@@ -145,7 +146,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                                     DNSServiceBrowseReply callBack,
                                                     IntPtr context)
         {
-            switch (GetCurrentOperatingSystem())
+            switch (Native.GetCurrentOperatingSystem())
             {
                 case OperatingSystem.Windows:
                     return NativeWindows.DNSServiceBrowse(out sdRef, flags, interfaceIndex, regtype, domain, callBack, context);
@@ -165,7 +166,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                                      DNSServiceResolveReply callBack,
                                                      IntPtr context)
         {
-            switch (GetCurrentOperatingSystem())
+            switch (Native.GetCurrentOperatingSystem())
             {
                 case OperatingSystem.Windows:
                     return NativeWindows.DNSServiceResolve(out sdRef, flags, interfaceIndex, name, regtype, domain, callBack, context);
@@ -189,7 +190,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                                       DNSServiceRegisterReply callBack,
                                                       IntPtr context)
         {
-            switch (GetCurrentOperatingSystem())
+            switch (Native.GetCurrentOperatingSystem())
             {
                 case OperatingSystem.Windows:
                     return NativeWindows.DNSServiceRegister(out sdRef, flags, interfaceIndex, name, regtype, domain, host, port, txtLen, txtRecord, callBack, context);
@@ -209,7 +210,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                                          DNSServiceQueryRecordReply callBack,
                                                          IntPtr context)
         {
-            switch (GetCurrentOperatingSystem())
+            switch (Native.GetCurrentOperatingSystem())
             {
                 case OperatingSystem.Windows:
                     return NativeWindows.DNSServiceQueryRecord(out sdRef, flags, interfaceIndex, fullname, rrtype, rrclass, callBack, context);
@@ -224,7 +225,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         public static void TXTRecordCreate(IntPtr txtRecord, ushort bufferLen, IntPtr buffer)
         {
-            switch (GetCurrentOperatingSystem())
+            switch (Native.GetCurrentOperatingSystem())
             {
                 case OperatingSystem.Windows:
                     NativeWindows.TXTRecordCreate(txtRecord, bufferLen, buffer);
@@ -239,7 +240,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         public static void TXTRecordDeallocate(IntPtr txtRecord)
         {
-            switch (GetCurrentOperatingSystem())
+            switch (Native.GetCurrentOperatingSystem())
             {
                 case OperatingSystem.Windows:
                     NativeWindows.TXTRecordDeallocate(txtRecord);
@@ -260,7 +261,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                                            out byte valueLen,
                                                            out IntPtr value)
         {
-            switch (GetCurrentOperatingSystem())
+            switch (Native.GetCurrentOperatingSystem())
             {
                 case OperatingSystem.Windows:
                     return NativeWindows.TXTRecordGetItemAtIndex(txtLen, txtRecord, index, keyBufLen, key, out valueLen, out value);
@@ -276,7 +277,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                                      sbyte valueSize,
                                                      byte[] value)
         {
-            switch (GetCurrentOperatingSystem())
+            switch (Native.GetCurrentOperatingSystem())
             {
                 case OperatingSystem.Windows:
                     return NativeWindows.TXTRecordSetValue(txtRecord, key, valueSize, value);
@@ -289,7 +290,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         public static ServiceError TXTRecordRemoveValue(IntPtr txtRecord, byte[] key)
         {
-            switch (GetCurrentOperatingSystem())
+            switch (Native.GetCurrentOperatingSystem())
             {
                 case OperatingSystem.Windows:
                     return NativeWindows.TXTRecordRemoveValue(txtRecord, key);
@@ -302,7 +303,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         public static ushort TXTRecordGetLength(IntPtr txtRecord)
         {
-            switch (GetCurrentOperatingSystem())
+            switch (Native.GetCurrentOperatingSystem())
             {
                 case OperatingSystem.Windows:
                     return NativeWindows.TXTRecordGetLength(txtRecord);
@@ -315,7 +316,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         public static IntPtr TXTRecordGetBytesPtr(IntPtr txtRecord)
         {
-            switch (GetCurrentOperatingSystem())
+            switch (Native.GetCurrentOperatingSystem())
             {
                 case OperatingSystem.Windows:
                     return NativeWindows.TXTRecordGetBytesPtr(txtRecord);
@@ -328,7 +329,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         public static ushort TXTRecordGetCount(ushort txtLen, IntPtr txtRecord)
         {
-            switch (GetCurrentOperatingSystem())
+            switch (Native.GetCurrentOperatingSystem())
             {
                 case OperatingSystem.Windows:
                     return NativeWindows.TXTRecordGetCount(txtLen, txtRecord);
@@ -352,7 +353,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
         }
 
         // Taken from https://stackoverflow.com/a/38795621
-        public enum OperatingSystem 
+        private enum OperatingSystem 
         {
             Unknown,
             Windows,
@@ -360,7 +361,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             Linux
         }
 
-        public static OperatingSystem GetCurrentOperatingSystem()
+        private static OperatingSystem GetCurrentOperatingSystem()
         {
             var windir = Environment.GetEnvironmentVariable("windir");
             if (!string.IsNullOrEmpty(windir) && windir.Contains(@"\") && Directory.Exists(windir))

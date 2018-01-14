@@ -18,7 +18,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 {
     public class TxtRecord : ITxtRecord
     {
-        private static readonly Encoding encoding = new ASCIIEncoding () ;
+        private static readonly Encoding Encoding = new ASCIIEncoding () ;
 
         public TxtRecord ()
         {
@@ -50,19 +50,13 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             }
         }
 
-        public IntPtr RawBytes
-        {
-            get { return this.handle == IntPtr.Zero ? this.buffer : Native.TXTRecordGetBytesPtr (this.handle) ; }
-        }
+        public IntPtr RawBytes => this.handle == IntPtr.Zero ? this.buffer : Native.TXTRecordGetBytesPtr (this.handle) ;
 
-        public ushort RawLength
-        {
-            get { return this.handle == IntPtr.Zero ? this.length : Native.TXTRecordGetLength (this.handle) ; }
-        }
+        public ushort RawLength => this.handle == IntPtr.Zero ? this.length : Native.TXTRecordGetLength (this.handle) ;
 
-        public int Count { get { return Native.TXTRecordGetCount (this.RawLength, this.RawBytes) ; } }
+        public int Count => Native.TXTRecordGetCount (this.RawLength, this.RawBytes) ;
 
-        public ITxtRecord BaseRecord { get { return this ; } }
+        public ITxtRecord BaseRecord => this ;
 
         public void Dispose ()
         {
@@ -87,7 +81,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                 key += "\0" ;
 
             ServiceError error = Native.TXTRecordSetValue (this.handle,
-                                                           TxtRecord.encoding.GetBytes (key + "\0"),
+                                                           TxtRecord.Encoding.GetBytes (key + "\0"),
                                                            (sbyte) item.ValueRaw.Length,
                                                            item.ValueRaw) ;
 
@@ -100,7 +94,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             if (this.handle == IntPtr.Zero)
                 throw new InvalidOperationException ("This TXT Record is read only") ;
 
-            ServiceError error = Native.TXTRecordRemoveValue (this.handle, TxtRecord.encoding.GetBytes (key)) ;
+            ServiceError error = Native.TXTRecordRemoveValue (this.handle, TxtRecord.Encoding.GetBytes (key)) ;
 
             if (error != ServiceError.NoError)
                 throw new ServiceErrorException (error) ;
@@ -109,8 +103,6 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
         public TxtRecordItem GetItemAt (int index)
         {
             var key = new byte[32] ;
-            byte value_length = 0 ;
-            IntPtr value_raw = IntPtr.Zero ;
 
             if ((index < 0) || (index >= this.Count))
                 throw new IndexOutOfRangeException () ;
@@ -120,24 +112,24 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                                                  (ushort) index,
                                                                  (ushort) key.Length,
                                                                  key,
-                                                                 out value_length,
-                                                                 out value_raw) ;
+                                                                 out byte valueLength,
+                                                                 out IntPtr valueRaw) ;
 
             if (error != ServiceError.NoError)
                 throw new ServiceErrorException (error) ;
 
-            var buffer = new byte[value_length] ;
-            for (var i = 0; i < value_length; i++)
-                buffer[i] = Marshal.ReadByte (value_raw, i) ;
+            var buffer = new byte[valueLength] ;
+            for (var i = 0; i < valueLength; i++)
+                buffer[i] = Marshal.ReadByte (valueRaw, i) ;
 
             var pos = 0 ;
             for (; (pos < key.Length) && (key[pos] != 0); pos++)
-                ;
+            { }
 
-            return new TxtRecordItem (TxtRecord.encoding.GetString (key, 0, pos), buffer) ;
+            return new TxtRecordItem (TxtRecord.Encoding.GetString (key, 0, pos), buffer) ;
         }
 
-        public IEnumerator GetEnumerator () { return new TxtRecordEnumerator (this) ; }
+        public IEnumerator GetEnumerator () => new TxtRecordEnumerator (this) ;
 
         public override string ToString ()
         {

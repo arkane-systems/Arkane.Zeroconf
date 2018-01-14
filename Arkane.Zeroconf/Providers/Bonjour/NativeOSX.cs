@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using static ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour.Native;
+// ReSharper disable InconsistentNaming
 
 namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 {
-    public static class NativeOSX
+    internal static class NativeOSX
     {
         [DllImport("libc.dylib")]
         public static extern void DNSServiceRefDeallocate(IntPtr sdRef);

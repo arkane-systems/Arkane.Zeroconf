@@ -19,10 +19,7 @@ namespace ArkaneSystems.Arkane.Zeroconf
 {
     public class ServiceBrowser : IServiceBrowser
     {
-        public ServiceBrowser ()
-        {
-            this.browser = (IServiceBrowser) Activator.CreateInstance (ProviderFactory.SelectedProvider.ServiceBrowser) ;
-        }
+        public ServiceBrowser () => this.browser = (IServiceBrowser) Activator.CreateInstance (ProviderFactory.SelectedProvider.ServiceBrowser) ;
 
         private readonly IServiceBrowser browser ;
 
@@ -33,20 +30,20 @@ namespace ArkaneSystems.Arkane.Zeroconf
             this.browser.Browse (interfaceIndex, addressProtocol, regtype, domain ?? "local") ;
         }
 
-        public IEnumerator <IResolvableService> GetEnumerator () { return this.browser.GetEnumerator () ; }
+        public IEnumerator <IResolvableService> GetEnumerator () => this.browser.GetEnumerator () ;
 
-        IEnumerator IEnumerable.GetEnumerator () { return this.browser.GetEnumerator () ; }
+        IEnumerator IEnumerable.GetEnumerator () => this.browser.GetEnumerator () ;
 
         public event ServiceBrowseEventHandler ServiceAdded
         {
-            add { this.browser.ServiceAdded += value ; }
-            remove { this.browser.ServiceRemoved -= value ; }
+            add => this.browser.ServiceAdded += value ;
+            remove => this.browser.ServiceRemoved -= value ;
         }
 
         public event ServiceBrowseEventHandler ServiceRemoved
         {
-            add { this.browser.ServiceRemoved += value ; }
-            remove { this.browser.ServiceRemoved -= value ; }
+            add => this.browser.ServiceRemoved += value ;
+            remove => this.browser.ServiceRemoved -= value ;
         }
 
         public void Browse (uint interfaceIndex, string regtype, string domain)

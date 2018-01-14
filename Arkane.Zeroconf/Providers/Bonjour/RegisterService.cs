@@ -26,8 +26,8 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             this.SetupCallback () ;
         }
 
-        private Native.DNSServiceRegisterReply register_reply_handler ;
-        private ServiceRef sd_ref ;
+        private Native.DNSServiceRegisterReply registerReplyHandler ;
+        private ServiceRef sdRef ;
         private Thread thread ;
 
         public bool AutoRename { get ; set ; } = true ;
@@ -44,10 +44,10 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                 this.thread = null ;
             }
 
-            this.sd_ref.Deallocate () ;
+            this.sdRef.Deallocate () ;
         }
 
-        private void SetupCallback () { this.register_reply_handler = this.OnRegisterReply ; }
+        private void SetupCallback () { this.registerReplyHandler = this.OnRegisterReply ; }
 
         public void Register (bool async)
         {
@@ -56,8 +56,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
             if (async)
             {
-                this.thread = new Thread (this.ThreadedRegister) ;
-                this.thread.IsBackground = true ;
+                this.thread = new Thread (this.ThreadedRegister) {IsBackground = true} ;
                 this.thread.Start () ;
             }
             else
@@ -84,17 +83,17 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         public void ProcessRegister ()
         {
-            ushort txt_rec_length = 0 ;
-            byte[] txt_rec = null ;
+            ushort txtRecLength = 0 ;
+            byte[] txtRec = null ;
 
             if (this.TxtRecord != null)
             {
-                txt_rec_length = ((TxtRecord) this.TxtRecord.BaseRecord).RawLength ;
-                txt_rec = new byte[txt_rec_length] ;
-                Marshal.Copy (((TxtRecord) this.TxtRecord.BaseRecord).RawBytes, txt_rec, 0, txt_rec_length) ;
+                txtRecLength = ((TxtRecord) this.TxtRecord.BaseRecord).RawLength ;
+                txtRec = new byte[txtRecLength] ;
+                Marshal.Copy (((TxtRecord) this.TxtRecord.BaseRecord).RawBytes, txtRec, 0, txtRecLength) ;
             }
 
-            ServiceError error = Native.DNSServiceRegister (out this.sd_ref,
+            ServiceError error = Native.DNSServiceRegister (out this.sdRef,
                                                             this.AutoRename ? ServiceFlags.None : ServiceFlags.NoAutoRename,
                                                             this.InterfaceIndex,
                                                             Encoding.UTF8.GetBytes(this.Name),
@@ -102,15 +101,15 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                                             this.ReplyDomain,
                                                             this.HostTarget,
                                                             (ushort) IPAddress.HostToNetworkOrder ((short) this.port),
-                                                            txt_rec_length,
-                                                            txt_rec,
-                                                            this.register_reply_handler,
+                                                            txtRecLength,
+                                                            txtRec,
+                                                            this.registerReplyHandler,
                                                             IntPtr.Zero) ;
 
             if (error != ServiceError.NoError)
                 throw new ServiceErrorException (error) ;
 
-            this.sd_ref.Process () ;
+            this.sdRef.Process () ;
         }
 
         private void OnRegisterReply (ServiceRef sdRef,
@@ -121,11 +120,13 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                       string domain,
                                       IntPtr context)
         {
-            var args = new RegisterServiceEventArgs () ;
+            var args = new RegisterServiceEventArgs
+                       {
+                           Service      = this,
+                           IsRegistered = false,
+                           ServiceError = (ServiceErrorCode) errorCode
+                       } ;
 
-            args.Service = this ;
-            args.IsRegistered = false ;
-            args.ServiceError = (ServiceErrorCode) errorCode ;
 
             if (errorCode == ServiceError.NoError)
             {
@@ -136,8 +137,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             }
 
             RegisterServiceEventHandler handler = this.Response ;
-            if (handler != null)
-                handler (this, args) ;
+            handler?.Invoke (this, args) ;
         }
     }
 }

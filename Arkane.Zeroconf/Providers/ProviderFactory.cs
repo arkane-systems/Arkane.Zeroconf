@@ -20,7 +20,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers
     internal static class ProviderFactory
     {
         private static IZeroconfProvider[] providers ;
-        private static IZeroconfProvider selected_provider ;
+        private static IZeroconfProvider selectedProvider ;
 
         private static IZeroconfProvider DefaultProvider
         {
@@ -35,13 +35,10 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers
 
         public static IZeroconfProvider SelectedProvider
         {
-            get
-            {
-                return ProviderFactory.selected_provider == null
-                           ? ProviderFactory.DefaultProvider
-                           : ProviderFactory.selected_provider ;
-            }
-            set { ProviderFactory.selected_provider = value ; }
+            get => ProviderFactory.selectedProvider == null
+                       ? ProviderFactory.DefaultProvider
+                       : ProviderFactory.selectedProvider ;
+            set => ProviderFactory.selectedProvider = value ;
         }
 
         private static IZeroconfProvider[] GetProviders ()
@@ -49,21 +46,21 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers
             if (ProviderFactory.providers != null)
                 return ProviderFactory.providers ;
 
-            var providers_list = new List <IZeroconfProvider> () ;
+            var providersList = new List <IZeroconfProvider> () ;
             var directories = new List <string> () ;
 
             Assembly asm = Assembly.GetExecutingAssembly () ;
 
-            string env_path = Environment.GetEnvironmentVariable ("MONO_ZEROCONF_PROVIDERS") ;
-            if (!string.IsNullOrEmpty (env_path))
-                foreach (string path in env_path.Split (':'))
+            string envPath = Environment.GetEnvironmentVariable ("MONO_ZEROCONF_PROVIDERS") ;
+            if (!string.IsNullOrEmpty (envPath))
+                foreach (string path in envPath.Split (':'))
                 {
                     if (Directory.Exists (path))
                         directories.Add (path) ;
                 }
 
-            string this_asm_path = asm.Location ;
-            directories.Add (Path.GetDirectoryName (this_asm_path)) ;
+            string thisAsmPath = asm.Location ;
+            directories.Add (Path.GetDirectoryName (thisAsmPath)) ;
 
             //! We aren't a signed assembly. Ain't no GAC here.
 
@@ -86,7 +83,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers
             foreach (var provider in asm.GetCustomAttributes (false).OfType <ZeroconfProviderAttribute> ().Select (attr => attr.ProviderType).Select (type => (IZeroconfProvider) Activator.CreateInstance (type)))
             {
                 provider.Initialize ();
-                providers_list.Add (provider);
+                providersList.Add (provider);
             }
 
             //! -- AJRY 2017/04/30
@@ -95,10 +92,10 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers
             {
                 foreach (string file in Directory.GetFiles (directory, "Arkane.Zeroconf.Providers.*.dll"))
                 {
-                    if (Path.GetFileName (file) != Path.GetFileName (this_asm_path))
+                    if (Path.GetFileName (file) != Path.GetFileName (thisAsmPath))
                     {
-                        Assembly provider_asm = Assembly.LoadFile (file) ;
-                        foreach (Attribute attr in provider_asm.GetCustomAttributes (false))
+                        Assembly providerAsm = Assembly.LoadFile (file) ;
+                        foreach (Attribute attr in providerAsm.GetCustomAttributes (false))
                         {
                             if (attr is ZeroconfProviderAttribute)
                             {
@@ -107,7 +104,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers
                                 try
                                 {
                                     provider.Initialize () ;
-                                    providers_list.Add (provider) ;
+                                    providersList.Add (provider) ;
                                 }
                                 catch (Exception e)
                                 {
@@ -119,10 +116,10 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers
                 }
             }
 
-            if (providers_list.Count == 0)
+            if (providersList.Count == 0)
                 throw new Exception ("No Zeroconf providers could be found or initialized. Necessary daemon may not be running.") ;
 
-            ProviderFactory.providers = providers_list.ToArray () ;
+            ProviderFactory.providers = providersList.ToArray () ;
 
             return ProviderFactory.providers ;
         }

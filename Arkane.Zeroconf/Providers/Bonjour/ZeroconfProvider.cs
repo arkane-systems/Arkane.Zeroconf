@@ -22,23 +22,22 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
     {
         public static void Initialize ()
         {
-            ServiceRef sd_ref ;
-            ServiceError error = Native.DNSServiceCreateConnection (out sd_ref) ;
+            ServiceError error = Native.DNSServiceCreateConnection (out ServiceRef sdRef) ;
 
             if (error != ServiceError.NoError)
                 throw new ServiceErrorException (error) ;
 
-            sd_ref.Deallocate () ;
+            sdRef.Deallocate () ;
         }
     }
 
     public class ZeroconfProvider : IZeroconfProvider
     {
-        public Type ServiceBrowser { get { return typeof (ServiceBrowser) ; } }
+        public Type ServiceBrowser => typeof (ServiceBrowser) ;
 
-        public Type RegisterService { get { return typeof (RegisterService) ; } }
+        public Type RegisterService => typeof (RegisterService) ;
 
-        public Type TxtRecord { get { return typeof (TxtRecord) ; } }
+        public Type TxtRecord => typeof (TxtRecord) ;
 
         public void Initialize () { Zeroconf.Initialize () ; }
     }

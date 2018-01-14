@@ -16,7 +16,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers
     [AttributeUsage (AttributeTargets.Assembly)]
     public class ZeroconfProviderAttribute : Attribute
     {
-        public ZeroconfProviderAttribute (Type providerType) { this.ProviderType = providerType ; }
+        public ZeroconfProviderAttribute (Type providerType) => this.ProviderType = providerType ;
 
         public Type ProviderType { get ; }
     }

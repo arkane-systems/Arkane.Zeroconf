@@ -29,8 +29,8 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
         NoSuchRecord = -65554,
         NoAuth = -65555,
         NoSuchKey = -65556,
-        NATTraversal = -65557,
-        DoubleNAT = -65558,
+        NatTraversal = -65557,
+        DoubleNat = -65558,
         BadTime = -65559
     }
 }
