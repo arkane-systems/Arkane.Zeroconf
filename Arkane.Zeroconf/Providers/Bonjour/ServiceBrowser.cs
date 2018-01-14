@@ -18,24 +18,24 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 {
     public class ServiceBrowseEventArgs : Arkane.Zeroconf.ServiceBrowseEventArgs
     {
-        public ServiceBrowseEventArgs (BrowseService service, bool moreComing) : base (service) { this.MoreComing = moreComing ; }
+        public ServiceBrowseEventArgs (BrowseService service, bool moreComing) : base (service) => this.MoreComing = moreComing ;
 
         public bool MoreComing { get ; }
     }
 
     public class ServiceBrowser : IServiceBrowser, IDisposable
     {
-        public ServiceBrowser () { this.browse_reply_handler = this.OnBrowseReply ; }
+        public ServiceBrowser () => this.browseReplyHandler = this.OnBrowseReply ;
 
         private AddressProtocol address_protocol ;
 
-        private readonly Native.DNSServiceBrowseReply browse_reply_handler ;
+        private readonly Native.DNSServiceBrowseReply browseReplyHandler ;
         private string domain ;
-        private uint interface_index ;
+        private uint interfaceIndex ;
         private string regtype ;
 
-        private ServiceRef sd_ref = ServiceRef.Zero ;
-        private readonly Dictionary <string, IResolvableService> service_table = new Dictionary <string, IResolvableService> () ;
+        private ServiceRef sdRef = ServiceRef.Zero ;
+        private readonly Dictionary <string, IResolvableService> serviceTable = new Dictionary <string, IResolvableService> () ;
 
         private Thread thread ;
 
@@ -55,16 +55,16 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
         {
             lock (this)
             {
-                foreach (IResolvableService service in this.service_table.Values)
+                foreach (IResolvableService service in this.serviceTable.Values)
                     yield return service ;
             }
         }
 
-        IEnumerator IEnumerable.GetEnumerator () { return this.GetEnumerator () ; }
+        IEnumerator IEnumerable.GetEnumerator () => this.GetEnumerator () ;
 
         public void Configure (uint interfaceIndex, AddressProtocol addressProtocol, string regtype, string domain)
         {
-            this.interface_index = interfaceIndex ;
+            this.interfaceIndex = interfaceIndex ;
             this.address_protocol = addressProtocol ;
             this.regtype = regtype ;
             this.domain = domain ;
@@ -80,8 +80,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
             if (async)
             {
-                this.thread = new Thread (this.ThreadedStart) ;
-                this.thread.IsBackground = true ;
+                this.thread = new Thread (this.ThreadedStart) {IsBackground = true} ;
                 this.thread.Start () ;
             }
             else
@@ -110,26 +109,26 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         private void ProcessStart ()
         {
-            ServiceError error = Native.DNSServiceBrowse (out this.sd_ref,
+            ServiceError error = Native.DNSServiceBrowse (out this.sdRef,
                                                           ServiceFlags.Default,
-                                                          this.interface_index,
+                                                          this.interfaceIndex,
                                                           this.regtype,
                                                           this.domain,
-                                                          this.browse_reply_handler,
+                                                          this.browseReplyHandler,
                                                           IntPtr.Zero) ;
 
             if (error != ServiceError.NoError)
                 throw new ServiceErrorException (error) ;
 
-            this.sd_ref.Process () ;
+            this.sdRef.Process () ;
         }
 
         public void Stop ()
         {
-            if (this.sd_ref != ServiceRef.Zero)
+            if (this.sdRef != ServiceRef.Zero)
             {
-                this.sd_ref.Deallocate () ;
-                this.sd_ref = ServiceRef.Zero ;
+                this.sdRef.Deallocate () ;
+                this.sdRef = ServiceRef.Zero ;
             }
 
             if (this.thread != null)
@@ -164,29 +163,27 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
             if ((flags & ServiceFlags.Add) != 0)
             {
-                lock (this.service_table)
+                lock (this.serviceTable)
                 {
-                    if (this.service_table.ContainsKey (name))
-                        this.service_table[name] = service ;
+                    if (this.serviceTable.ContainsKey (name))
+                        this.serviceTable[name] = service ;
                     else
-                        this.service_table.Add (name, service) ;
+                        this.serviceTable.Add (name, service) ;
                 }
 
                 ServiceBrowseEventHandler handler = this.ServiceAdded ;
-                if (handler != null)
-                    handler (this, args) ;
+                handler?.Invoke (this, args) ;
             }
             else
             {
-                lock (this.service_table)
+                lock (this.serviceTable)
                 {
-                    if (this.service_table.ContainsKey (name))
-                        this.service_table.Remove (name) ;
+                    if (this.serviceTable.ContainsKey (name))
+                        this.serviceTable.Remove (name) ;
                 }
 
                 ServiceBrowseEventHandler handler = this.ServiceRemoved ;
-                if (handler != null)
-                    handler (this, args) ;
+                handler?.Invoke (this, args) ;
             }
         }
     }

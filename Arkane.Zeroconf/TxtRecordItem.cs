@@ -15,7 +15,7 @@ namespace ArkaneSystems.Arkane.Zeroconf
 {
     public class TxtRecordItem
     {
-        private static readonly Encoding encoding = new UTF8Encoding () ;
+        private static readonly Encoding Encoding = new UTF8Encoding () ;
 
         public TxtRecordItem (string key, byte[] valueRaw)
         {
@@ -29,7 +29,7 @@ namespace ArkaneSystems.Arkane.Zeroconf
             this.ValueString = valueString ;
         }
 
-        private string value_string ;
+        private string valueString ;
 
         public string Key { get ; }
 
@@ -39,19 +39,19 @@ namespace ArkaneSystems.Arkane.Zeroconf
         {
             get
             {
-                if (this.value_string != null)
-                    return this.value_string ;
+                if (this.valueString != null)
+                    return this.valueString ;
 
-                this.value_string = TxtRecordItem.encoding.GetString (this.ValueRaw) ;
-                return this.value_string ;
+                this.valueString = TxtRecordItem.Encoding.GetString (this.ValueRaw) ;
+                return this.valueString ;
             }
             set
             {
-                this.value_string = value ;
-                this.ValueRaw = TxtRecordItem.encoding.GetBytes (value) ;
+                this.valueString = value ;
+                this.ValueRaw = TxtRecordItem.Encoding.GetBytes (value) ;
             }
         }
 
-        public override string ToString () { return string.Format ("{0} = {1}", this.Key, this.ValueString) ; }
+        public override string ToString () => string.Format ("{0} = {1}", this.Key, this.ValueString) ;
     }
 }

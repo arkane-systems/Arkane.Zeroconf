@@ -18,14 +18,11 @@ namespace ArkaneSystems.Arkane.Zeroconf
 {
     public class TxtRecord : ITxtRecord
     {
-        public TxtRecord ()
-        {
-            this.BaseRecord = (ITxtRecord) Activator.CreateInstance (ProviderFactory.SelectedProvider.TxtRecord) ;
-        }
+        public TxtRecord () => this.BaseRecord = (ITxtRecord) Activator.CreateInstance (ProviderFactory.SelectedProvider.TxtRecord) ;
 
-        public TxtRecordItem this [string index] { get { return this.BaseRecord[index] ; } }
+        public TxtRecordItem this [string index] => this.BaseRecord[index] ;
 
-        public int Count { get { return this.BaseRecord.Count ; } }
+        public int Count => this.BaseRecord.Count ;
 
         public ITxtRecord BaseRecord { get ; }
 
@@ -37,9 +34,9 @@ namespace ArkaneSystems.Arkane.Zeroconf
 
         public void Remove (string key) { this.BaseRecord.Remove (key) ; }
 
-        public TxtRecordItem GetItemAt (int index) { return this.BaseRecord.GetItemAt (index) ; }
+        public TxtRecordItem GetItemAt (int index) => this.BaseRecord.GetItemAt (index) ;
 
-        public IEnumerator GetEnumerator () { return this.BaseRecord.GetEnumerator () ; }
+        public IEnumerator GetEnumerator () => this.BaseRecord.GetEnumerator () ;
 
         public void Dispose () { this.BaseRecord.Dispose () ; }
     }

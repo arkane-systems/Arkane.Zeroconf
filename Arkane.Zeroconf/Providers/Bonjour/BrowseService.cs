@@ -26,10 +26,10 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             this.SetupCallbacks () ;
         }
 
-        private Native.DNSServiceQueryRecordReply query_record_reply_handler ;
-        private bool resolve_pending ;
+        private Native.DNSServiceQueryRecordReply queryRecordReplyHandler ;
+        private bool resolvePending ;
 
-        private Native.DNSServiceResolveReply resolve_reply_handler ;
+        private Native.DNSServiceResolveReply resolveReplyHandler ;
 
         public bool IsResolved { get ; private set ; }
 
@@ -44,8 +44,8 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         private void SetupCallbacks ()
         {
-            this.resolve_reply_handler = this.OnResolveReply ;
-            this.query_record_reply_handler = this.OnQueryRecordReply ;
+            this.resolveReplyHandler = this.OnResolveReply ;
+            this.queryRecordReplyHandler = this.OnQueryRecordReply ;
             this.resolveAction = this.Resolve;
         }
 
@@ -53,49 +53,47 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         public void Resolve (bool requery)
         {
-            if (this.resolve_pending)
+            if (this.resolvePending)
                 return ;
 
             this.IsResolved = false ;
-            this.resolve_pending = true ;
+            this.resolvePending = true ;
 
             if (requery)
                 this.InterfaceIndex = 0 ;
 
-            ServiceRef sd_ref ;
-            ServiceError error = Native.DNSServiceResolve (out sd_ref,
+            ServiceError error = Native.DNSServiceResolve (out ServiceRef sdRef,
                                                            ServiceFlags.None,
                                                            this.InterfaceIndex,
                                                            Encoding.UTF8.GetBytes(this.Name),
                                                            this.RegType,
                                                            this.ReplyDomain,
-                                                           this.resolve_reply_handler,
+                                                           this.resolveReplyHandler,
                                                            IntPtr.Zero) ;
 
             if (error != ServiceError.NoError)
                 throw new ServiceErrorException (error) ;
 
-            sd_ref.Process () ;
+            sdRef.Process () ;
         }
 
         public void RefreshTxtRecord ()
         {
             // Should probably make this async?
 
-            ServiceRef sd_ref ;
-            ServiceError error = Native.DNSServiceQueryRecord (out sd_ref,
+            ServiceError error = Native.DNSServiceQueryRecord (out ServiceRef sdRef,
                                                                ServiceFlags.None,
                                                                0,
                                                                this.fullname,
                                                                ServiceType.TXT,
                                                                ServiceClass.IN,
-                                                               this.query_record_reply_handler,
+                                                               this.queryRecordReplyHandler,
                                                                IntPtr.Zero) ;
 
             if (error != ServiceError.NoError)
                 throw new ServiceErrorException (error) ;
 
-            sd_ref.Process () ;
+            sdRef.Process () ;
         }
 
         private void OnResolveReply (ServiceRef sdRef,
@@ -110,7 +108,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                      IntPtr contex)
         {
             this.IsResolved = true ;
-            this.resolve_pending = false ;
+            this.resolvePending = false ;
 
             this.InterfaceIndex = interfaceIndex ;
             this.FullName = Native.Utf8toString(fullname) ;
@@ -131,7 +129,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                                                    hosttarget,
                                                                    ServiceType.A,
                                                                    ServiceClass.IN,
-                                                                   this.query_record_reply_handler,
+                                                                   this.queryRecordReplyHandler,
                                                                    IntPtr.Zero) ;
 
                 if (error != ServiceError.NoError)
@@ -148,7 +146,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                                                                    hosttarget,
                                                                    ServiceType.AAAA,
                                                                    ServiceClass.IN,
-                                                                   this.query_record_reply_handler,
+                                                                   this.queryRecordReplyHandler,
                                                                    IntPtr.Zero) ;
 
                 if (error != ServiceError.NoError)
@@ -185,18 +183,18 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                     if (rdlen == 4)
                     {
                         // ~4.5 times faster than Marshal.Copy into byte[4]
-                        var address_raw = (uint) (Marshal.ReadByte (rdata, 3) << 24) ;
-                        address_raw |= (uint) (Marshal.ReadByte (rdata, 2) << 16) ;
-                        address_raw |= (uint) (Marshal.ReadByte (rdata, 1) << 8) ;
-                        address_raw |= Marshal.ReadByte (rdata, 0) ;
+                        var addressRaw = (uint) (Marshal.ReadByte (rdata, 3) << 24) ;
+                        addressRaw |= (uint) (Marshal.ReadByte (rdata, 2) << 16) ;
+                        addressRaw |= (uint) (Marshal.ReadByte (rdata, 1) << 8) ;
+                        addressRaw |= Marshal.ReadByte (rdata, 0) ;
 
-                        address = new IPAddress (address_raw) ;
+                        address = new IPAddress (addressRaw) ;
                     }
                     else if (rdlen == 16)
                     {
-                        var address_raw = new byte[rdlen] ;
-                        Marshal.Copy (rdata, address_raw, 0, rdlen) ;
-                        address = new IPAddress (address_raw, interfaceIndex) ;
+                        var addressRaw = new byte[rdlen] ;
+                        Marshal.Copy (rdata, addressRaw, 0, rdlen) ;
+                        address = new IPAddress (addressRaw, interfaceIndex) ;
                     }
                     else
                     {
@@ -211,8 +209,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
                     if (this.hostentry.AddressList != null)
                     {
-                        var list = new ArrayList (this.hostentry.AddressList) ;
-                        list.Add (address) ;
+                        var list = new ArrayList (this.hostentry.AddressList) {address} ;
                         this.hostentry.AddressList = list.ToArray (typeof (IPAddress)) as IPAddress[] ;
                     }
                     else
@@ -226,8 +223,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
                     break ;
                 case ServiceType.TXT:
-                    if (this.TxtRecord != null)
-                        this.TxtRecord.Dispose () ;
+                    this.TxtRecord?.Dispose () ;
 
                     this.TxtRecord = new TxtRecord (rdlen, rdata) ;
                     break ;

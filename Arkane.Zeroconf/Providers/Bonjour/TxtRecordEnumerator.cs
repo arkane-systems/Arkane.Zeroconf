@@ -15,18 +15,18 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 {
     internal class TxtRecordEnumerator : IEnumerator
     {
-        public TxtRecordEnumerator (TxtRecord record) { this.record = record ; }
+        public TxtRecordEnumerator (TxtRecord record) => this.record = record ;
 
-        private TxtRecordItem current_item ;
+        private TxtRecordItem currentItem ;
         private int index ;
         private readonly TxtRecord record ;
 
-        public object Current { get { return this.current_item ; } }
+        public object Current => this.currentItem ;
 
         public void Reset ()
         {
             this.index = 0 ;
-            this.current_item = null ;
+            this.currentItem = null ;
         }
 
         public bool MoveNext ()
@@ -34,8 +34,8 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             if ((this.index < 0) || (this.index >= this.record.Count))
                 return false ;
 
-            this.current_item = this.record.GetItemAt (this.index++) ;
-            return this.current_item != null ;
+            this.currentItem = this.record.GetItemAt (this.index++) ;
+            return this.currentItem != null ;
         }
     }
 }

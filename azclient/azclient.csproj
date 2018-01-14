@@ -8,9 +8,10 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>ArkaneSystems.Arkane.Zeroconf.Client</RootNamespace>
     <AssemblyName>azclient</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -49,9 +50,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Arkane.Zeroconf\Arkane.Zeroconf.csproj">
-      <Project>{89e0233e-2723-43f7-9398-8f234bc57942}</Project>
-      <Name>Arkane.Zeroconf</Name>
+    <ProjectReference Include="..\Arkane.ZeroConf\Arkane.ZeroConf.csproj">
+      <Project>{4e134afa-89f4-4a16-ada6-4fcf52ce9e1c}</Project>
+      <Name>Arkane.ZeroConf</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

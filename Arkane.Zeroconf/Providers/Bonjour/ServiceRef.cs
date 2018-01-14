@@ -17,7 +17,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
     {
         public static readonly ServiceRef Zero ;
 
-        public ServiceRef (IntPtr raw) { this.Raw = raw ; }
+        public ServiceRef (IntPtr raw) => this.Raw = raw ;
 
         public void Deallocate () { Native.DNSServiceRefDeallocate (this.Raw) ; }
 
@@ -26,10 +26,10 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
         public void Process ()
         {
             while (this.ProcessSingle () == ServiceError.NoError)
-                ;
+            { }
         }
 
-        public int SocketFD { get { return Native.DNSServiceRefSockFD (this.Raw) ; } }
+        public int SocketFD => Native.DNSServiceRefSockFD (this.Raw) ;
 
         public IntPtr Raw { get ; }
 
@@ -41,14 +41,14 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             return ((ServiceRef) o).Raw == this.Raw ;
         }
 
-        public override int GetHashCode () { return this.Raw.GetHashCode () ; }
+        public override int GetHashCode () => this.Raw.GetHashCode () ;
 
-        public static bool operator == (ServiceRef a, ServiceRef b) { return a.Raw == b.Raw ; }
+        public static bool operator == (ServiceRef a, ServiceRef b) => a.Raw == b.Raw ;
 
-        public static bool operator != (ServiceRef a, ServiceRef b) { return a.Raw != b.Raw ; }
+        public static bool operator != (ServiceRef a, ServiceRef b) => a.Raw != b.Raw ;
 
-        public static explicit operator IntPtr (ServiceRef value) { return value.Raw ; }
+        public static explicit operator IntPtr (ServiceRef value) => value.Raw ;
 
-        public static explicit operator ServiceRef (IntPtr value) { return new ServiceRef (value) ; }
+        public static explicit operator ServiceRef (IntPtr value) => new ServiceRef (value) ;
     }
 }

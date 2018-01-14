@@ -5,6 +5,7 @@
 
 #endregion
 
+// ReSharper disable InconsistentNaming
 namespace ArkaneSystems.Arkane.Zeroconf
 {
     public enum AddressProtocol

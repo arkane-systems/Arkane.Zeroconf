@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.Zeroconf - RegisterService.cs
+// Arkane.ZeroConf - RegisterService.cs
 // 
 
 #endregion
@@ -17,42 +17,32 @@ namespace ArkaneSystems.Arkane.Zeroconf
 {
     public class RegisterService : IRegisterService
     {
-        public RegisterService ()
-        {
-            this.register_service = (IRegisterService) Activator.CreateInstance (
-                                                                                 ProviderFactory.SelectedProvider.RegisterService) ;
-        }
+        public RegisterService () => this.registerService =
+                                         (IRegisterService) Activator.CreateInstance (ProviderFactory
+                                                                                         .SelectedProvider.RegisterService) ;
 
-        private readonly IRegisterService register_service ;
+        private readonly IRegisterService registerService ;
 
-        public string Name { get { return this.register_service.Name ; } set { this.register_service.Name = value ; } }
+        public string Name { get => this.registerService.Name ; set => this.registerService.Name = value ; }
 
-        public string RegType { get { return this.register_service.RegType ; } set { this.register_service.RegType = value ; } }
+        public string RegType { get => this.registerService.RegType ; set => this.registerService.RegType = value ; }
 
-        public string ReplyDomain
-        {
-            get { return this.register_service.ReplyDomain ; }
-            set { this.register_service.ReplyDomain = value ; }
-        }
+        public string ReplyDomain { get => this.registerService.ReplyDomain ; set => this.registerService.ReplyDomain = value ; }
 
-        public ITxtRecord TxtRecord
-        {
-            get { return this.register_service.TxtRecord ; }
-            set { this.register_service.TxtRecord = value ; }
-        }
+        public ITxtRecord TxtRecord { get => this.registerService.TxtRecord ; set => this.registerService.TxtRecord = value ; }
 
-        public short Port { get { return this.register_service.Port ; } set { this.register_service.Port = value ; } }
+        public short Port { get => this.registerService.Port ; set => this.registerService.Port = value ; }
 
-        public ushort UPort { get { return this.register_service.UPort ; } set { this.register_service.UPort = value ; } }
+        public ushort UPort { get => this.registerService.UPort ; set => this.registerService.UPort = value ; }
 
-        public void Register () { this.register_service.Register () ; }
+        public void Register () { this.registerService.Register () ; }
 
-        public void Dispose () { this.register_service.Dispose () ; }
+        public void Dispose () { this.registerService.Dispose () ; }
 
         public event RegisterServiceEventHandler Response
         {
-            add { this.register_service.Response += value ; }
-            remove { this.register_service.Response -= value ; }
+            add => this.registerService.Response += value ;
+            remove => this.registerService.Response -= value ;
         }
     }
 }
