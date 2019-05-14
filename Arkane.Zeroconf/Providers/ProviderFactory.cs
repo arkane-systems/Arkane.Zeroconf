@@ -35,9 +35,8 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers
 
         public static IZeroconfProvider SelectedProvider
         {
-            get => ProviderFactory.selectedProvider == null
-                       ? ProviderFactory.DefaultProvider
-                       : ProviderFactory.selectedProvider ;
+            get => ProviderFactory.selectedProvider ?? ProviderFactory.DefaultProvider
+;
             set => ProviderFactory.selectedProvider = value ;
         }
 

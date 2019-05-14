@@ -203,8 +203,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
                     if (this.hostentry == null)
                     {
-                        this.hostentry = new IPHostEntry () ;
-                        this.hostentry.HostName = this.hosttarget ;
+                        this.hostentry = new IPHostEntry {HostName = this.hosttarget} ;
                     }
 
                     if (this.hostentry.AddressList != null)

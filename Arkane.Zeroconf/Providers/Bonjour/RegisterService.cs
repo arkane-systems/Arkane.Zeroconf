@@ -27,10 +27,11 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
             this.SetupCallback () ;
         }
 
+        private readonly CancellationTokenSource cts = new CancellationTokenSource () ;
+
         private Native.DNSServiceRegisterReply registerReplyHandler ;
         private ServiceRef                     sdRef ;
         private Task                           task ;
-        private CancellationTokenSource cts = new CancellationTokenSource() ;
 
         public bool AutoRename { get ; set ; } = true ;
 
@@ -102,9 +103,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
         {
             var args = new RegisterServiceEventArgs
                        {
-                           Service      = this,
-                           IsRegistered = false,
-                           ServiceError = (ServiceErrorCode) errorCode
+                           Service = this, IsRegistered = false, ServiceError = (ServiceErrorCode) errorCode
                        } ;
 
 

@@ -126,13 +126,15 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
         {
             string name = Native.Utf8toString (serviceName) ;
 
-            var service = new BrowseService () ;
-            service.Flags           = flags ;
-            service.Name            = name ;
-            service.RegType         = regtype ;
-            service.ReplyDomain     = replyDomain ;
-            service.InterfaceIndex  = interfaceIndex ;
-            service.AddressProtocol = this.address_protocol ;
+            var service = new BrowseService
+                          {
+                              Flags           = flags,
+                              Name            = name,
+                              RegType         = regtype,
+                              ReplyDomain     = replyDomain,
+                              InterfaceIndex  = interfaceIndex,
+                              AddressProtocol = this.address_protocol
+                          } ;
 
             var args = new ServiceBrowseEventArgs (
                                                    service,
