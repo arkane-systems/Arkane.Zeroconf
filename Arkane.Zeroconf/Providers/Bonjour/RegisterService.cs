@@ -11,6 +11,7 @@ using System ;
 using System.Net ;
 using System.Runtime.InteropServices ;
 using System.Text ;
+using System.Threading ;
 using System.Threading.Tasks ;
 
 #endregion
@@ -29,6 +30,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
         private Native.DNSServiceRegisterReply registerReplyHandler ;
         private ServiceRef                     sdRef ;
         private Task                           task ;
+        private CancellationTokenSource cts = new CancellationTokenSource() ;
 
         public bool AutoRename { get ; set ; } = true ;
 
@@ -38,8 +40,9 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 
         public void Dispose ()
         {
-            this.task?.Wait () ;
+            this.cts?.Cancel () ;
 
+            this.cts.Dispose () ;
             this.sdRef.Deallocate () ;
         }
 
@@ -51,7 +54,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                 throw new InvalidOperationException ("RegisterService registration already in process") ;
 
             if (async)
-                this.task = Task.Run (() => this.ProcessRegister ()).ContinueWith (_ => this.task = null) ;
+                this.task = Task.Run (() => this.ProcessRegister ()).ContinueWith (_ => this.task = null, this.cts.Token) ;
             else
                 this.ProcessRegister () ;
         }
