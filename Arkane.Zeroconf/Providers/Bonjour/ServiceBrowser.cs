@@ -10,6 +10,7 @@
 using System ;
 using System.Collections ;
 using System.Collections.Generic ;
+using System.Diagnostics ;
 using System.Threading.Tasks ;
 
 #endregion
@@ -79,7 +80,15 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
                 throw new InvalidOperationException ("ServiceBrowser is already started") ;
 
             if (async)
-                this.task = Task.Run (() => this.ProcessStart ()).ContinueWith (_ => this.task = null) ;
+                this.task = Task.Run (() => this.ProcessStart ()).ContinueWith (_ =>
+                                                                                {
+                                                                                    this.task = null ;
+                                                                                    if (_.IsFaulted)
+                                                                                    {
+                                                                                        Debug.Assert (_.Exception != null, "_.Exception != null") ;
+                                                                                        throw _.Exception ;
+                                                                                    }
+                                                                                }) ;
             else
                 this.ProcessStart () ;
         }
