@@ -31,6 +31,15 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
         NoSuchKey = -65556,
         NatTraversal = -65557,
         DoubleNat = -65558,
-        BadTime = -65559
+        BadTime = -65559,
+        BadSig = -65560,
+        BadKey = -65561,
+        Transient = -65562,
+        ServiceNotRunning = -65563, /* background daemon not running */
+        NatPortMappingUnsupported = -65564, /* NAT doesn't support PCP, NAT-PMP, or UPnP */
+        NatPortMappingDisabled = -65565, /* NAT supports PCP, NAT-PMP, or UPnP, but it's disabled by the administrator */
+        NoRouter = -65566, /* No router currently configured (probably no network connectivity) */
+        PollingMode = -65567,
+        Timeout = -65568
     }
 }
