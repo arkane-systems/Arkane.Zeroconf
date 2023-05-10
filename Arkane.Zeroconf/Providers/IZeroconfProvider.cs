@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.Zeroconf - IZeroconfProvider.cs
+// Arkane.ZeroConf - IZeroconfProvider.cs
 // 
 
 #endregion
@@ -11,16 +11,15 @@ using System ;
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf.Providers
+namespace ArkaneSystems.Arkane.Zeroconf.Providers ;
+
+public interface IZeroconfProvider
 {
-    public interface IZeroconfProvider
-    {
-        Type ServiceBrowser { get ; }
+    Type ServiceBrowser { get ; }
 
-        Type RegisterService { get ; }
+    Type RegisterService { get ; }
 
-        Type TxtRecord { get ; }
+    Type TxtRecord { get ; }
 
-        void Initialize () ;
-    }
+    void Initialize () ;
 }

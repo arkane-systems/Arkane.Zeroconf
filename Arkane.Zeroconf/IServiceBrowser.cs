@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.Zeroconf - IServiceBrowser.cs
+// Arkane.ZeroConf - IServiceBrowser.cs
 // 
 
 #endregion
@@ -12,14 +12,13 @@ using System.Collections.Generic ;
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf
+namespace ArkaneSystems.Arkane.Zeroconf ;
+
+public interface IServiceBrowser : IEnumerable <IResolvableService>, IDisposable
 {
-    public interface IServiceBrowser : IEnumerable <IResolvableService>, IDisposable
-    {
-        event ServiceBrowseEventHandler ServiceAdded ;
+    event ServiceBrowseEventHandler ServiceAdded ;
 
-        event ServiceBrowseEventHandler ServiceRemoved ;
+    event ServiceBrowseEventHandler ServiceRemoved ;
 
-        void Browse (uint interfaceIndex, AddressProtocol addressProtocol, string regtype, string domain) ;
-    }
+    void Browse (uint interfaceIndex, AddressProtocol addressProtocol, string regtype, string domain) ;
 }

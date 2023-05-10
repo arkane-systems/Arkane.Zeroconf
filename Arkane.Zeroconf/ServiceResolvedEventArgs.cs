@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.Zeroconf - ServiceResolvedEventArgs.cs
+// Arkane.ZeroConf - ServiceResolvedEventArgs.cs
 // 
 
 #endregion
@@ -11,12 +11,11 @@ using System ;
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf
-{
-    public class ServiceResolvedEventArgs : EventArgs
-    {
-        public ServiceResolvedEventArgs (IResolvableService service) => this.Service = service ;
+namespace ArkaneSystems.Arkane.Zeroconf ;
 
-        public IResolvableService Service { get ; }
-    }
+public class ServiceResolvedEventArgs : EventArgs
+{
+    public ServiceResolvedEventArgs (IResolvableService service) => this.Service = service ;
+
+    public IResolvableService Service { get ; }
 }

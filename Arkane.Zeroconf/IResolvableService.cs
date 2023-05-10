@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.Zeroconf - IResolvableService.cs
+// Arkane.ZeroConf - IResolvableService.cs
 // 
 
 #endregion
@@ -11,24 +11,23 @@ using System.Net ;
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf
+namespace ArkaneSystems.Arkane.Zeroconf ;
+
+public interface IResolvableService : IService
 {
-    public interface IResolvableService : IService
-    {
-        string FullName { get ; }
+    string FullName { get ; }
 
-        IPHostEntry HostEntry { get ; }
+    IPHostEntry HostEntry { get ; }
 
-        string HostTarget { get ; }
+    string HostTarget { get ; }
 
-        uint NetworkInterface { get ; }
+    uint NetworkInterface { get ; }
 
-        AddressProtocol AddressProtocol { get ; }
+    AddressProtocol AddressProtocol { get ; }
 
-        short Port { get ; }
+    short Port { get ; }
 
-        event ServiceResolvedEventHandler Resolved ;
+    event ServiceResolvedEventHandler Resolved ;
 
-        void Resolve () ;
-    }
+    void Resolve () ;
 }

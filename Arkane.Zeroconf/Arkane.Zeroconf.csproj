@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netcoreapp7.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <Authors>Arkane Systems</Authors>
     <Company>Arkane Systems</Company>
     <Product />
@@ -14,7 +14,7 @@ Please see project web site for more information.</Description>
     <PackageProjectUrl>https://github.com/cerebrate/Arkane.Zeroconf</PackageProjectUrl>
     <Copyright>MIT License</Copyright>
     <PackageTags>zeroconf bonjour</PackageTags>
-    <PackageReleaseNotes>Converted to .NET Standard. Projects for which this is not suitable should continue to use 1.0.</PackageReleaseNotes>
+    <PackageReleaseNotes>Converted to .NET Core. Projects for which this is not suitable should continue to use 1.2.</PackageReleaseNotes>
     <AssemblyName>Arkane.Zeroconf</AssemblyName>
     <RootNamespace>ArkaneSystems.Arkane.Zeroconf</RootNamespace>
     <SignAssembly>true</SignAssembly>

@@ -1,11 +1,10 @@
 #region header
 
-// Arkane.Zeroconf - ServiceBrowseEventHandler.cs
+// Arkane.ZeroConf - ServiceBrowseEventHandler.cs
 // 
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf
-{
-    public delegate void ServiceBrowseEventHandler (object o, ServiceBrowseEventArgs args) ;
-}
+namespace ArkaneSystems.Arkane.Zeroconf ;
+
+public delegate void ServiceBrowseEventHandler (object o, ServiceBrowseEventArgs args) ;

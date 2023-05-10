@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.Zeroconf - TxtRecord.cs
+// Arkane.ZeroConf - TxtRecord.cs
 // 
 
 #endregion
@@ -14,30 +14,29 @@ using ArkaneSystems.Arkane.Zeroconf.Providers ;
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf
+namespace ArkaneSystems.Arkane.Zeroconf ;
+
+public class TxtRecord : ITxtRecord
 {
-    public class TxtRecord : ITxtRecord
-    {
-        public TxtRecord () => this.BaseRecord = (ITxtRecord) Activator.CreateInstance (ProviderFactory.SelectedProvider.TxtRecord) ;
+    public TxtRecord () => this.BaseRecord = (ITxtRecord) Activator.CreateInstance (ProviderFactory.SelectedProvider.TxtRecord) ;
 
-        public TxtRecordItem this [string index] => this.BaseRecord[index] ;
+    public TxtRecordItem this [string index] => this.BaseRecord[index] ;
 
-        public int Count => this.BaseRecord.Count ;
+    public int Count => this.BaseRecord.Count ;
 
-        public ITxtRecord BaseRecord { get ; }
+    public ITxtRecord BaseRecord { get ; }
 
-        public void Add (string key, string value) { this.BaseRecord.Add (key, value) ; }
+    public void Add (string key, string value) { this.BaseRecord.Add (key, value) ; }
 
-        public void Add (string key, byte[] value) { this.BaseRecord.Add (key, value) ; }
+    public void Add (string key, byte[] value) { this.BaseRecord.Add (key, value) ; }
 
-        public void Add (TxtRecordItem item) { this.BaseRecord.Add (item) ; }
+    public void Add (TxtRecordItem item) { this.BaseRecord.Add (item) ; }
 
-        public void Remove (string key) { this.BaseRecord.Remove (key) ; }
+    public void Remove (string key) { this.BaseRecord.Remove (key) ; }
 
-        public TxtRecordItem GetItemAt (int index) => this.BaseRecord.GetItemAt (index) ;
+    public TxtRecordItem GetItemAt (int index) => this.BaseRecord.GetItemAt (index) ;
 
-        public IEnumerator GetEnumerator () => this.BaseRecord.GetEnumerator () ;
+    public IEnumerator GetEnumerator () => this.BaseRecord.GetEnumerator () ;
 
-        public void Dispose () { this.BaseRecord.Dispose () ; }
-    }
+    public void Dispose () { this.BaseRecord.Dispose () ; }
 }

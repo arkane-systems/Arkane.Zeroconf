@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.Zeroconf - ZeroconfProvider.cs
+// Arkane.ZeroConf - ZeroconfProvider.cs
 // 
 
 #endregion
@@ -16,29 +16,28 @@ using ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour ;
 
 [assembly: ZeroconfProvider (typeof (ZeroconfProvider))]
 
-namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
+namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour ;
+
+public static class Zeroconf
 {
-    public static class Zeroconf
+    public static void Initialize ()
     {
-        public static void Initialize ()
-        {
-            ServiceError error = Native.DNSServiceCreateConnection (out ServiceRef sdRef) ;
+        var error = Native.DNSServiceCreateConnection (out var sdRef) ;
 
-            if (error != ServiceError.NoError)
-                throw new ServiceErrorException (error) ;
+        if (error != ServiceError.NoError)
+            throw new ServiceErrorException (error) ;
 
-            sdRef.Deallocate () ;
-        }
+        sdRef.Deallocate () ;
     }
+}
 
-    public class ZeroconfProvider : IZeroconfProvider
-    {
-        public Type ServiceBrowser => typeof (ServiceBrowser) ;
+public class ZeroconfProvider : IZeroconfProvider
+{
+    public Type ServiceBrowser => typeof (ServiceBrowser) ;
 
-        public Type RegisterService => typeof (RegisterService) ;
+    public Type RegisterService => typeof (RegisterService) ;
 
-        public Type TxtRecord => typeof (TxtRecord) ;
+    public Type TxtRecord => typeof (TxtRecord) ;
 
-        public void Initialize () { Zeroconf.Initialize () ; }
-    }
+    public void Initialize () { Zeroconf.Initialize () ; }
 }

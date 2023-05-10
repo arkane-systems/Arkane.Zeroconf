@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.Zeroconf - RegisterServiceEventArgs.cs
+// Arkane.ZeroConf - RegisterServiceEventArgs.cs
 // 
 
 #endregion
@@ -11,23 +11,22 @@ using System ;
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf
+namespace ArkaneSystems.Arkane.Zeroconf ;
+
+public class RegisterServiceEventArgs : EventArgs
 {
-    public class RegisterServiceEventArgs : EventArgs
+    public RegisterServiceEventArgs () { }
+
+    public RegisterServiceEventArgs (IRegisterService service, bool isRegistered, ServiceErrorCode error)
     {
-        public RegisterServiceEventArgs () { }
-
-        public RegisterServiceEventArgs (IRegisterService service, bool isRegistered, ServiceErrorCode error)
-        {
-            this.Service = service ;
-            this.IsRegistered = isRegistered ;
-            this.ServiceError = error ;
-        }
-
-        public IRegisterService Service { get ; set ; }
-
-        public bool IsRegistered { get ; set ; }
-
-        public ServiceErrorCode ServiceError { get ; set ; }
+        this.Service      = service ;
+        this.IsRegistered = isRegistered ;
+        this.ServiceError = error ;
     }
+
+    public IRegisterService Service { get ; set ; }
+
+    public bool IsRegistered { get ; set ; }
+
+    public ServiceErrorCode ServiceError { get ; set ; }
 }

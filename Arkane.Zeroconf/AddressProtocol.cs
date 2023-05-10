@@ -1,17 +1,16 @@
 #region header
 
-// Arkane.Zeroconf - AddressProtocol.cs
+// Arkane.ZeroConf - AddressProtocol.cs
 // 
 
 #endregion
 
 // ReSharper disable InconsistentNaming
-namespace ArkaneSystems.Arkane.Zeroconf
+namespace ArkaneSystems.Arkane.Zeroconf ;
+
+public enum AddressProtocol
 {
-    public enum AddressProtocol
-    {
-        Any,
-        IPv4,
-        IPv6
-    }
+    Any,
+    IPv4,
+    IPv6,
 }

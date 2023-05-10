@@ -1,11 +1,10 @@
 #region header
 
-// Arkane.Zeroconf - ServiceResolvedEventHandler.cs
+// Arkane.ZeroConf - ServiceResolvedEventHandler.cs
 // 
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf
-{
-    public delegate void ServiceResolvedEventHandler (object o, ServiceResolvedEventArgs args) ;
-}
+namespace ArkaneSystems.Arkane.Zeroconf ;
+
+public delegate void ServiceResolvedEventHandler (object o, ServiceResolvedEventArgs args) ;

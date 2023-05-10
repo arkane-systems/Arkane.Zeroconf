@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.Zeroconf - ServiceRef.cs
+// Arkane.ZeroConf - ServiceRef.cs
 // 
 
 #endregion
@@ -11,44 +11,43 @@ using System ;
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
+namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour ;
+
+public struct ServiceRef
 {
-    public struct ServiceRef
+    public static readonly ServiceRef Zero ;
+
+    public ServiceRef (IntPtr raw) => this.Raw = raw ;
+
+    public void Deallocate () { Native.DNSServiceRefDeallocate (this.Raw) ; }
+
+    public ServiceError ProcessSingle () => Native.DNSServiceProcessResult (this.Raw) ;
+
+    public void Process ()
     {
-        public static readonly ServiceRef Zero ;
-
-        public ServiceRef (IntPtr raw) => this.Raw = raw ;
-
-        public void Deallocate () { Native.DNSServiceRefDeallocate (this.Raw) ; }
-
-        public ServiceError ProcessSingle () { return Native.DNSServiceProcessResult (this.Raw) ; }
-
-        public void Process ()
-        {
-            while (this.ProcessSingle () == ServiceError.NoError)
-            { }
-        }
-
-        public int SocketFD => Native.DNSServiceRefSockFD (this.Raw) ;
-
-        public IntPtr Raw { get ; }
-
-        public override bool Equals (object o)
-        {
-            if (!(o is ServiceRef))
-                return false ;
-
-            return ((ServiceRef) o).Raw == this.Raw ;
-        }
-
-        public override int GetHashCode () => this.Raw.GetHashCode () ;
-
-        public static bool operator == (ServiceRef a, ServiceRef b) => a.Raw == b.Raw ;
-
-        public static bool operator != (ServiceRef a, ServiceRef b) => a.Raw != b.Raw ;
-
-        public static explicit operator IntPtr (ServiceRef value) => value.Raw ;
-
-        public static explicit operator ServiceRef (IntPtr value) => new ServiceRef (value) ;
+        while (this.ProcessSingle () == ServiceError.NoError)
+        { }
     }
+
+    public int SocketFD => Native.DNSServiceRefSockFD (this.Raw) ;
+
+    public IntPtr Raw { get ; }
+
+    public override bool Equals (object o)
+    {
+        if (!(o is ServiceRef))
+            return false ;
+
+        return ((ServiceRef) o).Raw == this.Raw ;
+    }
+
+    public override int GetHashCode () => this.Raw.GetHashCode () ;
+
+    public static bool operator == (ServiceRef a, ServiceRef b) => a.Raw == b.Raw ;
+
+    public static bool operator != (ServiceRef a, ServiceRef b) => a.Raw != b.Raw ;
+
+    public static explicit operator IntPtr (ServiceRef value) => value.Raw ;
+
+    public static explicit operator ServiceRef (IntPtr value) => new(value) ;
 }

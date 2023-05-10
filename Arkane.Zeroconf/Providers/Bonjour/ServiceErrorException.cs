@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.Zeroconf - ServiceErrorException.cs
+// Arkane.ZeroConf - ServiceErrorException.cs
 // 
 
 #endregion
@@ -11,12 +11,11 @@ using System ;
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
-{
-    internal class ServiceErrorException : Exception
-    {
-        internal ServiceErrorException (ServiceError error) : base (error.ToString ()) { }
+namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour ;
 
-        internal ServiceErrorException (string error) : base (error) { }
-    }
+internal class ServiceErrorException : Exception
+{
+    internal ServiceErrorException (ServiceError error) : base (error.ToString ()) { }
+
+    internal ServiceErrorException (string error) : base (error) { }
 }

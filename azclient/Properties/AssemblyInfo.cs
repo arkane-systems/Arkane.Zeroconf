@@ -1,6 +1,16 @@
-﻿using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+﻿#region header
+
+// azclient - AssemblyInfo.cs
+// 
+
+#endregion
+
+#region using
+
+using System.Reflection ;
+using System.Runtime.InteropServices ;
+
+#endregion
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
@@ -11,7 +21,7 @@ using System.Runtime.InteropServices;
 #if DEBUG
 [assembly: AssemblyConfiguration ("Debug")]
 #else
-[assembly: AssemblyConfiguration("Release")]
+[assembly: AssemblyConfiguration ("Release")]
 #endif
 
 [assembly: AssemblyCompany ("Arkane Systems")]

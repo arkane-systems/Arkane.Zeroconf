@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.Zeroconf - ZeroconfProviderAttribute.cs
+// Arkane.ZeroConf - ZeroconfProviderAttribute.cs
 // 
 
 #endregion
@@ -11,13 +11,12 @@ using System ;
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf.Providers
-{
-    [AttributeUsage (AttributeTargets.Assembly)]
-    public class ZeroconfProviderAttribute : Attribute
-    {
-        public ZeroconfProviderAttribute (Type providerType) => this.ProviderType = providerType ;
+namespace ArkaneSystems.Arkane.Zeroconf.Providers ;
 
-        public Type ProviderType { get ; }
-    }
+[AttributeUsage (AttributeTargets.Assembly)]
+public class ZeroconfProviderAttribute : Attribute
+{
+    public ZeroconfProviderAttribute (Type providerType) => this.ProviderType = providerType ;
+
+    public Type ProviderType { get ; }
 }
