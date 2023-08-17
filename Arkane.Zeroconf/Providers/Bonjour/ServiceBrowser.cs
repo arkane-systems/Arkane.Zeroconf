@@ -11,6 +11,7 @@ using System ;
 using System.Collections ;
 using System.Collections.Generic ;
 using System.Diagnostics ;
+using System.Threading ;
 using System.Threading.Tasks ;
 
 #endregion
@@ -30,6 +31,7 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
 
     private readonly Native.DNSServiceBrowseReply            browseReplyHandler ;
     private readonly Dictionary <string, IResolvableService> serviceTable = new() ;
+    private readonly SemaphoreSlim serviceTableSemaphore = new(1, 1) ;
 
     private AddressProtocol address_protocol ;
     private string          domain ;
@@ -54,10 +56,15 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
 
     public IEnumerator <IResolvableService> GetEnumerator ()
     {
-        lock (this)
+        serviceTableSemaphore.Wait();
+        try
         {
             foreach (var service in this.serviceTable.Values)
                 yield return service ;
+        }
+        finally
+        {
+            serviceTableSemaphore.Release();
         }
     }
 
@@ -152,12 +159,14 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
 
         if ((flags & ServiceFlags.Add) != 0)
         {
-            lock (this.serviceTable)
+            serviceTableSemaphore.Wait();
+            try
             {
-                if (this.serviceTable.ContainsKey (name))
-                    this.serviceTable[name] = service ;
-                else
-                    this.serviceTable.Add (name, service) ;
+                this.serviceTable[name] = service;
+            }
+            finally
+            {
+                serviceTableSemaphore.Release();
             }
 
             var handler = this.ServiceAdded ;
@@ -165,10 +174,14 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
         }
         else
         {
-            lock (this.serviceTable)
+            serviceTableSemaphore.Wait();
+            try
             {
-                if (this.serviceTable.ContainsKey (name))
-                    this.serviceTable.Remove (name) ;
+                this.serviceTable.Remove (name) ;
+            }
+            finally
+            {
+                serviceTableSemaphore.Release();
             }
 
             var handler = this.ServiceRemoved ;
