@@ -119,7 +119,7 @@ public sealed class BrowseService : Service, IResolvableService
         this.resolvePending = false ;
 
         this.InterfaceIndex = interfaceIndex ;
-        this.FullName       = Native.Utf8toString (fullname) ;
+        this.FullName       = Marshal.PtrToStringUTF8 (fullname) ;
         this.port           = (ushort) IPAddress.NetworkToHostOrder ((short) port) ;
         this.TxtRecord      = new TxtRecord (txtLen, txtRecord) ;
         this.hosttarget     = hosttarget ;

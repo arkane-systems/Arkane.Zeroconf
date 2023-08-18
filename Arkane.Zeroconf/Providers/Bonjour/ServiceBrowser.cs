@@ -11,6 +11,7 @@ using System ;
 using System.Collections ;
 using System.Collections.Generic ;
 using System.Diagnostics ;
+using System.Runtime.InteropServices ;
 using System.Threading.Tasks ;
 
 #endregion
@@ -134,7 +135,7 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
                                 string       replyDomain,
                                 IntPtr       context)
     {
-        var name = Native.Utf8toString (serviceName) ;
+        var name = Marshal.PtrToStringUTF8 (serviceName) ;
 
         var service = new BrowseService
                       {

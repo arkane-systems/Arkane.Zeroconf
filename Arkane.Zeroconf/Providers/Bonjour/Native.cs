@@ -8,9 +8,6 @@
 #region using
 
 using System ;
-using System.IO ;
-using System.Runtime.InteropServices ;
-using System.Text ;
 
 // ReSharper disable InconsistentNaming
 
@@ -72,72 +69,41 @@ public static class Native
 
     #endregion
 
-    #region Nested type: OperatingSystem
-
-    // Taken from https://stackoverflow.com/a/38795621
-    private enum OperatingSystem
-    {
-        Unknown,
-        Windows,
-        OSX,
-        Linux,
-    }
-
-    #endregion
-
-
     public static void DNSServiceRefDeallocate (IntPtr sdRef)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                NativeWindows.DNSServiceRefDeallocate (sdRef) ;
-                return ;
-            case OperatingSystem.OSX:
-                NativeOSX.DNSServiceRefDeallocate (sdRef) ;
-                return ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
+        if (OperatingSystem.IsWindows())
+            NativeWindows.DNSServiceRefDeallocate (sdRef) ;
+        else if (OperatingSystem.IsMacOS())
+            NativeMacOS.DNSServiceRefDeallocate (sdRef) ;
+        else
+            NativeLinux.DNSServiceRefDeallocate (sdRef) ;
     }
 
     public static ServiceError DNSServiceProcessResult (IntPtr sdRef)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                return NativeWindows.DNSServiceProcessResult (sdRef) ;
-            case OperatingSystem.OSX:
-                return NativeOSX.DNSServiceProcessResult (sdRef) ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
+        if (OperatingSystem.IsWindows())
+            return NativeWindows.DNSServiceProcessResult (sdRef) ;
+        if (OperatingSystem.IsMacOS())
+            return NativeMacOS.DNSServiceProcessResult (sdRef) ;
+        return NativeLinux.DNSServiceProcessResult (sdRef) ;
     }
 
     public static int DNSServiceRefSockFD (IntPtr sdRef)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                return NativeWindows.DNSServiceRefSockFD (sdRef) ;
-            case OperatingSystem.OSX:
-                return NativeOSX.DNSServiceRefSockFD (sdRef) ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
+        if (OperatingSystem.IsWindows())
+            return NativeWindows.DNSServiceRefSockFD (sdRef) ;
+        if (OperatingSystem.IsMacOS())
+            return NativeMacOS.DNSServiceRefSockFD (sdRef) ;
+        return NativeLinux.DNSServiceRefSockFD (sdRef) ;
     }
 
     public static ServiceError DNSServiceCreateConnection (out ServiceRef sdRef)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                return NativeWindows.DNSServiceCreateConnection (out sdRef) ;
-            case OperatingSystem.OSX:
-                return NativeOSX.DNSServiceCreateConnection (out sdRef) ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
+        if (OperatingSystem.IsWindows())
+            return NativeWindows.DNSServiceCreateConnection (out sdRef) ;
+        if (OperatingSystem.IsMacOS())
+            return NativeMacOS.DNSServiceCreateConnection (out sdRef) ;
+        return NativeLinux.DNSServiceCreateConnection (out sdRef) ;
     }
 
     public static ServiceError DNSServiceBrowse (out ServiceRef        sdRef,
@@ -148,15 +114,11 @@ public static class Native
                                                  DNSServiceBrowseReply callBack,
                                                  IntPtr                context)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                return NativeWindows.DNSServiceBrowse (out sdRef, flags, interfaceIndex, regtype, domain, callBack, context) ;
-            case OperatingSystem.OSX:
-                return NativeOSX.DNSServiceBrowse (out sdRef, flags, interfaceIndex, regtype, domain, callBack, context) ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
+        if (OperatingSystem.IsWindows())
+            return NativeWindows.DNSServiceBrowse (out sdRef, flags, interfaceIndex, regtype, domain, callBack, context) ;
+        if (OperatingSystem.IsMacOS())
+            return NativeMacOS.DNSServiceBrowse (out sdRef, flags, interfaceIndex, regtype, domain, callBack, context) ;
+        return NativeLinux.DNSServiceBrowse (out sdRef, flags, interfaceIndex, regtype, domain, callBack, context) ;
     }
 
     public static ServiceError DNSServiceResolve (out ServiceRef         sdRef,
@@ -168,22 +130,18 @@ public static class Native
                                                   DNSServiceResolveReply callBack,
                                                   IntPtr                 context)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                return NativeWindows.DNSServiceResolve (out sdRef,
-                                                        flags,
-                                                        interfaceIndex,
-                                                        name,
-                                                        regtype,
-                                                        domain,
-                                                        callBack,
-                                                        context) ;
-            case OperatingSystem.OSX:
-                return NativeOSX.DNSServiceResolve (out sdRef, flags, interfaceIndex, name, regtype, domain, callBack, context) ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
+        if (OperatingSystem.IsWindows())
+            return NativeWindows.DNSServiceResolve (out sdRef,
+                                                flags,
+                                                interfaceIndex,
+                                                name,
+                                                regtype,
+                                                domain,
+                                                callBack,
+                                                context) ;
+        if (OperatingSystem.IsMacOS())
+            return NativeMacOS.DNSServiceResolve (out sdRef, flags, interfaceIndex, name, regtype, domain, callBack, context) ;
+        return NativeLinux.DNSServiceResolve (out sdRef, flags, interfaceIndex, name, regtype, domain, callBack, context) ;
     }
 
     public static ServiceError DNSServiceRegister (out ServiceRef          sdRef,
@@ -199,23 +157,8 @@ public static class Native
                                                    DNSServiceRegisterReply callBack,
                                                    IntPtr                  context)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                return NativeWindows.DNSServiceRegister (out sdRef,
-                                                         flags,
-                                                         interfaceIndex,
-                                                         name,
-                                                         regtype,
-                                                         domain,
-                                                         host,
-                                                         port,
-                                                         txtLen,
-                                                         txtRecord,
-                                                         callBack,
-                                                         context) ;
-            case OperatingSystem.OSX:
-                return NativeOSX.DNSServiceRegister (out sdRef,
+        if (OperatingSystem.IsWindows())
+            return NativeWindows.DNSServiceRegister (out sdRef,
                                                      flags,
                                                      interfaceIndex,
                                                      name,
@@ -227,9 +170,31 @@ public static class Native
                                                      txtRecord,
                                                      callBack,
                                                      context) ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
+        if (OperatingSystem.IsMacOS())
+            return NativeMacOS.DNSServiceRegister (out sdRef,
+                                                 flags,
+                                                 interfaceIndex,
+                                                 name,
+                                                 regtype,
+                                                 domain,
+                                                 host,
+                                                 port,
+                                                 txtLen,
+                                                 txtRecord,
+                                                 callBack,
+                                                 context) ;
+        return NativeLinux.DNSServiceRegister (out sdRef,
+                                             flags,
+                                             interfaceIndex,
+                                             name,
+                                             regtype,
+                                             domain,
+                                             host,
+                                             port,
+                                             txtLen,
+                                             txtRecord,
+                                             callBack,
+                                             context) ;
     }
 
     public static ServiceError DNSServiceQueryRecord (out ServiceRef             sdRef,
@@ -241,19 +206,8 @@ public static class Native
                                                       DNSServiceQueryRecordReply callBack,
                                                       IntPtr                     context)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                return NativeWindows.DNSServiceQueryRecord (out sdRef,
-                                                            flags,
-                                                            interfaceIndex,
-                                                            fullname,
-                                                            rrtype,
-                                                            rrclass,
-                                                            callBack,
-                                                            context) ;
-            case OperatingSystem.OSX:
-                return NativeOSX.DNSServiceQueryRecord (out sdRef,
+        if (OperatingSystem.IsWindows())
+            return NativeWindows.DNSServiceQueryRecord (out sdRef,
                                                         flags,
                                                         interfaceIndex,
                                                         fullname,
@@ -261,41 +215,45 @@ public static class Native
                                                         rrclass,
                                                         callBack,
                                                         context) ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
+        if (OperatingSystem.IsMacOS())
+            return NativeMacOS.DNSServiceQueryRecord (out sdRef,
+                                                    flags,
+                                                    interfaceIndex,
+                                                    fullname,
+                                                    rrtype,
+                                                    rrclass,
+                                                    callBack,
+                                                    context) ;
+        return NativeLinux.DNSServiceQueryRecord (out sdRef,
+                                                flags,
+                                                interfaceIndex,
+                                                fullname,
+                                                rrtype,
+                                                rrclass,
+                                                callBack,
+                                                context) ;
     }
 
     // TXT Record Handling
 
     public static void TXTRecordCreate (IntPtr txtRecord, ushort bufferLen, IntPtr buffer)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                NativeWindows.TXTRecordCreate (txtRecord, bufferLen, buffer) ;
-                return ;
-            case OperatingSystem.OSX:
-                NativeOSX.TXTRecordCreate (txtRecord, bufferLen, buffer) ;
-                return ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
+        if (OperatingSystem.IsWindows())
+            NativeWindows.TXTRecordCreate (txtRecord, bufferLen, buffer) ;
+        else if (OperatingSystem.IsMacOS())
+            NativeMacOS.TXTRecordCreate (txtRecord, bufferLen, buffer) ;
+        else
+            NativeLinux.TXTRecordCreate (txtRecord, bufferLen, buffer) ;
     }
 
     public static void TXTRecordDeallocate (IntPtr txtRecord)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                NativeWindows.TXTRecordDeallocate (txtRecord) ;
-                return ;
-            case OperatingSystem.OSX:
-                NativeOSX.TXTRecordDeallocate (txtRecord) ;
-                return ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
+        if (OperatingSystem.IsWindows())
+            NativeWindows.TXTRecordDeallocate (txtRecord) ;
+        else if (OperatingSystem.IsMacOS())
+            NativeMacOS.TXTRecordDeallocate (txtRecord) ;
+        else
+            NativeLinux.TXTRecordDeallocate (txtRecord) ;
     }
 
     public static ServiceError TXTRecordGetItemAtIndex (ushort     txtLen,
@@ -306,15 +264,11 @@ public static class Native
                                                         out byte   valueLen,
                                                         out IntPtr value)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                return NativeWindows.TXTRecordGetItemAtIndex (txtLen, txtRecord, index, keyBufLen, key, out valueLen, out value) ;
-            case OperatingSystem.OSX:
-                return NativeOSX.TXTRecordGetItemAtIndex (txtLen, txtRecord, index, keyBufLen, key, out valueLen, out value) ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
+        if (OperatingSystem.IsWindows())
+            return NativeWindows.TXTRecordGetItemAtIndex (txtLen, txtRecord, index, keyBufLen, key, out valueLen, out value) ;
+        if (OperatingSystem.IsMacOS())
+            return NativeMacOS.TXTRecordGetItemAtIndex (txtLen, txtRecord, index, keyBufLen, key, out valueLen, out value) ;
+        return NativeLinux.TXTRecordGetItemAtIndex (txtLen, txtRecord, index, keyBufLen, key, out valueLen, out value) ;
     }
 
     public static ServiceError TXTRecordSetValue (IntPtr txtRecord,
@@ -322,101 +276,46 @@ public static class Native
                                                   sbyte  valueSize,
                                                   byte[] value)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                return NativeWindows.TXTRecordSetValue (txtRecord, key, valueSize, value) ;
-            case OperatingSystem.OSX:
-                return NativeOSX.TXTRecordSetValue (txtRecord, key, valueSize, value) ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
+        if (OperatingSystem.IsWindows())
+            return NativeWindows.TXTRecordSetValue (txtRecord, key, valueSize, value) ;
+        if (OperatingSystem.IsMacOS())
+            return NativeMacOS.TXTRecordSetValue (txtRecord, key, valueSize, value) ;
+        return NativeLinux.TXTRecordSetValue (txtRecord, key, valueSize, value) ;
     }
 
     public static ServiceError TXTRecordRemoveValue (IntPtr txtRecord, byte[] key)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                return NativeWindows.TXTRecordRemoveValue (txtRecord, key) ;
-            case OperatingSystem.OSX:
-                return NativeOSX.TXTRecordRemoveValue (txtRecord, key) ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
+        if (OperatingSystem.IsWindows())
+            return NativeWindows.TXTRecordRemoveValue (txtRecord, key) ;
+        if (OperatingSystem.IsMacOS())
+            return NativeMacOS.TXTRecordRemoveValue (txtRecord, key) ;
+        return NativeLinux.TXTRecordRemoveValue (txtRecord, key) ;
     }
 
     public static ushort TXTRecordGetLength (IntPtr txtRecord)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                return NativeWindows.TXTRecordGetLength (txtRecord) ;
-            case OperatingSystem.OSX:
-                return NativeOSX.TXTRecordGetLength (txtRecord) ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
+        if (OperatingSystem.IsWindows())
+            return NativeWindows.TXTRecordGetLength (txtRecord) ;
+        if (OperatingSystem.IsMacOS())
+            return NativeMacOS.TXTRecordGetLength (txtRecord) ;
+        return NativeLinux.TXTRecordGetLength (txtRecord) ;
     }
 
     public static IntPtr TXTRecordGetBytesPtr (IntPtr txtRecord)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                return NativeWindows.TXTRecordGetBytesPtr (txtRecord) ;
-            case OperatingSystem.OSX:
-                return NativeOSX.TXTRecordGetBytesPtr (txtRecord) ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
+        if (OperatingSystem.IsWindows())
+            return NativeWindows.TXTRecordGetBytesPtr (txtRecord) ;
+        if (OperatingSystem.IsMacOS())
+            return NativeMacOS.TXTRecordGetBytesPtr (txtRecord) ;
+        return NativeLinux.TXTRecordGetBytesPtr (txtRecord) ;
     }
 
     public static ushort TXTRecordGetCount (ushort txtLen, IntPtr txtRecord)
     {
-        switch (Native.GetCurrentOperatingSystem ())
-        {
-            case OperatingSystem.Windows:
-                return NativeWindows.TXTRecordGetCount (txtLen, txtRecord) ;
-            case OperatingSystem.OSX:
-                return NativeOSX.TXTRecordGetCount (txtLen, txtRecord) ;
-            default:
-                throw new InvalidOperationException ("The current OS is unsupported") ;
-        }
-    }
-
-    public static string Utf8toString (IntPtr ptr)
-    {
-        var len = 0 ;
-        while (Marshal.ReadByte (ptr, len) != 0)
-            len++ ;
-        var raw = new byte[len] ;
-        Marshal.Copy (ptr, raw, 0, len) ;
-        return Encoding.UTF8.GetString (raw) ;
-    }
-
-    private static OperatingSystem GetCurrentOperatingSystem ()
-    {
-        var windir = Environment.GetEnvironmentVariable ("windir") ;
-        if (!string.IsNullOrEmpty (windir) && windir.Contains (@"\") && Directory.Exists (windir))
-            return OperatingSystem.Windows ;
-
-        if (File.Exists (@"/proc/sys/kernel/ostype"))
-        {
-            var osType = File.ReadAllText (@"/proc/sys/kernel/ostype") ;
-            if (osType.StartsWith ("Linux", StringComparison.OrdinalIgnoreCase))
-
-                // Note: Android gets here too
-                return OperatingSystem.Linux ;
-
-            return OperatingSystem.Unknown ;
-        }
-
-        if (File.Exists (@"/System/Library/CoreServices/SystemVersion.plist"))
-
-            // Note: iOS gets here too
-            return OperatingSystem.OSX ;
-
-        return OperatingSystem.Unknown ;
+        if (OperatingSystem.IsWindows())
+            return NativeWindows.TXTRecordGetCount (txtLen, txtRecord) ;
+        if (OperatingSystem.IsMacOS())
+            return NativeMacOS.TXTRecordGetCount (txtLen, txtRecord) ;
+        return NativeLinux.TXTRecordGetCount (txtLen, txtRecord) ;
     }
 }
