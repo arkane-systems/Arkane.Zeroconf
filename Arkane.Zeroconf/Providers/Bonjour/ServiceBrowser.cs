@@ -102,7 +102,7 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
     private void ProcessStart ()
     {
         var error = Native.DNSServiceBrowse (out this.sdRef,
-                                             ServiceFlags.Default,
+                                             ServiceFlags.None,
                                              this.interfaceIndex,
                                              this.regtype,
                                              this.domain,
