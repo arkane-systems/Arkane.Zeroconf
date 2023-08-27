@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp7.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Version>1.3.0</Version>
     <Authors>Arkane Systems</Authors>
@@ -10,7 +10,7 @@
     <Description>A Zero Configuration Networking library for .NET.
 
 Please see project web site for more information.</Description>
-    <PackageLicenseUrl></PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/cerebrate/Arkane.Zeroconf</PackageProjectUrl>
     <Copyright>MIT License</Copyright>
     <PackageTags>zeroconf bonjour</PackageTags>
@@ -19,11 +19,6 @@ Please see project web site for more information.</Description>
     <RootNamespace>ArkaneSystems.Arkane.Zeroconf</RootNamespace>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>zeroconf.snk</AssemblyOriginatorKeyFile>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
 </Project>
