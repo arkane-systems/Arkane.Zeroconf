@@ -12,6 +12,8 @@ using System.Collections ;
 using System.Net ;
 using System.Runtime.InteropServices ;
 using System.Text ;
+using System.Threading ;
+using System.Threading.Tasks ;
 
 #endregion
 
@@ -28,8 +30,8 @@ public sealed class BrowseService : Service, IResolvableService
 
     private Native.DNSServiceQueryRecordReply queryRecordReplyHandler ;
 
-    private Action <bool> resolveAction ;
-    private bool          resolvePending ;
+    private Action <bool, CancellationToken> resolveAction ;
+    private bool                             resolvePending ;
 
     private Native.DNSServiceResolveReply resolveReplyHandler ;
 
@@ -43,7 +45,12 @@ public sealed class BrowseService : Service, IResolvableService
     {
         // If people call this in a ServiceAdded event handler (which they generally do), we need to
         // invoke onto another thread, otherwise we block processing any more results.
-        this.resolveResult = this.resolveAction.BeginInvoke (false, null, null) ;
+        this.resolveResult = ResolveAsync () ;
+    }
+
+    public Task ResolveAsync (CancellationToken cancellationToken = default)
+    {
+        return Task.Run (() => this.resolveAction (false, cancellationToken), cancellationToken) ;
     }
 
     ~BrowseService ()
@@ -60,6 +67,11 @@ public sealed class BrowseService : Service, IResolvableService
     }
 
     public void Resolve (bool requery)
+    {
+        Resolve (requery, CancellationToken.None) ;
+    }
+
+    public void Resolve (bool requery, CancellationToken cancellationToken)
     {
         if (this.resolvePending)
             return ;
@@ -82,7 +94,7 @@ public sealed class BrowseService : Service, IResolvableService
         if (error != ServiceError.NoError)
             throw new ServiceErrorException (error) ;
 
-        sdRef.Process () ;
+        sdRef.Process (cancellationToken) ;
     }
 
     public void RefreshTxtRecord ()

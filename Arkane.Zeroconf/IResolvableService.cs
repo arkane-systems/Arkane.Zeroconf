@@ -8,6 +8,8 @@
 #region using
 
 using System.Net ;
+using System.Threading ;
+using System.Threading.Tasks ;
 
 #endregion
 
@@ -30,4 +32,6 @@ public interface IResolvableService : IService
     event ServiceResolvedEventHandler Resolved ;
 
     void Resolve () ;
+
+    Task ResolveAsync (CancellationToken cancellationToken = default) ;
 }

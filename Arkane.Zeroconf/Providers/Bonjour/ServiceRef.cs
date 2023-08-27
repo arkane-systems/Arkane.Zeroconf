@@ -8,6 +8,7 @@
 #region using
 
 using System ;
+using System.Threading ;
 
 #endregion
 
@@ -25,8 +26,16 @@ public struct ServiceRef
 
     public void Process ()
     {
-        while (this.ProcessSingle () == ServiceError.NoError)
-        { }
+        Process(CancellationToken.None);
+    }
+
+    public void Process (CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        while (this.ProcessSingle() == ServiceError.NoError)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
     }
 
     public int SocketFD => Native.DNSServiceRefSockFD (this.Raw) ;
