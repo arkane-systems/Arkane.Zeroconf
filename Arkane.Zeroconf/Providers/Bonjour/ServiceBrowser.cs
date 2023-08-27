@@ -11,6 +11,7 @@ using System ;
 using System.Collections ;
 using System.Collections.Generic ;
 using System.Diagnostics ;
+using System.Runtime.InteropServices ;
 using System.Threading ;
 using System.Threading.Tasks ;
 
@@ -108,7 +109,7 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
     private void ProcessStart ()
     {
         var error = Native.DNSServiceBrowse (out this.sdRef,
-                                             ServiceFlags.Default,
+                                             ServiceFlags.None,
                                              this.interfaceIndex,
                                              this.regtype,
                                              this.domain,
@@ -141,7 +142,7 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
                                 string       replyDomain,
                                 IntPtr       context)
     {
-        var name = Native.Utf8toString (serviceName) ;
+        var name = Marshal.PtrToStringUTF8 (serviceName) ;
 
         var service = new BrowseService
                       {

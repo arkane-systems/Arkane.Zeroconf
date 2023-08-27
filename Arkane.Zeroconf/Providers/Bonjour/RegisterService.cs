@@ -109,7 +109,7 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
 
         if (errorCode == ServiceError.NoError)
         {
-            this.Name         = Native.Utf8toString (name) ;
+            this.Name         = Marshal.PtrToStringUTF8(name) ;
             this.RegType      = regtype ;
             this.ReplyDomain  = domain ;
             args.IsRegistered = true ;
