@@ -1,0 +1,194 @@
+{
+  "settings": {
+    "components": {
+      "code": true,
+      "binaries": false
+    },
+    "targetId": "net10.0",
+    "targetDisplayName": ".NETCoreApp,Version=v10.0"
+  },
+  "analysisStartTime": "2026-04-11T18:13:43.2205308Z",
+  "analysisEndTime": "2026-04-11T18:13:45.976701Z",
+  "privacyModeHelpUrl": "https://go.microsoft.com/fwlink/?linkid=2270980",
+  "stats": {
+    "summary": {
+      "projects": 2,
+      "issues": 2,
+      "incidents": 3,
+      "effort": 3
+    },
+    "charts": {
+      "severity": {
+        "Mandatory": 3,
+        "Optional": 0,
+        "Potential": 0,
+        "Information": 0
+      },
+      "category": {
+        "Project": 2,
+        "NuGet": 1
+      }
+    }
+  },
+  "projects": [
+    {
+      "path": "Arkane.ZeroConf\\Arkane.ZeroConf.csproj",
+      "startingProject": true,
+      "issues": 1,
+      "storyPoints": 1,
+      "properties": {
+        "appName": "Arkane.ZeroConf",
+        "projectKind": "ClassLibrary",
+        "frameworks": [
+          "netcoreapp7.0"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": true,
+        "numberOfFiles": 37,
+        "numberOfCodeFiles": 37,
+        "linesTotal": 2426,
+        "linesOfCode": 2426,
+        "totalApiScanned": 1448,
+        "minLinesOfCodeToChange": 0,
+        "maxLinesOfCodeToChange": 0
+      },
+      "ruleInstances": [
+        {
+          "incidentId": "5da77d84-38b3-4cc4-9718-6ad911c9abeb",
+          "ruleId": "Project.0002",
+          "projectPath": "Arkane.ZeroConf\\Arkane.ZeroConf.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Current target framework: netcoreapp7.0\nRecommended target framework: net10.0",
+              "protected": "Current target framework: netcoreapp7.0\nRecommended target framework: net10.0"
+            },
+            "kind": "File",
+            "path": "Arkane.ZeroConf\\Arkane.ZeroConf.csproj",
+            "snippet": "Current target framework: netcoreapp7.0\nRecommended target framework: net10.0",
+            "protectedSnippet": "Current target framework: netcoreapp7.0\nRecommended target framework: net10.0",
+            "properties": {
+              "CurrentTargetFramework": "netcoreapp7.0",
+              "RecommendedTargetFramework": "net10.0"
+            }
+          }
+        }
+      ],
+      "features": []
+    },
+    {
+      "path": "azclient\\azclient.csproj",
+      "startingProject": true,
+      "issues": 2,
+      "storyPoints": 2,
+      "properties": {
+        "appName": "azclient",
+        "projectKind": "DotNetCoreApp",
+        "frameworks": [
+          "net7.0"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": true,
+        "numberOfFiles": 2,
+        "numberOfCodeFiles": 2,
+        "linesTotal": 354,
+        "linesOfCode": 354,
+        "totalApiScanned": 338,
+        "minLinesOfCodeToChange": 0,
+        "maxLinesOfCodeToChange": 0
+      },
+      "ruleInstances": [
+        {
+          "incidentId": "21121583-3e35-4662-a9ee-8b0eb5a4b510",
+          "ruleId": "NuGet.0003",
+          "projectPath": "azclient\\azclient.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "System.Data.DataSetExtensions, 4.5.0\n\nRecommendation:\n\nPackage functionality included with new framework reference",
+              "protected": "System.Data.DataSetExtensions, 4.5.0\n\nRecommendation:\n\nPackage functionality included with new framework reference"
+            },
+            "kind": "File",
+            "path": "azclient\\azclient.csproj",
+            "snippet": "System.Data.DataSetExtensions, 4.5.0\n\nRecommendation:\n\nPackage functionality included with new framework reference",
+            "protectedSnippet": "System.Data.DataSetExtensions, 4.5.0\n\nRecommendation:\n\nPackage functionality included with new framework reference",
+            "label": "System.Data.DataSetExtensions 4.5.0",
+            "properties": {
+              "PackageId": "System.Data.DataSetExtensions",
+              "PackageVersion": "4.5.0",
+              "PackageNewVersion": null,
+              "PackageReplacements": null
+            }
+          }
+        },
+        {
+          "incidentId": "113e7215-332b-4350-a2a8-07534faf4b44",
+          "ruleId": "Project.0002",
+          "projectPath": "azclient\\azclient.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Current target framework: net7.0\nRecommended target framework: net10.0",
+              "protected": "Current target framework: net7.0\nRecommended target framework: net10.0"
+            },
+            "kind": "File",
+            "path": "azclient\\azclient.csproj",
+            "snippet": "Current target framework: net7.0\nRecommended target framework: net10.0",
+            "protectedSnippet": "Current target framework: net7.0\nRecommended target framework: net10.0",
+            "properties": {
+              "CurrentTargetFramework": "net7.0",
+              "RecommendedTargetFramework": "net10.0"
+            }
+          }
+        }
+      ],
+      "features": []
+    }
+  ],
+  "rules": {
+    "Project.0002": {
+      "id": "Project.0002",
+      "isFeature": false,
+      "description": "Project\u0027s target framework(s) needs to be changed to the new target framework that you selected for this upgrade.\n\nDuring upgrade target framework will be adjusted to corresponding platform when applicable. In some cases project would result in multiple target frameworks after the upgrade if it was using features that now have their own platforms in modern .NET frameworks (windows, iOS, Android etc).",
+      "label": "Project\u0027s target framework(s) needs to be changed",
+      "severity": "Mandatory",
+      "effort": 1,
+      "links": [
+        {
+          "title": "Overview of porting from .NET Framework to .NET",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2265227",
+          "isCustom": false
+        },
+        {
+          "title": ".NET project SDKs",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2265226",
+          "isCustom": false
+        }
+      ]
+    },
+    "NuGet.0003": {
+      "id": "NuGet.0003",
+      "isFeature": false,
+      "description": "NuGet package functionality is included with framework reference.\n\nPackage needs to be removed.",
+      "label": "NuGet package functionality is included with framework reference",
+      "severity": "Mandatory",
+      "effort": 1,
+      "links": [
+        {
+          "url": "https://go.microsoft.com/fwlink/?linkid=2262609",
+          "isCustom": false
+        }
+      ]
+    }
+  }
+}
