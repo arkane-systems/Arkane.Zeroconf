@@ -13,3 +13,8 @@
 
 **03-update-packages**: Removed redundant System.Data.DataSetExtensions package (now in framework), retained compatible packages. Restore successful.
 
+
+## [2026-04-11 13:27] 04-build-and-validate
+
+**04-build-and-validate**: Solution built successfully with .NET 10 — both projects compiled with 0 errors, 1 informational warning (NU1510).
+
