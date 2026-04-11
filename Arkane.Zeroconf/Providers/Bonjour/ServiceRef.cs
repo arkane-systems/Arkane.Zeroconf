@@ -26,15 +26,15 @@ public struct ServiceRef
 
     public void Process ()
     {
-        Process(CancellationToken.None);
+        Process (CancellationToken.None) ;
     }
 
     public void Process (CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        while (this.ProcessSingle() == ServiceError.NoError)
+        cancellationToken.ThrowIfCancellationRequested () ;
+        while (this.ProcessSingle () == ServiceError.NoError)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested () ;
         }
     }
 
