@@ -33,5 +33,10 @@ public interface IResolvableService : IService
 
     void Resolve () ;
 
-    Task ResolveAsync (CancellationToken cancellationToken = default) ;
+    Task ResolveAsync (CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested() ;
+        Resolve() ;
+        return Task.CompletedTask ;
+    }
 }
