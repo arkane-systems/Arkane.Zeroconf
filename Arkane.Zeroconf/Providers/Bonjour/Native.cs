@@ -8,6 +8,7 @@
 #region using
 
 using System ;
+using System.Runtime.InteropServices ;
 
 // ReSharper disable InconsistentNaming
 
@@ -21,6 +22,7 @@ public static class Native
 
     // DNSServiceBrowse
 
+    [UnmanagedFunctionPointer (CallingConvention.Cdecl)]
     public delegate void DNSServiceBrowseReply (ServiceRef   sdRef,
                                                 ServiceFlags flags,
                                                 uint         interfaceIndex,
@@ -32,6 +34,7 @@ public static class Native
 
     // DNSServiceQueryRecord
 
+    [UnmanagedFunctionPointer (CallingConvention.Cdecl)]
     public delegate void DNSServiceQueryRecordReply (ServiceRef   sdRef,
                                                      ServiceFlags flags,
                                                      uint         interfaceIndex,
@@ -46,6 +49,7 @@ public static class Native
 
     // DNSServiceRegister
 
+    [UnmanagedFunctionPointer (CallingConvention.Cdecl)]
     public delegate void DNSServiceRegisterReply (ServiceRef   sdRef,
                                                   ServiceFlags flags,
                                                   ServiceError errorCode,
@@ -56,6 +60,7 @@ public static class Native
 
     // DNSServiceResolve
 
+    [UnmanagedFunctionPointer (CallingConvention.Cdecl)]
     public delegate void DNSServiceResolveReply (ServiceRef   sdRef,
                                                  ServiceFlags flags,
                                                  uint         interfaceIndex,
