@@ -12,6 +12,7 @@ using System.Collections ;
 using System.Net ;
 using System.Runtime.InteropServices ;
 using System.Text ;
+using System.Threading.Tasks ;
 
 #endregion
 
@@ -28,12 +29,9 @@ public sealed class BrowseService : Service, IResolvableService
 
     private Native.DNSServiceQueryRecordReply queryRecordReplyHandler ;
 
-    private Action <bool> resolveAction ;
-    private bool          resolvePending ;
+    private bool resolvePending ;
 
     private Native.DNSServiceResolveReply resolveReplyHandler ;
-
-    private IAsyncResult resolveResult ;
 
     public bool IsResolved { get ; private set ; }
 
@@ -43,20 +41,13 @@ public sealed class BrowseService : Service, IResolvableService
     {
         // If people call this in a ServiceAdded event handler (which they generally do), we need to
         // invoke onto another thread, otherwise we block processing any more results.
-        this.resolveResult = this.resolveAction.BeginInvoke (false, null, null) ;
-    }
-
-    ~BrowseService ()
-    {
-        if (this.resolveResult != null)
-            this.resolveAction.EndInvoke (this.resolveResult) ;
+        _ = Task.Run (() => this.Resolve (false)) ;
     }
 
     private void SetupCallbacks ()
     {
         this.resolveReplyHandler     = this.OnResolveReply ;
         this.queryRecordReplyHandler = this.OnQueryRecordReply ;
-        this.resolveAction           = this.Resolve ;
     }
 
     public void Resolve (bool requery)
