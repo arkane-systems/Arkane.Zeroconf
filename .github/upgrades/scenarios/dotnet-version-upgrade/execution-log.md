@@ -3,3 +3,8 @@
 
 **01-prerequisites**: Validated .NET 10 SDK availability — compatible SDK found, no global.json constraints detected. Ready to proceed.
 
+
+## [2026-04-11 13:18] 02-update-project-tfms
+
+**02-update-project-tfms**: Updated target frameworks to .NET 10 — Arkane.ZeroConf.csproj (netcoreapp7.0 → net10.0) and azclient.csproj (net7.0 → net10.0).
+
