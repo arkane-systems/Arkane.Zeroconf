@@ -131,11 +131,23 @@ public class MZClient
 
         if (services.Count > 0)
         {
+            if (!ZeroconfSupport.CanPublish)
+            {
+                Console.Error.WriteLine ("mDNS publishing is not supported by the active provider. Check ZeroconfSupport.Capabilities before publishing.") ;
+                return 2 ;
+            }
+
             foreach (string service_description in services)
                 MZClient.RegisterService (service_description) ;
         }
         else
         {
+            if (!ZeroconfSupport.CanBrowse)
+            {
+                Console.Error.WriteLine ("mDNS lookup is not supported by the active provider.") ;
+                return 2 ;
+            }
+
             if (MZClient.verbose)
             {
                 Console.WriteLine ("Creating a ServiceBrowser with the following settings:") ;

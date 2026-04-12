@@ -135,6 +135,24 @@ public class RegisterServiceTests : IDisposable
     }
 
     [Fact]
+    public void Register_RespectsCapabilitySupport ()
+    {
+        // Arrange
+        this.registerService.Name = "Test Service" ;
+        this.registerService.RegType = "_http._tcp" ;
+        this.registerService.Port = 8080 ;
+
+        // Act & Assert
+        if (ZeroconfSupport.CanPublish)
+        {
+            this.registerService.Register () ;
+            return ;
+        }
+
+        Assert.Throws <PlatformNotSupportedException> (() => this.registerService.Register ()) ;
+    }
+
+    [Fact]
     public void Response_Event_CanSubscribe ()
     {
         // Arrange

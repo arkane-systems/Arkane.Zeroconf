@@ -21,5 +21,9 @@ public interface IZeroconfProvider
 
     Type TxtRecord { get ; }
 
+    ZeroconfCapability Capabilities => ZeroconfCapability.Browse | ZeroconfCapability.Publish ;
+
+    bool IsAvailable () => true ;
+
     void Initialize () ;
 }

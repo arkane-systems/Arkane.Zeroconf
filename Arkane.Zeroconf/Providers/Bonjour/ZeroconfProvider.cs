@@ -14,7 +14,7 @@ using ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour ;
 
 #endregion
 
-[assembly: ZeroconfProvider (typeof (ZeroconfProvider))]
+[assembly: ZeroconfProvider (typeof (ZeroconfProvider), priority: 100)]
 
 namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour ;
 
@@ -53,6 +53,29 @@ public class ZeroconfProvider : IZeroconfProvider
     public Type RegisterService => typeof (RegisterService) ;
 
     public Type TxtRecord => typeof (TxtRecord) ;
+
+    public ZeroconfCapability Capabilities => ZeroconfCapability.Browse | ZeroconfCapability.Publish ;
+
+    public bool IsAvailable ()
+    {
+        try
+        {
+            Zeroconf.Initialize () ;
+            return true ;
+        }
+        catch (ServiceErrorException)
+        {
+            return false ;
+        }
+        catch (DllNotFoundException)
+        {
+            return false ;
+        }
+        catch (EntryPointNotFoundException)
+        {
+            return false ;
+        }
+    }
 
     public void Initialize () { Zeroconf.Initialize () ; }
 }

@@ -34,8 +34,7 @@ internal static class ProviderFactory
 
     public static IZeroconfProvider SelectedProvider
     {
-        get => ProviderFactory.selectedProvider ?? ProviderFactory.DefaultProvider
-        ;
+        get => ProviderFactory.selectedProvider ?? ProviderFactory.DefaultProvider ;
         set => ProviderFactory.selectedProvider = value ;
     }
 
@@ -48,17 +47,24 @@ internal static class ProviderFactory
 
         var asm = Assembly.GetExecutingAssembly () ;
 
-        foreach (var provider in asm.GetCustomAttributes (false)
-                                    .OfType <ZeroconfProviderAttribute> ()
-                                    .Select (attr => attr.ProviderType)
-                                    .Select (type => (IZeroconfProvider) Activator.CreateInstance (type)))
+        var candidates = asm.GetCustomAttributes (false)
+                            .OfType <ZeroconfProviderAttribute> ()
+                            .OrderByDescending (attr => attr.Priority)
+                            .Select (attr => (Provider: (IZeroconfProvider) Activator.CreateInstance (attr.ProviderType),
+                                              Priority: attr.Priority))
+                            .ToArray () ;
+
+        foreach (var candidate in candidates)
         {
-            provider.Initialize () ;
-            providersList.Add (provider) ;
+            if (!candidate.Provider.IsAvailable ())
+                continue ;
+
+            candidate.Provider.Initialize () ;
+            providersList.Add (candidate.Provider) ;
         }
 
         if (providersList.Count == 0)
-            throw new Exception ("No Zeroconf providers could be found or initialized. Necessary daemon may not be running.") ;
+            throw new InvalidOperationException ("No Zeroconf providers could be found or initialized. Necessary daemon may not be running.") ;
 
         ProviderFactory.providers = providersList.ToArray () ;
 

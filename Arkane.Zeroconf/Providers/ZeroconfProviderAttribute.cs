@@ -13,10 +13,16 @@ using System ;
 
 namespace ArkaneSystems.Arkane.Zeroconf.Providers ;
 
-[AttributeUsage (AttributeTargets.Assembly)]
+[AttributeUsage (AttributeTargets.Assembly, AllowMultiple = true)]
 public class ZeroconfProviderAttribute : Attribute
 {
-    public ZeroconfProviderAttribute (Type providerType) => this.ProviderType = providerType ;
+    public ZeroconfProviderAttribute (Type providerType, int priority = 0)
+    {
+        this.ProviderType = providerType ;
+        this.Priority = priority ;
+    }
 
     public Type ProviderType { get ; }
+
+    public int Priority { get ; }
 }

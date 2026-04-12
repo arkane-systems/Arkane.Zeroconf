@@ -7,7 +7,19 @@ A Zero Configuration Networking library for .NET.
 
 Basically, this is my forked version of Mono.Zeroconf for my .NET projects, which exists simply because I needed a version with various fixes that have been submitted in pull requests over the last few years, and which the release version of that package doesn't have.  API, etc., are identical to that of Mono.Zeroconf except for the different namespace.
 
-To run this, Apple's Bonjour must be installed first.
+To run this, Apple's Bonjour must be installed first for full lookup-and-publish behavior.
+
+On Windows 11, if Bonjour is not installed, Arkane.Zeroconf now falls back to a lookup-only provider that supports browsing and resolving mDNS services but does not support publishing.
+
+Use the capability API to check support before starting operations:
+
+```csharp
+if (!ZeroconfSupport.CanBrowse)
+    throw new InvalidOperationException("mDNS lookup is not available.");
+
+if (!ZeroconfSupport.CanPublish)
+    Console.WriteLine("Publishing not available on this platform/provider.");
+```
 
 Bonjour for Windows can be downloaded here:
 
@@ -25,4 +37,3 @@ General information about Zero Configuration Networking:
    http://www.zeroconf.org/
    
  Authorship of the majority of the code remains with Aaron Bockover <abockover@novell.com> .
- 
