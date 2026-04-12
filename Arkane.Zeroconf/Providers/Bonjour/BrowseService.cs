@@ -1,236 +1,231 @@
 #region header
 
 // Arkane.ZeroConf - BrowseService.cs
-// 
 
 #endregion
 
 #region using
 
-using System ;
-using System.Collections ;
-using System.Net ;
-using System.Runtime.InteropServices ;
-using System.Text ;
-using System.Threading.Tasks ;
+using System;
+using System.Collections;
+using System.Net;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour ;
+namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour;
 
 public sealed class BrowseService : Service, IResolvableService
 {
-    public BrowseService () { this.SetupCallbacks () ; }
+  public BrowseService () { this.SetupCallbacks (); }
 
-    public BrowseService (string name, string replyDomain, string regtype) : base (name, replyDomain, regtype)
+  public BrowseService (string name, string replyDomain, string regtype) : base (name: name,
+                                                                                 replyDomain: replyDomain,
+                                                                                 regtype: regtype)
+  {
+    this.SetupCallbacks ();
+  }
+
+  private Native.DNSServiceQueryRecordReply queryRecordReplyHandler;
+
+  private bool resolvePending;
+
+  private Native.DNSServiceResolveReply resolveReplyHandler;
+
+  public bool IsResolved { get; private set; }
+
+  public event ServiceResolvedEventHandler Resolved;
+
+  public void Resolve ()
+  {
+    // If people call this in a ServiceAdded event handler (which they generally do), we need to
+    // invoke onto another thread, otherwise we block processing any more results.
+    _ = Task.Run (() => this.Resolve (false));
+  }
+
+  private void SetupCallbacks ()
+  {
+    this.resolveReplyHandler     = this.OnResolveReply;
+    this.queryRecordReplyHandler = this.OnQueryRecordReply;
+  }
+
+  public void Resolve (bool requery) { this.Resolve (requery: requery, cancellationToken: CancellationToken.None); }
+
+  public void Resolve (bool requery, CancellationToken cancellationToken)
+  {
+    if (this.resolvePending)
+      return;
+
+    this.IsResolved     = false;
+    this.resolvePending = true;
+
+    if (requery)
+      this.InterfaceIndex = 0;
+
+    ServiceError error = Native.DNSServiceResolve (sdRef: out ServiceRef sdRef,
+                                                   flags: ServiceFlags.None,
+                                                   interfaceIndex: this.InterfaceIndex,
+                                                   name: Encoding.UTF8.GetBytes (this.Name),
+                                                   regtype: this.RegType,
+                                                   domain: this.ReplyDomain,
+                                                   callBack: this.resolveReplyHandler,
+                                                   context: IntPtr.Zero);
+
+    if (error != ServiceError.NoError)
+      throw new ServiceErrorException (error);
+
+    sdRef.Process (cancellationToken);
+  }
+
+  public void RefreshTxtRecord ()
+  {
+    // Should probably make this async?
+
+    ServiceError error = Native.DNSServiceQueryRecord (sdRef: out ServiceRef sdRef,
+                                                       flags: ServiceFlags.None,
+                                                       interfaceIndex: 0,
+                                                       fullname: this.fullname,
+                                                       rrtype: ServiceType.TXT,
+                                                       rrclass: ServiceClass.IN,
+                                                       callBack: this.queryRecordReplyHandler,
+                                                       context: IntPtr.Zero);
+
+    if (error != ServiceError.NoError)
+      throw new ServiceErrorException (error);
+
+    sdRef.Process ();
+  }
+
+  private void OnResolveReply (ServiceRef   sdRef,
+                               ServiceFlags flags,
+                               uint         interfaceIndex,
+                               ServiceError errorCode,
+                               IntPtr       fullname,
+                               string       hosttarget,
+                               ushort       port,
+                               ushort       txtLen,
+                               IntPtr       txtRecord,
+                               IntPtr       contex)
+  {
+    this.IsResolved     = true;
+    this.resolvePending = false;
+
+    this.InterfaceIndex = interfaceIndex;
+    this.FullName       = Marshal.PtrToStringUTF8 (fullname);
+    this.port           = (ushort)IPAddress.NetworkToHostOrder ((short)port);
+    this.TxtRecord      = new TxtRecord (length: txtLen, buffer: txtRecord);
+    this.hosttarget     = hosttarget;
+
+    sdRef.Deallocate ();
+
+    // Run an A query to resolve the IP address
+    ServiceRef sd_ref;
+
+    if ((this.AddressProtocol == AddressProtocol.Any) || (this.AddressProtocol == AddressProtocol.IPv4))
     {
-        this.SetupCallbacks () ;
+      ServiceError error = Native.DNSServiceQueryRecord (sdRef: out sd_ref,
+                                                         flags: ServiceFlags.None,
+                                                         interfaceIndex: interfaceIndex,
+                                                         fullname: hosttarget,
+                                                         rrtype: ServiceType.A,
+                                                         rrclass: ServiceClass.IN,
+                                                         callBack: this.queryRecordReplyHandler,
+                                                         context: IntPtr.Zero);
+
+      if (error != ServiceError.NoError)
+        throw new ServiceErrorException (error);
+
+      sd_ref.Process ();
     }
 
-    private Native.DNSServiceQueryRecordReply queryRecordReplyHandler ;
-
-    private bool resolvePending ;
-
-    private Native.DNSServiceResolveReply resolveReplyHandler ;
-
-    public bool IsResolved { get ; private set ; }
-
-    public event ServiceResolvedEventHandler Resolved ;
-
-    public void Resolve ()
+    if ((this.AddressProtocol == AddressProtocol.Any) || (this.AddressProtocol == AddressProtocol.IPv6))
     {
-        // If people call this in a ServiceAdded event handler (which they generally do), we need to
-        // invoke onto another thread, otherwise we block processing any more results.
-        _ = Task.Run (() => this.Resolve (false)) ;
+      ServiceError error = Native.DNSServiceQueryRecord (sdRef: out sd_ref,
+                                                         flags: ServiceFlags.None,
+                                                         interfaceIndex: interfaceIndex,
+                                                         fullname: hosttarget,
+                                                         rrtype: ServiceType.AAAA,
+                                                         rrclass: ServiceClass.IN,
+                                                         callBack: this.queryRecordReplyHandler,
+                                                         context: IntPtr.Zero);
+
+      if (error != ServiceError.NoError)
+        throw new ServiceErrorException (error);
+
+      sd_ref.Process ();
     }
 
-    private void SetupCallbacks ()
+    if (this.hostentry.AddressList != null)
     {
-        this.resolveReplyHandler     = this.OnResolveReply ;
-        this.queryRecordReplyHandler = this.OnQueryRecordReply ;
+      ServiceResolvedEventHandler handler = this.Resolved;
+      handler?.Invoke (o: this, args: new ServiceResolvedEventArgs (this));
     }
+  }
 
-    public void Resolve (bool requery)
+  private void OnQueryRecordReply (ServiceRef   sdRef,
+                                   ServiceFlags flags,
+                                   uint         interfaceIndex,
+                                   ServiceError errorCode,
+                                   string       fullname,
+                                   ServiceType  rrtype,
+                                   ServiceClass rrclass,
+                                   ushort       rdlen,
+                                   IntPtr       rdata,
+                                   uint         ttl,
+                                   IntPtr       context)
+  {
+    switch (rrtype)
     {
-        Resolve (requery, CancellationToken.None) ;
-    }
+      case ServiceType.A:
+      case ServiceType.AAAA:
+        IPAddress address;
 
-    public void Resolve (bool requery, CancellationToken cancellationToken)
-    {
-        if (this.resolvePending)
-            return ;
-
-        this.IsResolved     = false ;
-        this.resolvePending = true ;
-
-        if (requery)
-            this.InterfaceIndex = 0 ;
-
-        var error = Native.DNSServiceResolve (out var sdRef,
-                                              ServiceFlags.None,
-                                              this.InterfaceIndex,
-                                              Encoding.UTF8.GetBytes (this.Name),
-                                              this.RegType,
-                                              this.ReplyDomain,
-                                              this.resolveReplyHandler,
-                                              IntPtr.Zero) ;
-
-        if (error != ServiceError.NoError)
-            throw new ServiceErrorException (error) ;
-
-        sdRef.Process (cancellationToken) ;
-    }
-
-    public void RefreshTxtRecord ()
-    {
-        // Should probably make this async?
-
-        var error = Native.DNSServiceQueryRecord (out var sdRef,
-                                                  ServiceFlags.None,
-                                                  0,
-                                                  this.fullname,
-                                                  ServiceType.TXT,
-                                                  ServiceClass.IN,
-                                                  this.queryRecordReplyHandler,
-                                                  IntPtr.Zero) ;
-
-        if (error != ServiceError.NoError)
-            throw new ServiceErrorException (error) ;
-
-        sdRef.Process () ;
-    }
-
-    private void OnResolveReply (ServiceRef   sdRef,
-                                 ServiceFlags flags,
-                                 uint         interfaceIndex,
-                                 ServiceError errorCode,
-                                 IntPtr       fullname,
-                                 string       hosttarget,
-                                 ushort       port,
-                                 ushort       txtLen,
-                                 IntPtr       txtRecord,
-                                 IntPtr       contex)
-    {
-        this.IsResolved     = true ;
-        this.resolvePending = false ;
-
-        this.InterfaceIndex = interfaceIndex ;
-        this.FullName       = Marshal.PtrToStringUTF8 (fullname) ;
-        this.port           = (ushort) IPAddress.NetworkToHostOrder ((short) port) ;
-        this.TxtRecord      = new TxtRecord (txtLen, txtRecord) ;
-        this.hosttarget     = hosttarget ;
-
-        sdRef.Deallocate () ;
-
-        // Run an A query to resolve the IP address
-        ServiceRef sd_ref ;
-
-        if ((this.AddressProtocol == AddressProtocol.Any) || (this.AddressProtocol == AddressProtocol.IPv4))
+        if (rdlen == 4)
         {
-            var error = Native.DNSServiceQueryRecord (out sd_ref,
-                                                      ServiceFlags.None,
-                                                      interfaceIndex,
-                                                      hosttarget,
-                                                      ServiceType.A,
-                                                      ServiceClass.IN,
-                                                      this.queryRecordReplyHandler,
-                                                      IntPtr.Zero) ;
+          // ~4.5 times faster than Marshal.Copy into byte[4]
+          var addressRaw = (uint)(Marshal.ReadByte (ptr: rdata, ofs: 3) << 24);
+          addressRaw |= (uint)(Marshal.ReadByte (ptr: rdata, ofs: 2) << 16);
+          addressRaw |= (uint)(Marshal.ReadByte (ptr: rdata, ofs: 1) << 8);
+          addressRaw |= Marshal.ReadByte (ptr: rdata, ofs: 0);
 
-            if (error != ServiceError.NoError)
-                throw new ServiceErrorException (error) ;
-
-            sd_ref.Process () ;
+          address = new IPAddress (addressRaw);
         }
-
-        if ((this.AddressProtocol == AddressProtocol.Any) || (this.AddressProtocol == AddressProtocol.IPv6))
+        else if (rdlen == 16)
         {
-            var error = Native.DNSServiceQueryRecord (out sd_ref,
-                                                      ServiceFlags.None,
-                                                      interfaceIndex,
-                                                      hosttarget,
-                                                      ServiceType.AAAA,
-                                                      ServiceClass.IN,
-                                                      this.queryRecordReplyHandler,
-                                                      IntPtr.Zero) ;
-
-            if (error != ServiceError.NoError)
-                throw new ServiceErrorException (error) ;
-
-            sd_ref.Process () ;
+          var addressRaw = new byte[rdlen];
+          Marshal.Copy (source: rdata, destination: addressRaw, startIndex: 0, length: rdlen);
+          address = new IPAddress (address: addressRaw, scopeid: interfaceIndex);
         }
+        else { break; }
+
+        if (this.hostentry == null)
+          this.hostentry = new IPHostEntry { HostName = this.hosttarget };
 
         if (this.hostentry.AddressList != null)
         {
-            var handler = this.Resolved ;
-            handler?.Invoke (this, new ServiceResolvedEventArgs (this)) ;
+          var list = new ArrayList (this.hostentry.AddressList) { address };
+          this.hostentry.AddressList = list.ToArray (typeof (IPAddress)) as IPAddress[];
         }
+        else { this.hostentry.AddressList = new[] { address }; }
+
+        //ServiceResolvedEventHandler handler = this.Resolved ;
+        //if (handler != null)
+        //    handler (this, new ServiceResolvedEventArgs (this)) ;
+
+        break;
+
+      case ServiceType.TXT:
+        this.TxtRecord?.Dispose ();
+
+        this.TxtRecord = new TxtRecord (length: rdlen, buffer: rdata);
+
+        break;
     }
 
-    private void OnQueryRecordReply (ServiceRef   sdRef,
-                                     ServiceFlags flags,
-                                     uint         interfaceIndex,
-                                     ServiceError errorCode,
-                                     string       fullname,
-                                     ServiceType  rrtype,
-                                     ServiceClass rrclass,
-                                     ushort       rdlen,
-                                     IntPtr       rdata,
-                                     uint         ttl,
-                                     IntPtr       context)
-    {
-        switch (rrtype)
-        {
-            case ServiceType.A:
-            case ServiceType.AAAA:
-                IPAddress address ;
-
-                if (rdlen == 4)
-                {
-                    // ~4.5 times faster than Marshal.Copy into byte[4]
-                    var addressRaw = (uint) (Marshal.ReadByte (rdata, 3) << 24) ;
-                    addressRaw |= (uint) (Marshal.ReadByte (rdata, 2) << 16) ;
-                    addressRaw |= (uint) (Marshal.ReadByte (rdata, 1) << 8) ;
-                    addressRaw |= Marshal.ReadByte (rdata, 0) ;
-
-                    address = new IPAddress (addressRaw) ;
-                }
-                else if (rdlen == 16)
-                {
-                    var addressRaw = new byte[rdlen] ;
-                    Marshal.Copy (rdata, addressRaw, 0, rdlen) ;
-                    address = new IPAddress (addressRaw, interfaceIndex) ;
-                }
-                else
-                {
-                    break ;
-                }
-
-                if (this.hostentry == null)
-                    this.hostentry = new IPHostEntry { HostName = this.hosttarget } ;
-
-                if (this.hostentry.AddressList != null)
-                {
-                    var list = new ArrayList (this.hostentry.AddressList) { address } ;
-                    this.hostentry.AddressList = list.ToArray (typeof (IPAddress)) as IPAddress[] ;
-                }
-                else
-                {
-                    this.hostentry.AddressList = new[] { address } ;
-                }
-
-                //ServiceResolvedEventHandler handler = this.Resolved ;
-                //if (handler != null)
-                //    handler (this, new ServiceResolvedEventArgs (this)) ;
-
-                break ;
-            case ServiceType.TXT:
-                this.TxtRecord?.Dispose () ;
-
-                this.TxtRecord = new TxtRecord (rdlen, rdata) ;
-                break ;
-        }
-
-        if ((flags & ServiceFlags.MoreComing) != ServiceFlags.MoreComing)
-            sdRef.Deallocate () ;
-    }
+    if ((flags & ServiceFlags.MoreComing) != ServiceFlags.MoreComing)
+      sdRef.Deallocate ();
+  }
 }
