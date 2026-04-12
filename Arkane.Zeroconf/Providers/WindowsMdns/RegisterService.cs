@@ -1,43 +1,36 @@
 #region header
 
 // Arkane.ZeroConf - RegisterService.cs
-// 
 
 #endregion
 
 #region using
 
-using System ;
+using System;
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns ;
+namespace ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns;
 
 public sealed class RegisterService : IRegisterService
 {
-    public string Name { get ; set ; }
+  public string Name { get; set; }
 
-    public string RegType { get ; set ; }
+  public string RegType { get; set; }
 
-    public string ReplyDomain { get ; set ; }
+  public string ReplyDomain { get; set; }
 
-    public ITxtRecord TxtRecord { get ; set ; }
+  public ITxtRecord TxtRecord { get; set; }
 
-    public short Port { get ; set ; }
+  public short Port { get; set; }
 
-    public ushort UPort
-    {
-        get => (ushort) this.Port ;
-        set => this.Port = (short) value ;
-    }
+  public ushort UPort { get => (ushort)this.Port; set => this.Port = (short)value; }
 
-    public event RegisterServiceEventHandler Response
-    {
-        add { }
-        remove { }
-    }
+  public event RegisterServiceEventHandler Response { add { } remove { } }
 
-    public void Register () => throw new PlatformNotSupportedException ("mDNS publishing is not available on this Windows fallback provider. Check ZeroconfSupport.CanPublish before calling RegisterService.Register().") ;
+  public void Register ()
+    => throw new
+         PlatformNotSupportedException ("mDNS publishing is not available on this Windows fallback provider. Check ZeroconfSupport.CanPublish before calling RegisterService.Register().");
 
-    public void Dispose () { }
+  public void Dispose () { }
 }

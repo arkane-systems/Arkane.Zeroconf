@@ -1,22 +1,21 @@
 #region header
 
 // Arkane.ZeroConf - ZeroconfCapability.cs
-// 
 
 #endregion
 
 #region using
 
-using System ;
+using System;
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf ;
+namespace ArkaneSystems.Arkane.Zeroconf;
 
 [Flags]
 public enum ZeroconfCapability
 {
-    None = 0,
-    Browse = 1,
-    Publish = 2,
+  None    = 0,
+  Browse  = 1,
+  Publish = 2,
 }
