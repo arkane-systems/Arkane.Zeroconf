@@ -52,6 +52,11 @@ public sealed class BrowseService : Service, IResolvableService
 
     public void Resolve (bool requery)
     {
+        Resolve (requery, CancellationToken.None) ;
+    }
+
+    public void Resolve (bool requery, CancellationToken cancellationToken)
+    {
         if (this.resolvePending)
             return ;
 
@@ -73,7 +78,7 @@ public sealed class BrowseService : Service, IResolvableService
         if (error != ServiceError.NoError)
             throw new ServiceErrorException (error) ;
 
-        sdRef.Process () ;
+        sdRef.Process (cancellationToken) ;
     }
 
     public void RefreshTxtRecord ()
