@@ -121,6 +121,12 @@ $env:ARKANE_ZEROCONF_TEST_SERVICE_TYPES = "_http._tcp,_ipp._tcp,_printer._tcp"
    - Prefer targeted test runs first (`FullyQualifiedName~...`)
    - Keep network-dependent tests explicit about environmental prerequisites
 
+## Documentation Guidelines
+- For issue work on documentation, use a two-phase process:
+  - First, add comprehensive XML documentation to the public API.
+  - Then, produce comprehensive Markdown API documentation linked from the README.
+- Document platform-specific behavior in both places where appropriate.
+
 ## Key Files Reference
 - `Providers/ProviderFactory.cs`
 - `ZeroconfSupport.cs`

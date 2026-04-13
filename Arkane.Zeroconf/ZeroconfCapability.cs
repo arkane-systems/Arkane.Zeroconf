@@ -12,10 +12,24 @@ using System;
 
 namespace ArkaneSystems.Arkane.Zeroconf;
 
+/// <summary>
+///   Describes the operations supported by a Zeroconf provider.
+/// </summary>
 [Flags]
 public enum ZeroconfCapability
 {
-  None    = 0,
-  Browse  = 1,
+  /// <summary>
+  ///   No capabilities are supported.
+  /// </summary>
+  None = 0,
+
+  /// <summary>
+  ///   Browsing and lookup are supported.
+  /// </summary>
+  Browse = 1,
+
+  /// <summary>
+  ///   Service publishing is supported.
+  /// </summary>
   Publish = 2,
 }

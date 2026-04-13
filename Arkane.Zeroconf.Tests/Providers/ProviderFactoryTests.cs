@@ -19,6 +19,8 @@ namespace ArkaneSystems.Arkane.Zeroconf.Tests.Providers;
 [Collection ("ProviderFactory selection")]
 public class ProviderFactoryTests
 {
+  #region Nested type: InvalidProvider
+
   private sealed class InvalidProvider : IZeroconfProvider
   {
     public Type ServiceBrowser => typeof (object);
@@ -34,6 +36,8 @@ public class ProviderFactoryTests
     public void Initialize () { }
   }
 
+  #endregion
+
   [Fact]
   public void ServiceBrowser_Constructor_Failure_Message_IsSanitized ()
   {
@@ -44,18 +48,17 @@ public class ProviderFactoryTests
     try
     {
       // Act
-      ZeroconfException exception = Assert.Throws<ZeroconfException> (() => _ = new ServiceBrowser ());
+      var exception = Assert.Throws<ZeroconfException> (() => _ = new ServiceBrowser ());
 
       // Assert
-      Assert.DoesNotContain (expectedSubstring: "System.Object", actualString: exception.Message, comparisonType: StringComparison.Ordinal);
+      Assert.DoesNotContain (expectedSubstring: "System.Object",
+                             actualString: exception.Message,
+                             comparisonType: StringComparison.Ordinal);
       Assert.Contains (expectedSubstring: "compatible Zeroconf provider",
                        actualString: exception.Message,
                        comparisonType: StringComparison.OrdinalIgnoreCase);
     }
-    finally
-    {
-      ProviderFactory.SelectedProvider = originalProvider;
-    }
+    finally { ProviderFactory.SelectedProvider = originalProvider; }
   }
 
   [Fact]
@@ -68,18 +71,17 @@ public class ProviderFactoryTests
     try
     {
       // Act
-      ZeroconfException exception = Assert.Throws<ZeroconfException> (() => _ = new RegisterService ());
+      var exception = Assert.Throws<ZeroconfException> (() => _ = new RegisterService ());
 
       // Assert
-      Assert.DoesNotContain (expectedSubstring: "System.Object", actualString: exception.Message, comparisonType: StringComparison.Ordinal);
+      Assert.DoesNotContain (expectedSubstring: "System.Object",
+                             actualString: exception.Message,
+                             comparisonType: StringComparison.Ordinal);
       Assert.Contains (expectedSubstring: "compatible Zeroconf provider",
                        actualString: exception.Message,
                        comparisonType: StringComparison.OrdinalIgnoreCase);
     }
-    finally
-    {
-      ProviderFactory.SelectedProvider = originalProvider;
-    }
+    finally { ProviderFactory.SelectedProvider = originalProvider; }
   }
 
   [Fact]
@@ -92,18 +94,17 @@ public class ProviderFactoryTests
     try
     {
       // Act
-      ZeroconfException exception = Assert.Throws<ZeroconfException> (() => _ = new TxtRecord ());
+      var exception = Assert.Throws<ZeroconfException> (() => _ = new TxtRecord ());
 
       // Assert
-      Assert.DoesNotContain (expectedSubstring: "System.Object", actualString: exception.Message, comparisonType: StringComparison.Ordinal);
+      Assert.DoesNotContain (expectedSubstring: "System.Object",
+                             actualString: exception.Message,
+                             comparisonType: StringComparison.Ordinal);
       Assert.Contains (expectedSubstring: "compatible Zeroconf provider",
                        actualString: exception.Message,
                        comparisonType: StringComparison.OrdinalIgnoreCase);
     }
-    finally
-    {
-      ProviderFactory.SelectedProvider = originalProvider;
-    }
+    finally { ProviderFactory.SelectedProvider = originalProvider; }
   }
 
   [Fact]

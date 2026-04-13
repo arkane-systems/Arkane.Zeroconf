@@ -12,6 +12,18 @@ using ArkaneSystems.Arkane.Zeroconf.Providers;
 
 namespace ArkaneSystems.Arkane.Zeroconf;
 
+/// <summary>
+///   Provides information about the capabilities of the currently selected Zeroconf provider.
+/// </summary>
+/// <remarks>
+///   <para>
+///     Capability values reflect the provider selected by the internal provider factory at runtime.
+///   </para>
+///   <para>
+///     On Windows, if Bonjour is unavailable but the operating system supports Windows DNS-SD lookup,
+///     the fallback provider exposes browse support but not publish support.
+///   </para>
+/// </remarks>
 public static class ZeroconfSupport
 {
   /// <summary>
@@ -27,5 +39,8 @@ public static class ZeroconfSupport
   /// <summary>
   ///   Gets whether the selected provider supports service publishing.
   /// </summary>
+  /// <remarks>
+  ///   This value is <see langword="false" /> when the Windows fallback provider is active.
+  /// </remarks>
   public static bool CanPublish => (Capabilities & ZeroconfCapability.Publish) == ZeroconfCapability.Publish;
 }

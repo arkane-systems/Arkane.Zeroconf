@@ -19,18 +19,19 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 public class ServiceBrowser : IServiceBrowser
 {
   /// <summary>
-  /// Initializes a new instance of the <see cref="ServiceBrowser"/> class.
+  ///   Initializes a new instance of the <see cref="ServiceBrowser" /> class.
   /// </summary>
   /// <remarks>
-  /// <para>
-  /// This constructor delegates to the available Zeroconf provider (e.g., Bonjour or Windows mDNS).
-  /// The underlying provider instance is created via reflection using <see cref="Activator.CreateInstance"/>.
-  /// </para>
+  ///   <para>
+  ///     This constructor delegates to the available Zeroconf provider (e.g., Bonjour or Windows mDNS).
+  ///     The underlying provider instance is created via reflection using <see cref="Activator.CreateInstance" />.
+  ///   </para>
   /// </remarks>
   /// <exception cref="ZeroconfException">
-  /// Thrown when the Zeroconf provider's <see cref="IServiceBrowser"/> type cannot be instantiated.
-  /// This typically indicates that no suitable Zeroconf provider (Bonjour, Avahi, or Windows mDNS) is available on the current system.
-  /// Ensure that at least one supported mDNS/Bonjour implementation is installed and properly configured.
+  ///   Thrown when the Zeroconf provider's <see cref="IServiceBrowser" /> type cannot be instantiated.
+  ///   This typically indicates that no suitable Zeroconf provider (Bonjour, Avahi, or Windows mDNS) is available on the
+  ///   current system.
+  ///   Ensure that at least one supported mDNS/Bonjour implementation is installed and properly configured.
   /// </exception>
   public ServiceBrowser ()
     => this.browser = CreateRequiredInstance<IServiceBrowser> (ProviderFactory.SelectedProvider.ServiceBrowser);
@@ -63,7 +64,8 @@ public class ServiceBrowser : IServiceBrowser
 
   private static T CreateRequiredInstance<T> (Type type) where T : class
     => Activator.CreateInstance (type) as T ??
-       throw new ZeroconfException ("Unable to create the requested Zeroconf service. Ensure a compatible Zeroconf provider is installed and properly configured.");
+       throw new
+         ZeroconfException ("Unable to create the requested Zeroconf service. Ensure a compatible Zeroconf provider is installed and properly configured.");
 
   public void Browse (uint interfaceIndex, string regtype, string domain)
     => this.Browse (interfaceIndex: interfaceIndex, addressProtocol: AddressProtocol.Any, regtype: regtype, domain: domain);

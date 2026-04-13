@@ -17,18 +17,19 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 public class RegisterService : IRegisterService
 {
   /// <summary>
-  /// Initializes a new instance of the <see cref="RegisterService"/> class.
+  ///   Initializes a new instance of the <see cref="RegisterService" /> class.
   /// </summary>
   /// <remarks>
-  /// <para>
-  /// This constructor delegates to the available Zeroconf provider (e.g., Bonjour or Windows mDNS).
-  /// The underlying provider instance is created via reflection using <see cref="Activator.CreateInstance"/>.
-  /// </para>
+  ///   <para>
+  ///     This constructor delegates to the available Zeroconf provider (e.g., Bonjour or Windows mDNS).
+  ///     The underlying provider instance is created via reflection using <see cref="Activator.CreateInstance" />.
+  ///   </para>
   /// </remarks>
   /// <exception cref="ZeroconfException">
-  /// Thrown when the Zeroconf provider's <see cref="IRegisterService"/> type cannot be instantiated.
-  /// This typically indicates that no suitable Zeroconf provider (Bonjour, Avahi, or Windows mDNS) is available on the current system.
-  /// Ensure that at least one supported mDNS/Bonjour implementation is installed and properly configured.
+  ///   Thrown when the Zeroconf provider's <see cref="IRegisterService" /> type cannot be instantiated.
+  ///   This typically indicates that no suitable Zeroconf provider (Bonjour, Avahi, or Windows mDNS) is available on the
+  ///   current system.
+  ///   Ensure that at least one supported mDNS/Bonjour implementation is installed and properly configured.
   /// </exception>
   public RegisterService ()
     => this.registerService = CreateRequiredInstance<IRegisterService> (ProviderFactory
@@ -60,5 +61,6 @@ public class RegisterService : IRegisterService
 
   private static T CreateRequiredInstance<T> (Type type) where T : class
     => Activator.CreateInstance (type) as T ??
-       throw new ZeroconfException ("Unable to create the requested Zeroconf service. Ensure a compatible Zeroconf provider is installed and properly configured.");
+       throw new
+         ZeroconfException ("Unable to create the requested Zeroconf service. Ensure a compatible Zeroconf provider is installed and properly configured.");
 }
