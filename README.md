@@ -7,6 +7,10 @@ A Zero Configuration Networking library for .NET.
 
 Basically, this is my forked version of Mono.Zeroconf for my .NET projects, which exists simply because I needed a version with various fixes that have been submitted in pull requests over the last few years, and which the release version of that package doesn't have.  API, etc., are identical to that of Mono.Zeroconf except for the different namespace.
 
+## Documentation
+
+- [API Guide](API.md) - public API reference, platform behavior notes, and top-level usage examples.
+
 ## Provider behavior by platform
 
 Arkane.Zeroconf uses a simple provider selection model:
