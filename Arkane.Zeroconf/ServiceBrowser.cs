@@ -18,6 +18,20 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 
 public class ServiceBrowser : IServiceBrowser
 {
+  /// <summary>
+  /// Initializes a new instance of the <see cref="ServiceBrowser"/> class.
+  /// </summary>
+  /// <remarks>
+  /// <para>
+  /// This constructor delegates to the available Zeroconf provider (e.g., Bonjour or Windows mDNS).
+  /// The underlying provider instance is created via reflection using <see cref="Activator.CreateInstance"/>.
+  /// </para>
+  /// </remarks>
+  /// <exception cref="InvalidOperationException">
+  /// Thrown when the Zeroconf provider's <see cref="IServiceBrowser"/> type cannot be instantiated.
+  /// This typically indicates that no suitable Zeroconf provider (Bonjour, Avahi, or Windows mDNS) is available on the current system.
+  /// Ensure that at least one supported mDNS/Bonjour implementation is installed and properly configured.
+  /// </exception>
   public ServiceBrowser ()
     => this.browser = CreateRequiredInstance<IServiceBrowser> (ProviderFactory.SelectedProvider.ServiceBrowser);
 

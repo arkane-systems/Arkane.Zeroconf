@@ -63,6 +63,20 @@ public sealed class ServiceBrowser : IServiceBrowser
     }
 
     this.cts?.Dispose ();
+
+    // Dispose TxtRecord objects held by services before clearing the dictionary
+    foreach (BrowseService service in this.services.Values)
+    {
+      if (service.TxtRecord is IDisposable disposable)
+      {
+        try { disposable.Dispose (); }
+        catch (Exception ex)
+        {
+          System.Diagnostics.Debug.WriteLine ($"Error disposing TxtRecord: {ex.Message}");
+        }
+      }
+    }
+
     this.services.Clear ();
   }
 

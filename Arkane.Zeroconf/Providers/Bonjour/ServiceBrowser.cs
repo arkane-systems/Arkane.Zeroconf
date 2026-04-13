@@ -63,6 +63,36 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
 
     this.Stop ();
     this.stopTokenSource.Dispose ();
+
+    // Dispose TxtRecord objects held by services before clearing the dictionary
+    try
+    {
+      this.serviceTableSemaphore.Wait (TimeSpan.FromSeconds (1));
+
+      try
+      {
+        foreach (IResolvableService service in this.serviceTable.Values)
+        {
+          if (service.TxtRecord is IDisposable disposable)
+          {
+            try { disposable.Dispose (); }
+            catch (Exception ex)
+            {
+              System.Diagnostics.Debug.WriteLine ($"Error disposing TxtRecord: {ex.Message}");
+            }
+          }
+        }
+
+        this.serviceTable.Clear ();
+      }
+      finally { this.serviceTableSemaphore.Release (); }
+    }
+    catch (OperationCanceledException)
+    {
+      // Semaphore wait was cancelled or timed out, clear anyway
+      this.serviceTable.Clear ();
+    }
+
     this.serviceTableSemaphore.Dispose ();
     this.disposed = true;
   }

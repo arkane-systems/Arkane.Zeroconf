@@ -66,9 +66,21 @@ public class TxtRecord : ITxtRecord
     }
   }
 
-  public void Add (string key, string value) { this.Add (new TxtRecordItem (key: key, valueString: value)); }
+  public void Add (string key, string value)
+  {
+    ArgumentNullException.ThrowIfNull (key);
+    ArgumentNullException.ThrowIfNull (value);
 
-  public void Add (string key, byte[] value) { this.Add (new TxtRecordItem (key: key, valueRaw: value)); }
+    this.Add (new TxtRecordItem (key: key, valueString: value));
+  }
+
+  public void Add (string key, byte[] value)
+  {
+    ArgumentNullException.ThrowIfNull (key);
+    ArgumentNullException.ThrowIfNull (value);
+
+    this.Add (new TxtRecordItem (key: key, valueRaw: value));
+  }
 
   public void Add (TxtRecordItem item)
   {
@@ -90,6 +102,8 @@ public class TxtRecord : ITxtRecord
 
   public void Remove (string key)
   {
+    ArgumentNullException.ThrowIfNull (key);
+
     if (this.handle == IntPtr.Zero)
       throw new InvalidOperationException ("This TXT Record is read only");
 

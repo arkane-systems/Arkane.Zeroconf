@@ -16,6 +16,20 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 
 public class RegisterService : IRegisterService
 {
+  /// <summary>
+  /// Initializes a new instance of the <see cref="RegisterService"/> class.
+  /// </summary>
+  /// <remarks>
+  /// <para>
+  /// This constructor delegates to the available Zeroconf provider (e.g., Bonjour or Windows mDNS).
+  /// The underlying provider instance is created via reflection using <see cref="Activator.CreateInstance"/>.
+  /// </para>
+  /// </remarks>
+  /// <exception cref="InvalidOperationException">
+  /// Thrown when the Zeroconf provider's <see cref="IRegisterService"/> type cannot be instantiated.
+  /// This typically indicates that no suitable Zeroconf provider (Bonjour, Avahi, or Windows mDNS) is available on the current system.
+  /// Ensure that at least one supported mDNS/Bonjour implementation is installed and properly configured.
+  /// </exception>
   public RegisterService ()
     => this.registerService = CreateRequiredInstance<IRegisterService> (ProviderFactory
                                                                        .SelectedProvider.RegisterService);

@@ -121,8 +121,68 @@ internal static class MdnsClient
 
   #endregion
 
-  private static readonly TimeSpan BrowseTimeout  = TimeSpan.FromSeconds (4);
-  private static readonly TimeSpan ResolveTimeout = TimeSpan.FromSeconds (4);
+  private static readonly TimeSpan DefaultBrowseTimeout  = TimeSpan.FromSeconds (4);
+  private static readonly TimeSpan DefaultResolveTimeout = TimeSpan.FromSeconds (4);
+
+  private static TimeSpan browseTimeout  = DefaultBrowseTimeout;
+  private static TimeSpan resolveTimeout = DefaultResolveTimeout;
+  private static readonly object timeoutLock = new ();
+
+  /// <summary>
+  /// Gets or sets the timeout for mDNS browse operations.
+  /// Default is 4 seconds.
+  /// </summary>
+  /// <remarks>
+  /// <para>
+  /// This property is thread-safe and can be configured before using the Zeroconf provider
+  /// to accommodate slow networks or high-latency environments.
+  /// For example:
+  /// <code>
+  /// MdnsClient.BrowseTimeout = TimeSpan.FromSeconds(10);
+  /// </code>
+  /// </para>
+  /// </remarks>
+  public static TimeSpan BrowseTimeout
+  {
+    get
+    {
+      lock (timeoutLock)
+        return browseTimeout;
+    }
+    set
+    {
+      lock (timeoutLock)
+        browseTimeout = value;
+    }
+  }
+
+  /// <summary>
+  /// Gets or sets the timeout for mDNS resolve operations.
+  /// Default is 4 seconds.
+  /// </summary>
+  /// <remarks>
+  /// <para>
+  /// This property is thread-safe and can be configured before using the Zeroconf provider
+  /// to accommodate slow networks or high-latency environments.
+  /// For example:
+  /// <code>
+  /// MdnsClient.ResolveTimeout = TimeSpan.FromSeconds(10);
+  /// </code>
+  /// </para>
+  /// </remarks>
+  public static TimeSpan ResolveTimeout
+  {
+    get
+    {
+      lock (timeoutLock)
+        return resolveTimeout;
+    }
+    set
+    {
+      lock (timeoutLock)
+        resolveTimeout = value;
+    }
+  }
 
   private static readonly NativeWindowsDns.DnsServiceBrowseCallback  BrowseCallback  = OnBrowseResult;
   private static readonly NativeWindowsDns.DnsServiceResolveComplete ResolveCallback = OnResolveResult;
@@ -281,13 +341,11 @@ internal static class MdnsClient
 
   private static void OnBrowseResult (uint status, IntPtr queryContext, IntPtr dnsRecord)
   {
-    GCHandle handle = GCHandle.FromIntPtr (queryContext);
-
-    if (!handle.IsAllocated || handle.Target is not BrowseState state)
-      return;
-
     try
     {
+      if (!TryGetHandleTarget<BrowseState> (queryContext, out BrowseState? state))
+        return;
+
       if ((status != 0) || (dnsRecord == IntPtr.Zero))
         return;
 
@@ -299,6 +357,10 @@ internal static class MdnsClient
       if (records.Count > 0)
         state.WaitHandle.Set ();
     }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Debug.WriteLine ($"Error in OnBrowseResult callback: {ex.Message}");
+    }
     finally
     {
       if (dnsRecord != IntPtr.Zero)
@@ -308,24 +370,51 @@ internal static class MdnsClient
 
   private static void OnResolveResult (uint status, IntPtr queryContext, IntPtr instance)
   {
-    GCHandle handle = GCHandle.FromIntPtr (queryContext);
-
-    if (!handle.IsAllocated || handle.Target is not ResolveState state)
-      return;
-
     try
     {
+      if (!TryGetHandleTarget<ResolveState> (queryContext, out ResolveState? state))
+        return;
+
       if ((status != 0) || (instance == IntPtr.Zero))
         return;
 
       state.Result = ProjectResolvedInstance (instance);
       state.WaitHandle.Set ();
     }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Debug.WriteLine ($"Error in OnResolveResult callback: {ex.Message}");
+    }
     finally
     {
       if (instance != IntPtr.Zero)
         NativeWindowsDns.DnsServiceFreeInstance (instance);
     }
+  }
+
+  private static bool TryGetHandleTarget<T> (IntPtr queryContext, out T? target) where T : class
+  {
+    target = null;
+
+    try
+    {
+      GCHandle handle = GCHandle.FromIntPtr (queryContext);
+
+      if (!handle.IsAllocated)
+        return false;
+
+      if (handle.Target is T typedTarget)
+      {
+        target = typedTarget;
+        return true;
+      }
+    }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Debug.WriteLine ($"Error retrieving GCHandle target: {ex.Message}");
+    }
+
+    return false;
   }
 
   private static IReadOnlyList<DnsRecord> ProjectBrowseRecords (IntPtr recordList)
@@ -343,12 +432,24 @@ internal static class MdnsClient
       {
         IntPtr dataPtr = IntPtr.Add (pointer: current, offset: Marshal.SizeOf<NativeWindowsDns.DnsRecordHeader> ());
 
-        records.Add (new DnsRecord
-                     {
-                       Name      = Marshal.PtrToStringUni (header.pName) ?? string.Empty,
-                       Type      = DnsRecordType.Ptr,
-                       PtrTarget = Marshal.PtrToStringUni (Marshal.ReadIntPtr (dataPtr)) ?? string.Empty,
-                     });
+        try
+        {
+          string name   = header.pName != IntPtr.Zero ? Marshal.PtrToStringUni (header.pName) ?? string.Empty : string.Empty;
+          string target = Marshal.ReadIntPtr (dataPtr) is { } targetPtr && targetPtr != IntPtr.Zero
+            ? Marshal.PtrToStringUni (targetPtr) ?? string.Empty
+            : string.Empty;
+
+          records.Add (new DnsRecord
+                       {
+                         Name      = name,
+                         Type      = DnsRecordType.Ptr,
+                         PtrTarget = target,
+                       });
+        }
+        catch (Exception ex)
+        {
+          System.Diagnostics.Debug.WriteLine ($"Failed to parse browse record: {ex.Message}");
+        }
       }
 
       current = header.pNext;
@@ -407,8 +508,11 @@ internal static class MdnsClient
           IntPtr keyPtr   = Marshal.ReadIntPtr (ptr: instance.Keys,   ofs: i * IntPtr.Size);
           IntPtr valuePtr = Marshal.ReadIntPtr (ptr: instance.Values, ofs: i * IntPtr.Size);
 
+          if (keyPtr == IntPtr.Zero)
+            continue;
+
           string? key   = Marshal.PtrToStringUni (keyPtr);
-          string? value = Marshal.PtrToStringUni (valuePtr);
+          string? value = valuePtr != IntPtr.Zero ? Marshal.PtrToStringUni (valuePtr) : null;
 
           if (string.IsNullOrWhiteSpace (key))
             continue;
