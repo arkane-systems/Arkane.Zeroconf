@@ -9,8 +9,6 @@
 using System;
 using System.Threading;
 
-using ArkaneSystems.Arkane.Zeroconf;
-
 using Xunit;
 
 #endregion
@@ -31,12 +29,12 @@ public class PublicApiRoundTripIntegrationTests
     if (!ZeroconfSupport.CanBrowse || !ZeroconfSupport.CanPublish)
       return;
 
-    string serviceName = $"arkane-roundtrip-{Guid.NewGuid ():N}";
-    short  servicePort = 28081;
+    var   serviceName = $"arkane-roundtrip-{Guid.NewGuid ():N}";
+    short servicePort = 28081;
 
-    using var browser = new ServiceBrowser ();
-    using var service = CreateRegisterService (serviceName: serviceName, port: servicePort, txtValue: "browse");
-    using var discoveredEvent = new ManualResetEventSlim (false);
+    using var             browser         = new ServiceBrowser ();
+    using RegisterService service         = CreateRegisterService (serviceName: serviceName, port: servicePort, txtValue: "browse");
+    using var             discoveredEvent = new ManualResetEventSlim (false);
 
     IResolvableService? discoveredService = null;
 
@@ -59,7 +57,7 @@ public class PublicApiRoundTripIntegrationTests
     Assert.True (condition: discovered,
                  userMessage: "Expected published service to be discovered by ServiceBrowser via public API.");
     Assert.NotNull (discoveredService);
-    Assert.Equal (expected: serviceName, actual: discoveredService.Name);
+    Assert.Equal (expected: serviceName,               actual: discoveredService.Name);
     Assert.Equal (expected: TestRegType.TrimEnd ('.'), actual: discoveredService.RegType.TrimEnd ('.'));
   }
 
@@ -69,13 +67,13 @@ public class PublicApiRoundTripIntegrationTests
     if (!ZeroconfSupport.CanBrowse || !ZeroconfSupport.CanPublish)
       return;
 
-    string serviceName = $"arkane-roundtrip-{Guid.NewGuid ():N}";
-    string txtValue    = Guid.NewGuid ().ToString ("N");
-    short  servicePort = 28082;
+    var   serviceName = $"arkane-roundtrip-{Guid.NewGuid ():N}";
+    var   txtValue    = Guid.NewGuid ().ToString ("N");
+    short servicePort = 28082;
 
-    using var browser = new ServiceBrowser ();
-    using var service = CreateRegisterService (serviceName: serviceName, port: servicePort, txtValue: txtValue);
-    using var discoveredEvent = new ManualResetEventSlim (false);
+    using var             browser         = new ServiceBrowser ();
+    using RegisterService service         = CreateRegisterService (serviceName: serviceName, port: servicePort, txtValue: txtValue);
+    using var             discoveredEvent = new ManualResetEventSlim (false);
 
     IResolvableService? discoveredService = null;
 
@@ -98,7 +96,7 @@ public class PublicApiRoundTripIntegrationTests
     Assert.True (condition: discovered,
                  userMessage: "Expected published service to be discovered before resolve.");
     Assert.NotNull (discoveredService);
-    Assert.Equal (expected: serviceName, actual: discoveredService.Name);
+    Assert.Equal (expected: serviceName,               actual: discoveredService.Name);
     Assert.Equal (expected: TestRegType.TrimEnd ('.'), actual: discoveredService.RegType.TrimEnd ('.'));
 
     discoveredService.Resolve ();
@@ -108,9 +106,7 @@ public class PublicApiRoundTripIntegrationTests
       Thread.Sleep (100);
 
     if (discoveredService.Port > 0)
-    {
       Assert.Equal (expected: servicePort, actual: discoveredService.Port);
-    }
   }
 
   private static RegisterService CreateRegisterService (string serviceName, short port, string txtValue)

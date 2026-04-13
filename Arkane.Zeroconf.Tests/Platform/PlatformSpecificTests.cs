@@ -9,8 +9,6 @@
 using System;
 using System.Runtime.InteropServices;
 
-using ArkaneSystems.Arkane.Zeroconf;
-
 using Xunit;
 
 #endregion
@@ -44,17 +42,20 @@ public class PlatformSpecificTests
     catch (InvalidOperationException ex)
     {
       Assert.True (condition: false,
-                   userMessage: $"Native zeroconf initialization failed. Ensure platform dependency is installed and running (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
+                   userMessage:
+                   $"Native zeroconf initialization failed. Ensure platform dependency is installed and running (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
     }
     catch (DllNotFoundException ex)
     {
       Assert.True (condition: false,
-                   userMessage: $"Native zeroconf library was not found. Install platform dependency (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
+                   userMessage:
+                   $"Native zeroconf library was not found. Install platform dependency (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
     }
     catch (EntryPointNotFoundException ex)
     {
       Assert.True (condition: false,
-                   userMessage: $"Native zeroconf entry point was not found. Verify a compatible platform dependency installation (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
+                   userMessage:
+                   $"Native zeroconf entry point was not found. Verify a compatible platform dependency installation (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
     }
   }
 
@@ -107,7 +108,11 @@ public class PlatformSpecificTests
       return;
 
     Assert.Equal (expected: expectedName,
-                  actual: actualIsWindows ? "Windows" : actualIsMacOS ? "macOS" : "Linux");
+                  actual: actualIsWindows
+                            ? "Windows"
+                            : actualIsMacOS
+                              ? "macOS"
+                              : "Linux");
   }
 
   [Fact]

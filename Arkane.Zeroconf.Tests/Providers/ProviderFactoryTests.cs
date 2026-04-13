@@ -6,8 +6,6 @@
 
 #region using
 
-using System;
-
 using ArkaneSystems.Arkane.Zeroconf.Providers;
 
 using Xunit;
