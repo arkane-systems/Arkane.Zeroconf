@@ -52,7 +52,7 @@ public class PublicApiRoundTripIntegrationTests
 
     service.Register ();
 
-    bool discovered = discoveredEvent.Wait (TimeSpan.FromSeconds (10));
+    bool discovered = discoveredEvent.Wait (TimeSpan.FromSeconds (10), TestContext.Current.CancellationToken);
 
     Assert.True (condition: discovered,
                  userMessage: "Expected published service to be discovered by ServiceBrowser via public API.");
@@ -91,7 +91,7 @@ public class PublicApiRoundTripIntegrationTests
 
     service.Register ();
 
-    bool discovered = discoveredEvent.Wait (TimeSpan.FromSeconds (10));
+    bool discovered = discoveredEvent.Wait (TimeSpan.FromSeconds (10), TestContext.Current.CancellationToken);
 
     Assert.True (condition: discovered,
                  userMessage: "Expected published service to be discovered before resolve.");

@@ -101,7 +101,7 @@ public class AzClientE2ETests
     using RegisterService service =
       AzClientE2ETests.CreatePublishedService (regType: "_workstation._tcp", serviceName: serviceName, port: 28101);
     service.Register ();
-    await Task.Delay (250);
+    await Task.Delay (250, TestContext.Current.CancellationToken);
 
     // Act
     var (exitCode, output, error) = await this.RunAzClientAsync ("--timeout 3");
@@ -120,7 +120,7 @@ public class AzClientE2ETests
     using RegisterService service =
       AzClientE2ETests.CreatePublishedService (regType: regType, serviceName: serviceName, port: 28102);
     service.Register ();
-    await Task.Delay (250);
+    await Task.Delay (250, TestContext.Current.CancellationToken);
 
     // Act
     var (exitCode, output, error) = await this.RunAzClientAsync ($"--timeout 3 -t {regType}");
@@ -150,7 +150,7 @@ public class AzClientE2ETests
     using RegisterService service =
       AzClientE2ETests.CreatePublishedService (regType: regType, serviceName: serviceName, port: 28103);
     service.Register ();
-    await Task.Delay (250);
+    await Task.Delay (250, TestContext.Current.CancellationToken);
 
     // Act
     var (exitCode, output, error) = await this.RunAzClientAsync ($"--timeout 3 -v -t {regType}");

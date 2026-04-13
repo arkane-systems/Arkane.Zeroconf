@@ -33,7 +33,7 @@ public class WindowsMdnsBrowserIntegrationTests
   ];
 
   [Fact]
-  public void Browse_CommonServiceTypes_FindsAtLeastOneService_OnWindows11Network ()
+  public async Task Browse_CommonServiceTypes_FindsAtLeastOneService_OnWindows11Network ()
   {
     if (!OperatingSystem.IsWindowsVersionAtLeast (major: 10, minor: 0, build: 22000))
       return;
@@ -48,7 +48,7 @@ public class WindowsMdnsBrowserIntegrationTests
                                                                                                                                             timeout: discoveryTimeout)));
 
     Task allDiscoveryTasks = Task.WhenAll (discoveryTasks.Values);
-    allDiscoveryTasks.Wait (timeout: TimeSpan.FromSeconds (14));
+    await Task.WhenAny (allDiscoveryTasks, Task.Delay (TimeSpan.FromSeconds (14), TestContext.Current.CancellationToken));
 
     string[] discoveredTypes = discoveryTasks.Where (pair => pair.Value.IsCompletedSuccessfully && pair.Value.Result > 0)
                                              .Select (pair => pair.Key)

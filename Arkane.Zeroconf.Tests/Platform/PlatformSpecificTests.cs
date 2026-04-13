@@ -41,21 +41,15 @@ public class PlatformSpecificTests
     }
     catch (InvalidOperationException ex)
     {
-      Assert.True (condition: false,
-                   userMessage:
-                   $"Native zeroconf initialization failed. Ensure platform dependency is installed and running (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
+      Assert.Fail ($"Native zeroconf initialization failed. Ensure platform dependency is installed and running (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
     }
     catch (DllNotFoundException ex)
     {
-      Assert.True (condition: false,
-                   userMessage:
-                   $"Native zeroconf library was not found. Install platform dependency (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
+      Assert.Fail ($"Native zeroconf library was not found. Install platform dependency (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
     }
     catch (EntryPointNotFoundException ex)
     {
-      Assert.True (condition: false,
-                   userMessage:
-                   $"Native zeroconf entry point was not found. Verify a compatible platform dependency installation (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
+      Assert.Fail ($"Native zeroconf entry point was not found. Verify a compatible platform dependency installation (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
     }
   }
 

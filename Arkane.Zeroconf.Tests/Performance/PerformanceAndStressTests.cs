@@ -182,7 +182,7 @@ public class PerformanceAndStressTests
                                using var browser = new ServiceBrowser ();
                                Thread.Sleep (10);
                              }
-                           }));
+                           }, TestContext.Current.CancellationToken));
     }
 
     await Task.WhenAll (tasks);
@@ -208,7 +208,7 @@ public class PerformanceAndStressTests
   }
 
   [Fact]
-  public void ServiceBrowser_Enumeration_ThreadSafe ()
+  public async Task ServiceBrowser_Enumeration_ThreadSafe ()
   {
     // Arrange
     var browser = new ServiceBrowser ();
@@ -225,14 +225,24 @@ public class PerformanceAndStressTests
                                        {
                                          // Enumeration may fail if browser not started, that's OK
                                        }
-                                     });
+                                     }, TestContext.Current.CancellationToken);
 
     Thread.Sleep (100);
     browser.Dispose ();
 
     // Assert
-    Assert.True (condition: enumerationTask.Wait (TimeSpan.FromSeconds (2)),
-                 userMessage: "Enumeration should complete or timeout gracefully");
+    bool completed;
+    try
+    {
+      await enumerationTask.WaitAsync (TimeSpan.FromSeconds (2), TestContext.Current.CancellationToken);
+      completed = true;
+    }
+    catch (TimeoutException)
+    {
+      completed = false;
+    }
+
+    Assert.True (condition: completed, userMessage: "Enumeration should complete or timeout gracefully");
   }
 
   [Fact]
