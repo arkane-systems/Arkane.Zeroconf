@@ -30,7 +30,7 @@ public static class Zeroconf
       // Using setenv instead of Environment.SetEnvironmentVariable because, as documented:
       // > On non-Windows systems, calls to the SetEnvironmentVariable(String, String, EnvironmentVariableTarget) method with
       // > a value of EnvironmentVariableTarget.Process have no effect on any native libraries that are, or will be, loaded.
-      Zeroconf.setenv (key: "AVAHI_COMPAT_NOWARN", value: "1");
+      setenv (key: "AVAHI_COMPAT_NOWARN", value: "1");
 
       // DNSServiceCreateConnection is not supported on Linux
       // See https://github.com/lathiat/avahi/blob/55d783d9d11ced838d73a2757273c5f6958ccd5c/avahi-compat-libdns_sd/unsupported.c#L62-L66

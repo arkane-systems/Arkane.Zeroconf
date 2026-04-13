@@ -1,7 +1,7 @@
 # Arkane.Zeroconf Copilot Instructions
 
 ## Project Overview
-**Arkane.Zeroconf** is a .NET 10 library for Zero Configuration Networking (Bonjour/mDNS). It provides a cross-platform abstraction over platform-specific mDNS implementations (Windows Bonjour, macOS native, Linux Avahi).
+**Arkane.Zeroconf** is a .NET 10 library for Zero Configuration Networking (Bonjour/mDNS). It provides a cross-platform abstraction over platform-specific implementations.
 
 **Key Components:**
 - **Arkane.ZeroConf**: Core library with platform-agnostic APIs
@@ -13,69 +13,54 @@
 The library uses a **plugin architecture** with dynamic provider selection:
 - `ProviderFactory` discovers and instantiates providers via `ZeroconfProviderAttribute`
 - Providers implement `IZeroconfProvider` and expose three types: `ServiceBrowser`, `RegisterService`, `TxtRecord`
-- The Bonjour provider uses P/Invoke to call native DNS-SD libraries (`DNSServiceBrowse`, `DNSServiceRegister`, etc.)
-- **Critical design**: Platform support is extensible; new providers added as assembly-level attributes
+- Providers now expose capabilities and availability checks (`Capabilities`, `IsAvailable()`)
+- Provider selection uses priority and availability probing
 
-**Example from code:**
-```csharp
-// Arkane.ZeroConf/Providers/Bonjour/ZeroconfProvider.cs
-[assembly: ZeroconfProvider(typeof(ZeroconfProvider))]
-```
+**Current provider behavior:**
+- **Bonjour provider**: preferred when available; supports browse + publish
+- **WindowsMdns provider**: fallback on Windows 11+ when Bonjour is unavailable; supports browse/resolve only
 
 ### Public Facade Pattern
 Wrapper classes like `ServiceBrowser` and `RegisterService` delegate to provider implementations:
-- Use `Activator.CreateInstance()` to instantiate the concrete provider class
-- Forward all method calls and events to the internal `IServiceBrowser`
-- Consumers code against the facade, never the provider directly
+- Use `Activator.CreateInstance()` to instantiate concrete provider classes
+- Forward calls/events to the internal implementation
+- Consumers code against facades, not provider internals
 
-**Default domain fallback**: Always pass `domain ?? "local"` to provider.
+**Default domain fallback**: pass `domain ?? "local"` to provider.
 
-### Event Delegation Pattern
-Events in facades must **always** delegate ADD and REMOVE to the underlying browser:
-```csharp
-public event ServiceBrowseEventHandler ServiceAdded
-{
-    add => this.browser.ServiceAdded += value;
-    remove => this.browser.ServiceAdded -= value;  // Delegate to same event, not ServiceRemoved
-}
-```
+### Capability API Pattern
+Use `ZeroconfSupport` before operations:
+- `ZeroconfSupport.Capabilities`
+- `ZeroconfSupport.CanBrowse`
+- `ZeroconfSupport.CanPublish`
 
-### Thread Safety
-- Use `SemaphoreSlim` (not locks) for async-safe synchronization in Bonjour provider
-- `GetEnumerator()` in `ServiceBrowser` acquires semaphore before iterating service table
-- Always release in finally block
+Publishing with lookup-only providers is expected to throw `PlatformNotSupportedException`.
 
-## Native Interop & Bonjour
+## Windows fallback implementation
 
-### P/Invoke Conventions
-- All native calls in `Arkane.ZeroConf/Providers/Bonjour/Native.cs`
-- Use `DllImport("c")` or platform-specific DLL names
-- Always check returned `ServiceError` and throw `ServiceErrorException` on error:
-  ```csharp
-  var error = Native.DNSServiceBrowse(...);
-  if (error != ServiceError.NoError)
-      throw new ServiceErrorException(error);
-  ```
+### WindowsMdns provider
+- Namespace: `ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns`
+- Uses Windows DNS-SD APIs in `dnsapi.dll`:
+  - `DnsServiceBrowse`
+  - `DnsServiceResolve`
+- Interop contracts are in `Providers/WindowsMdns/NativeWindowsDns.cs`
+- Lookup flow is implemented in `Providers/WindowsMdns/MdnsClient.cs`
 
-### Platform-Specific Initialization
-- **Linux**: Uses `setenv()` for `AVAHI_COMPAT_NOWARN`; skips `DNSServiceCreateConnection` (not supported)
-- **macOS/Windows**: Call `DNSServiceCreateConnection` to test Bonjour availability
-- Guard with `OperatingSystem.IsLinux()`, `OperatingSystem.IsMacOS()`, `OperatingSystem.IsWindows()`
-
-### Event Callbacks
-Bonjour callbacks are **async** and managed via Task loops:
-- `OnBrowseReply` marshals callback results into the service table
-- Callbacks use delegates like `Native.DNSServiceBrowseReply` and `Native.DNSServiceRegisterReply`
-- Event handlers invoke on background threads; assume thread safety required
+### Important constraints
+- Keep Windows fallback **lookup-only**; no publishing support
+- Preserve facade API compatibility
+- Ensure native resources are always freed in callback/finally paths (`DnsRecordListFree`, `DnsServiceFreeInstance`)
+- Keep OS checks for fallback availability (`OperatingSystem.IsWindowsVersionAtLeast(10,0,22000)`)
 
 ## Code Conventions
 
 ### Namespace Structure
 ```
-ArkaneSystems.Arkane.Zeroconf (public APIs)
-ArkaneSystems.Arkane.Zeroconf.Providers (factory, attributes)
-ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour (platform impl)
-ArkaneSystems.Arkane.Zeroconf.Client (CLI utility)
+ArkaneSystems.Arkane.Zeroconf
+ArkaneSystems.Arkane.Zeroconf.Providers
+ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
+ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns
+ArkaneSystems.Arkane.Zeroconf.Client
 ```
 
 ### File Headers
@@ -90,59 +75,64 @@ using System;
 #endregion
 ```
 
-### Nullable Handling
-Project uses `LangVersion: latest` (C# 14 features available). Null checks:
-- Use `ArgumentNullException.ThrowIfNull(param)` for public APIs
-- Use `string.IsNullOrWhiteSpace(param)` for strings
-- Use `?` null-coalescing for optional domains: `domain ?? "local"`
-
-### Task Management
-- `ServiceBrowser.Start(async)` creates background task for Bonjour polling
-- Use `Task.Run()` wrapped in `ContinueWith()` for error propagation
-- Tasks must set `this.task = null` when complete to prevent "already started" exceptions
+### Nullability and guards
+- Use `ArgumentNullException.ThrowIfNull(param)`
+- Use `ArgumentException.ThrowIfNullOrWhiteSpace(param)` for required strings
+- Use `string.IsNullOrWhiteSpace(param)` for checks
 
 ## Testing & Build
 
-### Build Command
+### Build command
 ```pwsh
 dotnet build
 ```
 
-### Project Files
-- **Arkane.ZeroConf.csproj**: Targets `net10.0`, signed assembly (`zeroconf.snk`)
-- **azclient.csproj**: Console app that references Arkane.ZeroConf
+### Key test classes
+- `Facades/ZeroconfSupportTests.cs`
+- `Providers/WindowsMdnsProviderTests.cs`
+- `Integration/WindowsMdnsBrowserIntegrationTests.cs`
 
-### API Expectations
-- Consumers instantiate `ServiceBrowser()` and call `Browse(interfaceIndex, addressProtocol, regtype, domain)`
-- Services are enumerable; access via `foreach` or `GetEnumerator()`
-- Events: `ServiceAdded`, `ServiceRemoved` with `ServiceBrowseEventArgs` (includes `MoreComing` flag)
+### WindowsMdns integration test behavior
+`WindowsMdnsBrowserIntegrationTests` probes multiple common service types in parallel and passes when at least one service is discovered.
 
-## Common Editing Patterns
+You can override service probe types with:
+```powershell
+$env:ARKANE_ZEROCONF_TEST_SERVICE_TYPES = "_http._tcp,_ipp._tcp,_printer._tcp"
+```
 
-1. **Adding a new provider**: 
-   - Implement `IZeroconfProvider` 
-   - Add `[assembly: ZeroconfProvider(typeof(MyProvider))]` attribute
-   - Implement three Type properties returning your custom types
+## Common editing patterns
 
-2. **Modifying event handling**:
-   - Check both add/remove accessors delegate to the **same** event
-   - Verify semaphore usage in iterators
+1. **Adding/updating a provider**
+   - Implement `IZeroconfProvider`
+   - Register with `[assembly: ZeroconfProvider(typeof(MyProvider), priority: ...)]`
+   - Implement capability/availability members
 
-3. **Adding native bindings**:
-   - Add P/Invoke signature to `Native.cs`
-   - Wrap with error checking and `ServiceErrorException`
-   - Guard platform-specific calls with OS checks
+2. **Updating native interop**
+   - Keep signatures in provider-native interop file
+   - Pair every returned native allocation with matching free API
+   - Avoid swallowing interop failures silently
 
-## Key Files Reference
-- **IServiceBrowser.cs**: Public browser interface
-- **ServiceBrowser.cs**: Facade wrapping provider
-- **Providers/ProviderFactory.cs**: Dynamic provider discovery & selection
-- **Providers/Bonjour/ServiceBrowser.cs**: Concrete Bonjour implementation (task-based polling, semaphore-protected service table)
-- **Providers/Bonjour/Native.cs**: All P/Invoke signatures
-- **ZeroconfProvider.cs**: Bonjour provider registration & initialization
+3. **Updating tests**
+   - Prefer targeted test runs first (`FullyQualifiedName~...`)
+   - Keep network-dependent tests explicit about environmental prerequisites
+
+## Key files reference
+- `Providers/ProviderFactory.cs`
+- `ZeroconfSupport.cs`
+- `Providers/Bonjour/ZeroconfProvider.cs`
+- `Providers/WindowsMdns/ZeroconfProvider.cs`
+- `Providers/WindowsMdns/NativeWindowsDns.cs`
+- `Providers/WindowsMdns/MdnsClient.cs`
+- `Integration/WindowsMdnsBrowserIntegrationTests.cs`
 
 ## Troubleshooting
 
-- **"No Zeroconf providers could be found"**: Bonjour daemon not running (Windows/macOS) or Avahi not installed (Linux)
-- **ServiceBrowser already started**: Don't call `Browse()` twice without disposing first
-- **Missing events**: Verify event delegate delegates to correct underlying event (common copy-paste error)
+- **"No Zeroconf providers could be found"**
+  - No available provider initialized on current OS/runtime.
+
+- **Windows lookup works but publish fails**
+  - Expected when fallback `WindowsMdns` provider is active; check `ZeroconfSupport.CanPublish`.
+
+- **Windows fallback integration test discovers nothing**
+  - Ensure mDNS-advertised services exist on the network.
+  - Override `ARKANE_ZEROCONF_TEST_SERVICE_TYPES` to match local environment.

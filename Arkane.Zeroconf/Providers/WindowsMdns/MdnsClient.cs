@@ -7,12 +7,10 @@
 #region using
 
 using System;
-using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
-using System.Text;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 #endregion
@@ -21,6 +19,19 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns;
 
 internal static class MdnsClient
 {
+  #region Nested type: BrowseState
+
+  private sealed class BrowseState
+  {
+    public object SyncRoot { get; } = new ();
+
+    public List<DnsRecord> Records { get; } = new ();
+
+    public ManualResetEventSlim WaitHandle { get; } = new (false);
+  }
+
+  #endregion
+
   #region Nested type: DnsRecord
 
   private sealed class DnsRecord
@@ -30,14 +41,6 @@ internal static class MdnsClient
     public DnsRecordType Type { get; init; }
 
     public string PtrTarget { get; set; }
-
-    public string TargetHost { get; set; }
-
-    public ushort Port { get; set; }
-
-    public IPAddress Address { get; set; }
-
-    public IEnumerable<TxtRecordItem> TxtItems { get; set; } = Array.Empty<TxtRecordItem> ();
   }
 
   #endregion
@@ -46,12 +49,7 @@ internal static class MdnsClient
 
   private enum DnsRecordType : ushort
   {
-    A    = 1,
-    Ptr  = 12,
-    Txt  = 16,
-    Aaaa = 28,
-    Srv  = 33,
-    Any  = 255,
+    Ptr = 12,
   }
 
   #endregion
@@ -96,9 +94,37 @@ internal static class MdnsClient
 
   #endregion
 
-  private const int DnsPort = 5353;
+  #region Nested type: ResolvedInstance
 
-  private static readonly TimeSpan QueryWindow = TimeSpan.FromMilliseconds (1200);
+  private sealed class ResolvedInstance
+  {
+    public string HostName { get; init; } = string.Empty;
+
+    public ushort Port { get; init; }
+
+    public List<IPAddress> Addresses { get; init; } = new ();
+
+    public List<TxtRecordItem> TxtItems { get; init; } = new ();
+  }
+
+  #endregion
+
+  #region Nested type: ResolveState
+
+  private sealed class ResolveState
+  {
+    public ManualResetEventSlim WaitHandle { get; } = new (false);
+
+    public ResolvedInstance? Result { get; set; }
+  }
+
+  #endregion
+
+  private static readonly TimeSpan BrowseTimeout  = TimeSpan.FromSeconds (4);
+  private static readonly TimeSpan ResolveTimeout = TimeSpan.FromSeconds (4);
+
+  private static readonly NativeWindowsDns.DnsServiceBrowseCallback  BrowseCallback  = OnBrowseResult;
+  private static readonly NativeWindowsDns.DnsServiceResolveComplete ResolveCallback = OnResolveResult;
 
   public static IReadOnlyList<MdnsServiceInfo> Browse (string            regtype,
                                                        string            domain,
@@ -108,22 +134,24 @@ internal static class MdnsClient
     ArgumentNullException.ThrowIfNull (regtype);
     ArgumentNullException.ThrowIfNull (domain);
 
-    string queryName = MdnsClient.NormalizeName ($"{regtype}.{domain}");
-    IReadOnlyList<DnsRecord> records = MdnsClient.Query (name: queryName,
-                                                         type: DnsRecordType.Ptr,
-                                                         addressProtocol: addressProtocol,
-                                                         cancellationToken: cancellationToken);
+    cancellationToken.ThrowIfCancellationRequested ();
+    _ = addressProtocol;
+
+    string queryName = NormalizeName ($"{regtype}.{domain}").TrimEnd ('.');
+    IReadOnlyList<DnsRecord> records = BrowseRecords (queryName: queryName,
+                                                      interfaceIndex: 0,
+                                                      cancellationToken: cancellationToken);
 
     var services = new List<MdnsServiceInfo> ();
 
     foreach (DnsRecord record in records.Where (record => (record.Type == DnsRecordType.Ptr) &&
-                                                          string.Equals (a: MdnsClient.NormalizeName (record.Name),
-                                                                         b: queryName,
+                                                          string.Equals (a: NormalizeName (record.Name),
+                                                                         b: NormalizeName (queryName),
                                                                          comparisonType: StringComparison.OrdinalIgnoreCase) &&
                                                           !string.IsNullOrWhiteSpace (record.PtrTarget)))
     {
-      string fullName    = MdnsClient.NormalizeName (record.PtrTarget);
-      string serviceName = MdnsClient.ParseServiceName (fullName: fullName, regtype: regtype);
+      string fullName    = NormalizeName (record.PtrTarget);
+      string serviceName = ParseServiceName (fullName: fullName, regtype: regtype);
 
       services.Add (new MdnsServiceInfo
                     {
@@ -146,300 +174,236 @@ internal static class MdnsClient
   {
     ArgumentNullException.ThrowIfNull (service);
 
-    IReadOnlyList<DnsRecord> serviceRecords = MdnsClient.Query (name: service.FullName,
-                                                                type: DnsRecordType.Any,
-                                                                addressProtocol: addressProtocol,
-                                                                cancellationToken: cancellationToken);
+    cancellationToken.ThrowIfCancellationRequested ();
 
-    DnsRecord srvRecord = serviceRecords.FirstOrDefault (record => record.Type == DnsRecordType.Srv);
+    ResolvedInstance? resolved = ResolveService (queryName: service.FullName.TrimEnd ('.'),
+                                                 interfaceIndex: service.InterfaceIndex,
+                                                 cancellationToken: cancellationToken);
 
-    if (srvRecord == null)
+    if (resolved == null)
       return MdnsResolveResult.Empty;
 
-    TxtRecordItem[] txtEntries = serviceRecords.Where (record => record.Type == DnsRecordType.Txt)
-                                               .SelectMany (record => record.TxtItems)
-                                               .Where (item => item != null)
-                                               .ToArray ();
-
-    string hostName = MdnsClient.NormalizeName (srvRecord.TargetHost);
-    IReadOnlyList<DnsRecord> hostRecords = MdnsClient.Query (name: hostName,
-                                                             type: DnsRecordType.Any,
-                                                             addressProtocol: addressProtocol,
-                                                             cancellationToken: cancellationToken);
-
-    IPAddress[] addresses = hostRecords.Where (record => record.Type is DnsRecordType.A or DnsRecordType.Aaaa)
-                                       .Select (record => record.Address)
-                                       .Where (address => address != null)
-                                       .Distinct ()
-                                       .ToArray ();
+    IPAddress[] addresses = resolved.Addresses.Where (address => address != null)
+                                    .Distinct ()
+                                    .ToArray ();
 
     if (addresses.Length == 0)
       return MdnsResolveResult.Empty;
 
     return new MdnsResolveResult
            {
-             HostName = hostName, Port = srvRecord.Port, Addresses = addresses, TxtEntries = txtEntries,
+             HostName   = NormalizeName (resolved.HostName),
+             Port       = resolved.Port,
+             Addresses  = addresses,
+             TxtEntries = resolved.TxtItems.ToArray (),
            };
   }
 
-  private static IReadOnlyList<DnsRecord> Query (string            name,
-                                                 DnsRecordType     type,
-                                                 AddressProtocol   addressProtocol,
-                                                 CancellationToken cancellationToken)
+  private static IReadOnlyList<DnsRecord> BrowseRecords (string queryName, uint interfaceIndex, CancellationToken cancellationToken)
   {
-    byte[] query   = MdnsClient.BuildQuery (name: name, type: type);
-    var    records = new List<DnsRecord> ();
+    var      state  = new BrowseState ();
+    GCHandle handle = GCHandle.Alloc (state);
 
-    if (addressProtocol is AddressProtocol.Any or AddressProtocol.IPv4)
-      records.AddRange (MdnsClient.QuerySocket (query: query,
-                                                endpoint: new IPEndPoint (address: IPAddress.Parse ("224.0.0.251"),
-                                                                          port: MdnsClient.DnsPort),
-                                                addressFamily: AddressFamily.InterNetwork,
-                                                cancellationToken: cancellationToken));
+    var cancel = new NativeWindowsDns.DnsServiceCancel ();
 
-    if (addressProtocol is AddressProtocol.Any or AddressProtocol.IPv6)
-      if (Socket.OSSupportsIPv6)
-        records.AddRange (MdnsClient.QuerySocket (query: query,
-                                                  endpoint: new IPEndPoint (address: IPAddress.Parse ("ff02::fb"),
-                                                                            port: MdnsClient.DnsPort),
-                                                  addressFamily: AddressFamily.InterNetworkV6,
-                                                  cancellationToken: cancellationToken));
+    try
+    {
+      var request = new NativeWindowsDns.DnsServiceBrowseRequest
+                    {
+                      Version        = NativeWindowsDns.DnsQueryRequestVersion1,
+                      InterfaceIndex = interfaceIndex,
+                      QueryName      = queryName,
+                      BrowseCallback = BrowseCallback,
+                      QueryContext   = GCHandle.ToIntPtr (handle),
+                    };
 
-    return records;
+      int status = NativeWindowsDns.DnsServiceBrowse (request: ref request, cancel: ref cancel);
+
+      if ((status != 0) && (status != NativeWindowsDns.DnsRequestPending))
+        return Array.Empty<DnsRecord> ();
+
+      state.WaitHandle.Wait (timeout: BrowseTimeout, cancellationToken: cancellationToken);
+
+      lock (state.SyncRoot)
+        return state.Records.ToArray ();
+    }
+    finally
+    {
+      if (cancel.Reserved != IntPtr.Zero)
+        _ = NativeWindowsDns.DnsServiceBrowseCancel (cancel: ref cancel);
+
+      state.WaitHandle.Dispose ();
+
+      if (handle.IsAllocated)
+        handle.Free ();
+    }
   }
 
-  private static IReadOnlyList<DnsRecord> QuerySocket (byte[]            query,
-                                                       IPEndPoint        endpoint,
-                                                       AddressFamily     addressFamily,
-                                                       CancellationToken cancellationToken)
+  private static ResolvedInstance? ResolveService (string queryName, uint interfaceIndex, CancellationToken cancellationToken)
+  {
+    var      state  = new ResolveState ();
+    GCHandle handle = GCHandle.Alloc (state);
+
+    var cancel = new NativeWindowsDns.DnsServiceCancel ();
+
+    try
+    {
+      var request = new NativeWindowsDns.DnsServiceResolveRequest
+                    {
+                      Version         = NativeWindowsDns.DnsQueryRequestVersion1,
+                      InterfaceIndex  = interfaceIndex,
+                      QueryName       = queryName,
+                      ResolveCallback = ResolveCallback,
+                      QueryContext    = GCHandle.ToIntPtr (handle),
+                    };
+
+      int status = NativeWindowsDns.DnsServiceResolve (request: ref request, cancel: ref cancel);
+
+      if ((status != 0) && (status != NativeWindowsDns.DnsRequestPending))
+        return null;
+
+      state.WaitHandle.Wait (timeout: ResolveTimeout, cancellationToken: cancellationToken);
+
+      return state.Result;
+    }
+    finally
+    {
+      if (cancel.Reserved != IntPtr.Zero)
+        _ = NativeWindowsDns.DnsServiceResolveCancel (cancel: ref cancel);
+
+      state.WaitHandle.Dispose ();
+
+      if (handle.IsAllocated)
+        handle.Free ();
+    }
+  }
+
+  private static void OnBrowseResult (uint status, IntPtr queryContext, IntPtr dnsRecord)
+  {
+    GCHandle handle = GCHandle.FromIntPtr (queryContext);
+
+    if (!handle.IsAllocated || handle.Target is not BrowseState state)
+      return;
+
+    try
+    {
+      if ((status != 0) || (dnsRecord == IntPtr.Zero))
+        return;
+
+      IReadOnlyList<DnsRecord> records = ProjectBrowseRecords (dnsRecord);
+
+      lock (state.SyncRoot)
+        state.Records.AddRange (records);
+
+      if (records.Count > 0)
+        state.WaitHandle.Set ();
+    }
+    finally
+    {
+      if (dnsRecord != IntPtr.Zero)
+        NativeWindowsDns.DnsRecordListFree (pRecordList: dnsRecord, freeType: NativeWindowsDns.DnsFreeType.RecordList);
+    }
+  }
+
+  private static void OnResolveResult (uint status, IntPtr queryContext, IntPtr instance)
+  {
+    GCHandle handle = GCHandle.FromIntPtr (queryContext);
+
+    if (!handle.IsAllocated || handle.Target is not ResolveState state)
+      return;
+
+    try
+    {
+      if ((status != 0) || (instance == IntPtr.Zero))
+        return;
+
+      state.Result = ProjectResolvedInstance (instance);
+      state.WaitHandle.Set ();
+    }
+    finally
+    {
+      if (instance != IntPtr.Zero)
+        NativeWindowsDns.DnsServiceFreeInstance (instance);
+    }
+  }
+
+  private static IReadOnlyList<DnsRecord> ProjectBrowseRecords (IntPtr recordList)
   {
     var records = new List<DnsRecord> ();
 
-    using var socket = new Socket (addressFamily: addressFamily, socketType: SocketType.Dgram, protocolType: ProtocolType.Udp);
-    socket.SetSocketOption (optionLevel: SocketOptionLevel.Socket, optionName: SocketOptionName.ReuseAddress, optionValue: true);
+    IntPtr current = recordList;
+    var    guard   = 0;
 
-    if (addressFamily == AddressFamily.InterNetwork)
-      socket.Bind (new IPEndPoint (address: IPAddress.Any, port: 0));
-    else
-      socket.Bind (new IPEndPoint (address: IPAddress.IPv6Any, port: 0));
-
-    socket.SendTo (buffer: query, remoteEP: endpoint);
-
-    DateTime deadline = DateTime.UtcNow + MdnsClient.QueryWindow;
-    var      buffer   = new byte[4096];
-
-    while (DateTime.UtcNow <= deadline)
+    while ((current != IntPtr.Zero) && (guard++ < 4096))
     {
-      cancellationToken.ThrowIfCancellationRequested ();
+      var header = Marshal.PtrToStructure<NativeWindowsDns.DnsRecordHeader> (current);
 
-      var timeout = (int)Math.Max (val1: 0, val2: (deadline - DateTime.UtcNow).TotalMilliseconds);
+      if ((DnsRecordType)header.wType == DnsRecordType.Ptr)
+      {
+        IntPtr dataPtr = IntPtr.Add (pointer: current, offset: Marshal.SizeOf<NativeWindowsDns.DnsRecordHeader> ());
 
-      if (timeout == 0)
-        break;
+        records.Add (new DnsRecord
+                     {
+                       Name      = Marshal.PtrToStringUni (header.pName),
+                       Type      = DnsRecordType.Ptr,
+                       PtrTarget = Marshal.PtrToStringUni (Marshal.ReadIntPtr (dataPtr)),
+                     });
+      }
 
-      if (!socket.Poll (microSeconds: timeout * 1000, mode: SelectMode.SelectRead))
-        continue;
-
-      EndPoint remote = addressFamily == AddressFamily.InterNetwork
-                          ? new IPEndPoint (address: IPAddress.Any,     port: 0)
-                          : new IPEndPoint (address: IPAddress.IPv6Any, port: 0);
-
-      int received = socket.ReceiveFrom (buffer: buffer, remoteEP: ref remote);
-      records.AddRange (MdnsClient.ParseResponse (buffer.AsSpan (start: 0, length: received)));
+      current = header.pNext;
     }
 
     return records;
   }
 
-  private static byte[] BuildQuery (string name, DnsRecordType type)
+  private static ResolvedInstance ProjectResolvedInstance (IntPtr instancePtr)
   {
-    var bytes = new List<byte> (512);
+    var instance = Marshal.PtrToStructure<NativeWindowsDns.DnsServiceInstance> (instancePtr);
 
-    var header = new byte[12];
-    BinaryPrimitives.WriteUInt16BigEndian (destination: header.AsSpan (start: 4, length: 2), value: 1);
-    bytes.AddRange (header);
+    var addresses = new List<IPAddress> ();
 
-    MdnsClient.WriteName (bytes: bytes, name: name);
-
-    bytes.AddRange (BitConverter.GetBytes (IPAddress.HostToNetworkOrder ((short)type)));
-    bytes.AddRange (BitConverter.GetBytes (IPAddress.HostToNetworkOrder ((short)1)));
-
-    return bytes.ToArray ();
-  }
-
-  private static IReadOnlyList<DnsRecord> ParseResponse (ReadOnlySpan<byte> data)
-  {
-    if (data.Length < 12)
-      return Array.Empty<DnsRecord> ();
-
-    var offset = 0;
-    offset += 4;
-
-    ushort questionCount   = MdnsClient.ReadUInt16 (data: data, offset: ref offset);
-    ushort answerCount     = MdnsClient.ReadUInt16 (data: data, offset: ref offset);
-    ushort authorityCount  = MdnsClient.ReadUInt16 (data: data, offset: ref offset);
-    ushort additionalCount = MdnsClient.ReadUInt16 (data: data, offset: ref offset);
-
-    for (var i = 0; i < questionCount; i++)
+    if (instance.Ip4Address != IntPtr.Zero)
     {
-      _      =  MdnsClient.ReadName (data: data, offset: ref offset);
-      offset += 4;
+      var    ipv4Raw = (uint)Marshal.ReadInt32 (instance.Ip4Address);
+      byte[] bytes   = BitConverter.GetBytes (ipv4Raw);
+
+      if (BitConverter.IsLittleEndian)
+        Array.Reverse (bytes);
+
+      addresses.Add (new IPAddress (bytes));
     }
 
-    var records      = new List<DnsRecord> ();
-    int totalRecords = answerCount + authorityCount + additionalCount;
-
-    for (var i = 0; i < totalRecords; i++)
+    if (instance.Ip6Address != IntPtr.Zero)
     {
-      string name = MdnsClient.ReadName (data: data, offset: ref offset);
-      var    type = (DnsRecordType)MdnsClient.ReadUInt16 (data: data, offset: ref offset);
-      _ = MdnsClient.ReadUInt16 (data: data, offset: ref offset);
-      _ = MdnsClient.ReadUInt32 (data: data, offset: ref offset);
-      ushort dataLength = MdnsClient.ReadUInt16 (data: data, offset: ref offset);
+      var bytes = new byte[16];
+      Marshal.Copy (source: instance.Ip6Address, destination: bytes, startIndex: 0, length: bytes.Length);
+      addresses.Add (new IPAddress (bytes));
+    }
 
-      if (offset + dataLength > data.Length)
-        break;
+    var txtItems = new List<TxtRecordItem> ();
 
-      int                recordDataOffset = offset;
-      ReadOnlySpan<byte> recordData       = data.Slice (start: offset, length: dataLength);
-      offset += dataLength;
-
-      var record = new DnsRecord { Name = name, Type = type };
-
-      switch (type)
+    if ((instance.PropertyCount > 0) && (instance.Keys != IntPtr.Zero) && (instance.Values != IntPtr.Zero))
+      for (var i = 0; i < instance.PropertyCount; i++)
       {
-        case DnsRecordType.Ptr:
-          int ptrOffset = recordDataOffset;
-          record.PtrTarget = MdnsClient.ReadName (data: data, offset: ref ptrOffset);
+        IntPtr keyPtr   = Marshal.ReadIntPtr (ptr: instance.Keys,   ofs: i * IntPtr.Size);
+        IntPtr valuePtr = Marshal.ReadIntPtr (ptr: instance.Values, ofs: i * IntPtr.Size);
 
-          break;
+        string key   = Marshal.PtrToStringUni (keyPtr);
+        string value = Marshal.PtrToStringUni (valuePtr);
 
-        case DnsRecordType.Srv:
-          if (recordData.Length < 6)
-            break;
+        if (string.IsNullOrWhiteSpace (key))
+          continue;
 
-          int srvOffset = recordDataOffset;
-          _                 = MdnsClient.ReadUInt16 (data: data, offset: ref srvOffset);
-          _                 = MdnsClient.ReadUInt16 (data: data, offset: ref srvOffset);
-          record.Port       = MdnsClient.ReadUInt16 (data: data, offset: ref srvOffset);
-          record.TargetHost = MdnsClient.ReadName (data: data, offset: ref srvOffset);
-
-          break;
-
-        case DnsRecordType.Txt:
-          record.TxtItems = MdnsClient.ParseTxt (recordData);
-
-          break;
-
-        case DnsRecordType.A:
-          if (recordData.Length == 4)
-            record.Address = new IPAddress (recordData.ToArray ());
-
-          break;
-
-        case DnsRecordType.Aaaa:
-          if (recordData.Length == 16)
-            record.Address = new IPAddress (recordData.ToArray ());
-
-          break;
+        txtItems.Add (new TxtRecordItem (key: key, valueString: value ?? string.Empty));
       }
 
-      records.Add (record);
-    }
-
-    return records;
-  }
-
-  private static IEnumerable<TxtRecordItem> ParseTxt (ReadOnlySpan<byte> data)
-  {
-    var results = new List<TxtRecordItem> ();
-    var index   = 0;
-
-    while (index < data.Length)
-    {
-      byte itemLength = data[index++];
-
-      if ((itemLength == 0) || (index + itemLength > data.Length))
-        break;
-
-      string item = Encoding.UTF8.GetString (data.Slice (start: index, length: itemLength));
-      index += itemLength;
-
-      int separator = item.IndexOf ('=');
-
-      if (separator <= 0)
-        continue;
-
-      string key   = item[..separator];
-      string value = item[(separator + 1)..];
-      results.Add (new TxtRecordItem (key: key, valueString: value));
-    }
-
-    return results;
-  }
-
-  private static string ReadName (ReadOnlySpan<byte> data, ref int offset)
-  {
-    var labels        = new List<string> ();
-    var jumped        = false;
-    int currentOffset = offset;
-    var guard         = 0;
-
-    while (guard++ < data.Length)
-    {
-      if (currentOffset >= data.Length)
-        break;
-
-      byte length = data[currentOffset++];
-
-      if (length == 0)
-        break;
-
-      if ((length & 0xC0) == 0xC0)
-      {
-        if (currentOffset >= data.Length)
-          break;
-
-        int pointer = ((length & 0x3F) << 8) | data[currentOffset++];
-
-        if (!jumped)
-        {
-          offset = currentOffset;
-          jumped = true;
-        }
-
-        currentOffset = pointer;
-
-        continue;
-      }
-
-      if (currentOffset + length > data.Length)
-        break;
-
-      labels.Add (Encoding.UTF8.GetString (data.Slice (start: currentOffset, length: length)));
-      currentOffset += length;
-    }
-
-    if (!jumped)
-      offset = currentOffset;
-
-    return MdnsClient.NormalizeName (string.Join (separator: ".", values: labels));
-  }
-
-  private static void WriteName (ICollection<byte> bytes, string name)
-  {
-    foreach (string label in MdnsClient.NormalizeName (name)
-                                       .TrimEnd ('.')
-                                       .Split (separator: '.', options: StringSplitOptions.RemoveEmptyEntries))
-    {
-      byte[] labelBytes = Encoding.UTF8.GetBytes (label);
-      bytes.Add ((byte)labelBytes.Length);
-
-      foreach (byte labelByte in labelBytes)
-        bytes.Add (labelByte);
-    }
-
-    bytes.Add (0);
+    return new ResolvedInstance
+           {
+             HostName  = Marshal.PtrToStringUni (instance.HostName) ?? string.Empty,
+             Port      = instance.Port,
+             Addresses = addresses,
+             TxtItems  = txtItems,
+           };
   }
 
   private static string NormalizeName (string value)
@@ -455,7 +419,7 @@ internal static class MdnsClient
     if (string.IsNullOrWhiteSpace (fullName))
       return string.Empty;
 
-    string normalizedRegType = MdnsClient.NormalizeName (regtype).TrimEnd ('.');
+    string normalizedRegType = NormalizeName (regtype).TrimEnd ('.');
     var    marker            = $".{normalizedRegType}.";
     int    markerIndex       = fullName.IndexOf (value: marker, comparisonType: StringComparison.OrdinalIgnoreCase);
 
@@ -465,21 +429,5 @@ internal static class MdnsClient
     string[] labels = fullName.Split (separator: '.', options: StringSplitOptions.RemoveEmptyEntries);
 
     return labels.Length > 0 ? labels[0] : fullName;
-  }
-
-  private static ushort ReadUInt16 (ReadOnlySpan<byte> data, ref int offset)
-  {
-    ushort value = BinaryPrimitives.ReadUInt16BigEndian (data.Slice (start: offset, length: 2));
-    offset += 2;
-
-    return value;
-  }
-
-  private static uint ReadUInt32 (ReadOnlySpan<byte> data, ref int offset)
-  {
-    uint value = BinaryPrimitives.ReadUInt32BigEndian (data.Slice (start: offset, length: 4));
-    offset += 4;
-
-    return value;
   }
 }

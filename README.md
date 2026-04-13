@@ -7,23 +7,32 @@ A Zero Configuration Networking library for .NET.
 
 Basically, this is my forked version of Mono.Zeroconf for my .NET projects, which exists simply because I needed a version with various fixes that have been submitted in pull requests over the last few years, and which the release version of that package doesn't have.  API, etc., are identical to that of Mono.Zeroconf except for the different namespace.
 
-To run this, Apple's Bonjour must be installed first for full lookup-and-publish behavior.
+## Provider behavior by platform
 
-On Windows 11, if Bonjour is not installed, Arkane.Zeroconf now falls back to a lookup-only provider that supports browsing and resolving mDNS services but does not support publishing.
+- **Bonjour provider** (preferred): lookup and publish support.
+- **Windows fallback provider** (`WindowsMdns`): used when Bonjour is unavailable on Windows 11+, and provides **lookup-only** behavior using Windows DNS-SD APIs (`DnsServiceBrowse`/`DnsServiceResolve`).
 
-Use the capability API to check support before starting operations:
+## Capability checks
+
+Use the capability API before starting operations:
 
 ```csharp
 if (!ZeroconfSupport.CanBrowse)
     throw new InvalidOperationException("mDNS lookup is not available.");
 
 if (!ZeroconfSupport.CanPublish)
-    Console.WriteLine("Publishing not available on this platform/provider.");
+    Console.WriteLine("Publishing is unavailable for the selected provider.");
 ```
 
-Bonjour for Windows can be downloaded here:
+Publishing with the Windows fallback provider throws `PlatformNotSupportedException` by design.
 
-    http://www.apple.com/support/downloads/bonjourforwindows.html
+## Windows notes
+
+For full lookup-and-publish behavior on Windows, install Bonjour:
+
+    winget install Apple.Bonjour
+
+When Bonjour is not installed but the OS supports Windows DNS-SD lookup (Windows 11+), browsing and resolving continue to work through the fallback provider.
 
 As per the original readme:
 
