@@ -175,14 +175,15 @@ public class PerformanceAndStressTests
     // Act
     for (var i = 0; i < concurrentTasks; i++)
     {
-      tasks.Add (Task.Run (() =>
-                           {
-                             for (var j = 0; j < 10; j++)
-                             {
-                               using var browser = new ServiceBrowser ();
-                               Thread.Sleep (10);
-                             }
-                           }, TestContext.Current.CancellationToken));
+      tasks.Add (Task.Run (action: () =>
+                                   {
+                                     for (var j = 0; j < 10; j++)
+                                     {
+                                       using var browser = new ServiceBrowser ();
+                                       Thread.Sleep (10);
+                                     }
+                                   },
+                           cancellationToken: TestContext.Current.CancellationToken));
     }
 
     await Task.WhenAll (tasks);
@@ -214,33 +215,32 @@ public class PerformanceAndStressTests
     var browser = new ServiceBrowser ();
 
     // Act
-    Task enumerationTask = Task.Run (() =>
-                                     {
-                                       try
-                                       {
-                                         foreach (IResolvableService? service in browser)
-                                           Thread.Sleep (1);
-                                       }
-                                       catch
-                                       {
-                                         // Enumeration may fail if browser not started, that's OK
-                                       }
-                                     }, TestContext.Current.CancellationToken);
+    Task enumerationTask = Task.Run (action: () =>
+                                             {
+                                               try
+                                               {
+                                                 foreach (IResolvableService? service in browser)
+                                                   Thread.Sleep (1);
+                                               }
+                                               catch
+                                               {
+                                                 // Enumeration may fail if browser not started, that's OK
+                                               }
+                                             },
+                                     cancellationToken: TestContext.Current.CancellationToken);
 
     Thread.Sleep (100);
     browser.Dispose ();
 
     // Assert
     bool completed;
+
     try
     {
-      await enumerationTask.WaitAsync (TimeSpan.FromSeconds (2), TestContext.Current.CancellationToken);
+      await enumerationTask.WaitAsync (timeout: TimeSpan.FromSeconds (2), cancellationToken: TestContext.Current.CancellationToken);
       completed = true;
     }
-    catch (TimeoutException)
-    {
-      completed = false;
-    }
+    catch (TimeoutException) { completed = false; }
 
     Assert.True (condition: completed, userMessage: "Enumeration should complete or timeout gracefully");
   }

@@ -117,7 +117,7 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
                                                   flags: ServiceFlags.None,
                                                   interfaceIndex: this.interfaceIndex,
                                                   regtype: this.regtype ?? string.Empty,
-                                                  domain: this.domain ?? string.Empty,
+                                                  domain: this.domain   ?? string.Empty,
                                                   callBack: this.browseReplyHandler,
                                                   context: IntPtr.Zero);
 

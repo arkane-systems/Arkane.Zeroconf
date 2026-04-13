@@ -1,46 +1,45 @@
 #region header
 
 // Arkane.ZeroConf - TxtRecord.cs
-// 
 
 #endregion
 
 #region using
 
-using System ;
-using System.Collections ;
+using System;
+using System.Collections;
 
-using ArkaneSystems.Arkane.Zeroconf.Providers ;
+using ArkaneSystems.Arkane.Zeroconf.Providers;
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf ;
+namespace ArkaneSystems.Arkane.Zeroconf;
 
 public class TxtRecord : ITxtRecord
 {
-    public TxtRecord () => this.BaseRecord = CreateRequiredInstance<ITxtRecord> (ProviderFactory.SelectedProvider.TxtRecord) ;
+  public TxtRecord () => this.BaseRecord = CreateRequiredInstance<ITxtRecord> (ProviderFactory.SelectedProvider.TxtRecord);
 
-    private static T CreateRequiredInstance<T> (Type type) where T : class
-        => Activator.CreateInstance (type) as T ??
-           throw new InvalidOperationException ($"Unable to create instance of '{type.FullName}'.") ;
+  public TxtRecordItem? this [string index] => this.BaseRecord[index];
 
-    public TxtRecordItem? this [string index] => this.BaseRecord[index] ;
+  public int Count => this.BaseRecord.Count;
 
-    public int Count => this.BaseRecord.Count ;
+  public ITxtRecord BaseRecord { get; }
 
-    public ITxtRecord BaseRecord { get ; }
+  public void Add (string key, string value) => this.BaseRecord.Add (key: key, value: value);
 
-    public void Add (string key, string value) { this.BaseRecord.Add (key, value) ; }
+  public void Add (string key, byte[] value) => this.BaseRecord.Add (key: key, value: value);
 
-    public void Add (string key, byte[] value) { this.BaseRecord.Add (key, value) ; }
+  public void Add (TxtRecordItem item) => this.BaseRecord.Add (item);
 
-    public void Add (TxtRecordItem item) { this.BaseRecord.Add (item) ; }
+  public void Remove (string key) => this.BaseRecord.Remove (key);
 
-    public void Remove (string key) { this.BaseRecord.Remove (key) ; }
+  public TxtRecordItem GetItemAt (int index) => this.BaseRecord.GetItemAt (index);
 
-    public TxtRecordItem GetItemAt (int index) => this.BaseRecord.GetItemAt (index) ;
+  public IEnumerator GetEnumerator () => this.BaseRecord.GetEnumerator ();
 
-    public IEnumerator GetEnumerator () => this.BaseRecord.GetEnumerator () ;
+  public void Dispose () => this.BaseRecord.Dispose ();
 
-    public void Dispose () { this.BaseRecord.Dispose () ; }
+  private static T CreateRequiredInstance<T> (Type type) where T : class
+    => Activator.CreateInstance (type) as T ??
+       throw new InvalidOperationException ($"Unable to create instance of '{type.FullName}'.");
 }

@@ -47,7 +47,7 @@ public class MZClient
 
         case "-r":
         case "--resolve":
-          resolve_shares = true;
+          MZClient.resolve_shares = true;
 
           break;
 
@@ -59,7 +59,7 @@ public class MZClient
 
         case "-i":
         case "--interface":
-          if (!uint.TryParse (s: args[++i], result: out @interface))
+          if (!uint.TryParse (s: args[++i], result: out MZClient.@interface))
           {
             Console.Error.WriteLine (format: "Invalid interface index, '{0}'", arg0: args[i]);
             show_help = true;
@@ -75,19 +75,19 @@ public class MZClient
           {
             case "ipv4":
             case "4":
-              address_protocol = AddressProtocol.IPv4;
+              MZClient.address_protocol = AddressProtocol.IPv4;
 
               break;
 
             case "ipv6":
             case "6":
-              address_protocol = AddressProtocol.IPv6;
+              MZClient.address_protocol = AddressProtocol.IPv6;
 
               break;
 
             case "any":
             case "all":
-              address_protocol = AddressProtocol.Any;
+              MZClient.address_protocol = AddressProtocol.Any;
 
               break;
 
@@ -102,14 +102,14 @@ public class MZClient
 
         case "-d":
         case "--domain":
-          domain = args[++i];
+          MZClient.domain = args[++i];
 
           break;
 
         case "-w":
         case "--wait":
         case "--timeout":
-          if (!int.TryParse (s: args[++i], result: out timeout_seconds) || (timeout_seconds < 0))
+          if (!int.TryParse (s: args[++i], result: out MZClient.timeout_seconds) || (MZClient.timeout_seconds < 0))
           {
             Console.Error.WriteLine (format: "Invalid timeout, '{0}'", arg0: args[i]);
             show_help = true;
@@ -125,7 +125,7 @@ public class MZClient
 
         case "-v":
         case "--verbose":
-          verbose = true;
+          MZClient.verbose = true;
 
           break;
 
@@ -139,7 +139,7 @@ public class MZClient
 
     if (show_help)
     {
-      Console.WriteLine (format: "Usage: {0} [-t type] [--resolve] [--publish \"description\"]", arg0: app_name);
+      Console.WriteLine (format: "Usage: {0} [-t type] [--resolve] [--publish \"description\"]", arg0: MZClient.app_name);
       Console.WriteLine ();
       Console.WriteLine ("    -h|--help       shows this help");
       Console.WriteLine ("    -v|--verbose    print verbose details of what's happening");
@@ -154,7 +154,7 @@ public class MZClient
       Console.WriteLine ("                    (default is to continue until interrupted)");
       Console.WriteLine ("    -p|--publish    publish a service of 'description'");
       Console.WriteLine ();
-      Console.WriteLine (format: "The -d, -i and -a options are optional. By default {0} will listen", arg0: app_name);
+      Console.WriteLine (format: "The -d, -i and -a options are optional. By default {0} will listen", arg0: MZClient.app_name);
       Console.WriteLine ("on all network interfaces ('0') on the 'local' domain, and will resolve ");
       Console.WriteLine ("all address types, IPv4 and IPv6, as available.");
       Console.WriteLine ();
@@ -180,7 +180,7 @@ public class MZClient
       }
 
       foreach (string service_description in services)
-        RegisterService (service_description);
+        MZClient.RegisterService (service_description);
     }
     else
     {
@@ -191,15 +191,15 @@ public class MZClient
         return 2;
       }
 
-      if (verbose)
+      if (MZClient.verbose)
       {
         Console.WriteLine ("Creating a ServiceBrowser with the following settings:");
         Console.WriteLine (format: "  Interface         = {0}",
-                           arg0: @interface == 0 ? "0 (All)" : @interface.ToString ());
-        Console.WriteLine (format: "  Address Protocol  = {0}", arg0: address_protocol);
-        Console.WriteLine (format: "  Domain            = {0}", arg0: domain);
+                           arg0: MZClient.@interface == 0 ? "0 (All)" : MZClient.@interface.ToString ());
+        Console.WriteLine (format: "  Address Protocol  = {0}", arg0: MZClient.address_protocol);
+        Console.WriteLine (format: "  Domain            = {0}", arg0: MZClient.domain);
         Console.WriteLine (format: "  Registration Type = {0}", arg0: type);
-        Console.WriteLine (format: "  Resolve Shares    = {0}", arg0: resolve_shares);
+        Console.WriteLine (format: "  Resolve Shares    = {0}", arg0: MZClient.resolve_shares);
         Console.WriteLine ();
       }
 
@@ -208,17 +208,17 @@ public class MZClient
 
       // Listen for events of some service type
       var browser = new ServiceBrowser ();
-      browser.ServiceAdded   += OnServiceAdded;
-      browser.ServiceRemoved += OnServiceRemoved;
-      browser.Browse (interfaceIndex: @interface,
-                      addressProtocol: address_protocol,
+      browser.ServiceAdded   += MZClient.OnServiceAdded;
+      browser.ServiceRemoved += MZClient.OnServiceRemoved;
+      browser.Browse (interfaceIndex: MZClient.@interface,
+                      addressProtocol: MZClient.address_protocol,
                       regtype: type,
-                      domain: domain);
+                      domain: MZClient.domain);
     }
 
-    if (timeout_seconds > 0)
+    if (MZClient.timeout_seconds > 0)
     {
-      Thread.Sleep (TimeSpan.FromSeconds (timeout_seconds));
+      Thread.Sleep (TimeSpan.FromSeconds (MZClient.timeout_seconds));
 
       return 0;
     }
@@ -289,7 +289,7 @@ public class MZClient
                        arg1: service.RegType,
                        arg2: service.ReplyDomain);
 
-    service.Response += OnRegisterServiceResponse;
+    service.Response += MZClient.OnRegisterServiceResponse;
     service.Register ();
   }
 
@@ -300,20 +300,18 @@ public class MZClient
                        arg1: args.Service.RegType,
                        arg2: args.Service.ReplyDomain);
 
-    if (resolve_shares)
+    if (MZClient.resolve_shares)
     {
-      args.Service.Resolved += OnServiceResolved;
+      args.Service.Resolved += MZClient.OnServiceResolved;
       args.Service.Resolve ();
     }
   }
 
   private static void OnServiceRemoved (object? o, ServiceBrowseEventArgs args)
-  {
-    Console.WriteLine (format: "*** Lost  name = '{0}', type = '{1}', domain = '{2}'",
-                       arg0: args.Service.Name,
-                       arg1: args.Service.RegType,
-                       arg2: args.Service.ReplyDomain);
-  }
+    => Console.WriteLine (format: "*** Lost  name = '{0}', type = '{1}', domain = '{2}'",
+                          arg0: args.Service.Name,
+                          arg1: args.Service.RegType,
+                          arg2: args.Service.ReplyDomain);
 
   private static void OnServiceResolved (object? o, ServiceResolvedEventArgs args)
   {

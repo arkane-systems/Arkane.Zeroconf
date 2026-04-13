@@ -1,14 +1,13 @@
 ﻿#region header
 
 // azclient - AssemblyInfo.cs
-// 
 
 #endregion
 
 #region using
 
-using System.Reflection ;
-using System.Runtime.InteropServices ;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
 #endregion
 

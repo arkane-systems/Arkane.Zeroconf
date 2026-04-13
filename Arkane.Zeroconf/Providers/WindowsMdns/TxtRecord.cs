@@ -64,7 +64,7 @@ public sealed class TxtRecord : ITxtRecord
 
   public IEnumerator GetEnumerator () => this.items.GetEnumerator ();
 
-  public void Dispose () { this.items.Clear (); }
+  public void Dispose () => this.items.Clear ();
 
   internal static TxtRecord FromEntries (IEnumerable<TxtRecordItem> entries)
   {

@@ -18,37 +18,35 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers;
 internal static class ProviderFactory
 {
   private static IZeroconfProvider[]? providers;
-  private static IZeroconfProvider?  selectedProvider;
+  private static IZeroconfProvider?   selectedProvider;
 
   private static IZeroconfProvider DefaultProvider
   {
     get
     {
-      ProviderFactory.providers ??= ProviderFactory.GetProviders ();
-      return ProviderFactory.providers[0];
+      providers ??= GetProviders ();
+
+      return providers[0];
     }
   }
 
-  public static IZeroconfProvider SelectedProvider
-  {
-    get => ProviderFactory.selectedProvider ?? ProviderFactory.DefaultProvider;
-    set => ProviderFactory.selectedProvider = value;
-  }
+  public static IZeroconfProvider SelectedProvider { get => selectedProvider ?? DefaultProvider; set => selectedProvider = value; }
 
   private static IZeroconfProvider[] GetProviders ()
   {
-    if (ProviderFactory.providers != null)
-      return ProviderFactory.providers;
+    if (providers != null)
+      return providers;
 
     var providersList = new List<IZeroconfProvider> ();
 
-    Assembly asm = Assembly.GetExecutingAssembly ();
+    var asm = Assembly.GetExecutingAssembly ();
 
     (IZeroconfProvider? Provider, int Priority)[] candidates = asm.GetCustomAttributes (false)
                                                                   .OfType<ZeroconfProviderAttribute> ()
                                                                   .OrderByDescending (attr => attr.Priority)
                                                                   .Select (attr => (Provider: Activator
-                                                                                     .CreateInstance (attr.ProviderType) as IZeroconfProvider,
+                                                                                                 .CreateInstance (attr.ProviderType)
+                                                                                                as IZeroconfProvider,
                                                                                     attr.Priority))
                                                                   .ToArray ();
 
@@ -65,10 +63,11 @@ internal static class ProviderFactory
     }
 
     if (providersList.Count == 0)
-      throw new InvalidOperationException ("No Zeroconf providers could be found or initialized. Necessary daemon may not be running.");
+      throw new
+        InvalidOperationException ("No Zeroconf providers could be found or initialized. Necessary daemon may not be running.");
 
-    ProviderFactory.providers = providersList.ToArray ();
+    providers = providersList.ToArray ();
 
-    return ProviderFactory.providers;
+    return providers;
   }
 }

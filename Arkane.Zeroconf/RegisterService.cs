@@ -18,13 +18,9 @@ public class RegisterService : IRegisterService
 {
   public RegisterService ()
     => this.registerService = CreateRequiredInstance<IRegisterService> (ProviderFactory
-                                                                         .SelectedProvider.RegisterService);
+                                                                       .SelectedProvider.RegisterService);
 
   private readonly IRegisterService registerService;
-
-  private static T CreateRequiredInstance<T> (Type type) where T : class
-    => Activator.CreateInstance (type) as T ??
-       throw new InvalidOperationException ($"Unable to create instance of '{type.FullName}'.");
 
   public string Name { get => this.registerService.Name; set => this.registerService.Name = value; }
 
@@ -38,13 +34,17 @@ public class RegisterService : IRegisterService
 
   public ushort UPort { get => this.registerService.UPort; set => this.registerService.UPort = value; }
 
-  public void Register () { this.registerService.Register (); }
+  public void Register () => this.registerService.Register ();
 
-  public void Dispose () { this.registerService.Dispose (); }
+  public void Dispose () => this.registerService.Dispose ();
 
   public event RegisterServiceEventHandler Response
   {
     add => this.registerService.Response += value;
     remove => this.registerService.Response -= value;
   }
+
+  private static T CreateRequiredInstance<T> (Type type) where T : class
+    => Activator.CreateInstance (type) as T ??
+       throw new InvalidOperationException ($"Unable to create instance of '{type.FullName}'.");
 }

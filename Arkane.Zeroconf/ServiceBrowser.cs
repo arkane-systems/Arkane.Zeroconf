@@ -23,19 +23,13 @@ public class ServiceBrowser : IServiceBrowser
 
   private readonly IServiceBrowser browser;
 
-  private static T CreateRequiredInstance<T> (Type type) where T : class
-    => Activator.CreateInstance (type) as T ??
-       throw new InvalidOperationException ($"Unable to create instance of '{type.FullName}'.");
-
-  public void Dispose () { this.browser.Dispose (); }
+  public void Dispose () => this.browser.Dispose ();
 
   public void Browse (uint interfaceIndex, AddressProtocol addressProtocol, string regtype, string domain)
-  {
-    this.browser.Browse (interfaceIndex: interfaceIndex,
-                         addressProtocol: addressProtocol,
-                         regtype: regtype,
-                         domain: domain ?? "local");
-  }
+    => this.browser.Browse (interfaceIndex: interfaceIndex,
+                            addressProtocol: addressProtocol,
+                            regtype: regtype,
+                            domain: domain ?? "local");
 
   public IEnumerator<IResolvableService> GetEnumerator () => this.browser.GetEnumerator ();
 
@@ -53,18 +47,16 @@ public class ServiceBrowser : IServiceBrowser
     remove => this.browser.ServiceRemoved -= value;
   }
 
+  private static T CreateRequiredInstance<T> (Type type) where T : class
+    => Activator.CreateInstance (type) as T ??
+       throw new InvalidOperationException ($"Unable to create instance of '{type.FullName}'.");
+
   public void Browse (uint interfaceIndex, string regtype, string domain)
-  {
-    this.Browse (interfaceIndex: interfaceIndex, addressProtocol: AddressProtocol.Any, regtype: regtype, domain: domain);
-  }
+    => this.Browse (interfaceIndex: interfaceIndex, addressProtocol: AddressProtocol.Any, regtype: regtype, domain: domain);
 
   public void Browse (AddressProtocol addressProtocol, string regtype, string domain)
-  {
-    this.Browse (interfaceIndex: 0, addressProtocol: addressProtocol, regtype: regtype, domain: domain);
-  }
+    => this.Browse (interfaceIndex: 0, addressProtocol: addressProtocol, regtype: regtype, domain: domain);
 
   public void Browse (string regtype, string domain)
-  {
-    this.Browse (interfaceIndex: 0, addressProtocol: AddressProtocol.Any, regtype: regtype, domain: domain);
-  }
+    => this.Browse (interfaceIndex: 0, addressProtocol: AddressProtocol.Any, regtype: regtype, domain: domain);
 }

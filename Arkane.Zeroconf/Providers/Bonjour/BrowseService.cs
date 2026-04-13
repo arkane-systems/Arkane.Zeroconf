@@ -7,8 +7,6 @@
 #region using
 
 using System;
-using System.Collections;
-using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -21,14 +19,12 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour;
 
 public sealed class BrowseService : Service, IResolvableService
 {
-  public BrowseService () { this.SetupCallbacks (); }
+  internal BrowseService () => this.SetupCallbacks ();
 
   public BrowseService (string name, string replyDomain, string regtype) : base (name: name,
                                                                                  replyDomain: replyDomain,
                                                                                  regtype: regtype)
-  {
-    this.SetupCallbacks ();
-  }
+    => this.SetupCallbacks ();
 
   private Native.DNSServiceQueryRecordReply? queryRecordReplyHandler;
 
@@ -41,11 +37,11 @@ public sealed class BrowseService : Service, IResolvableService
   public event ServiceResolvedEventHandler? Resolved;
 
   public void Resolve ()
-  {
-    // If people call this in a ServiceAdded event handler (which they generally do), we need to
-    // invoke onto another thread, otherwise we block processing any more results.
-    _ = Task.Run (() => this.Resolve (false));
-  }
+    =>
+
+      // If people call this in a ServiceAdded event handler (which they generally do), we need to
+      // invoke onto another thread, otherwise we block processing any more results.
+      _ = Task.Run (() => this.Resolve (false));
 
   private void SetupCallbacks ()
   {
@@ -53,7 +49,7 @@ public sealed class BrowseService : Service, IResolvableService
     this.queryRecordReplyHandler = this.OnQueryRecordReply;
   }
 
-  public void Resolve (bool requery) { this.Resolve (requery: requery, cancellationToken: CancellationToken.None); }
+  public void Resolve (bool requery) => this.Resolve (requery: requery, cancellationToken: CancellationToken.None);
 
   public void Resolve (bool requery, CancellationToken cancellationToken)
   {
@@ -72,7 +68,9 @@ public sealed class BrowseService : Service, IResolvableService
                                                    name: Encoding.UTF8.GetBytes (this.Name),
                                                    regtype: this.RegType,
                                                    domain: this.ReplyDomain,
-                                                   callBack: this.resolveReplyHandler ?? throw new InvalidOperationException ("Resolve callback is not initialized."),
+                                                   callBack: this.resolveReplyHandler ??
+                                                             throw new
+                                                               InvalidOperationException ("Resolve callback is not initialized."),
                                                    context: IntPtr.Zero);
 
     if (error != ServiceError.NoError)
@@ -91,7 +89,9 @@ public sealed class BrowseService : Service, IResolvableService
                                                        fullname: this.fullname,
                                                        rrtype: ServiceType.TXT,
                                                        rrclass: ServiceClass.IN,
-                                                       callBack: this.queryRecordReplyHandler ?? throw new InvalidOperationException ("Query callback is not initialized."),
+                                                       callBack: this.queryRecordReplyHandler ??
+                                                                 throw new
+                                                                   InvalidOperationException ("Query callback is not initialized."),
                                                        context: IntPtr.Zero);
 
     if (error != ServiceError.NoError)
@@ -125,7 +125,7 @@ public sealed class BrowseService : Service, IResolvableService
     // Run an A query to resolve the IP address
     ServiceRef sd_ref;
 
-    if ((this.AddressProtocol == AddressProtocol.Any) || (this.AddressProtocol == AddressProtocol.IPv4))
+    if (this.AddressProtocol is AddressProtocol.Any or AddressProtocol.IPv4)
     {
       ServiceError error = Native.DNSServiceQueryRecord (sdRef: out sd_ref,
                                                          flags: ServiceFlags.None,
@@ -133,7 +133,9 @@ public sealed class BrowseService : Service, IResolvableService
                                                          fullname: hosttarget,
                                                          rrtype: ServiceType.A,
                                                          rrclass: ServiceClass.IN,
-                                                         callBack: this.queryRecordReplyHandler ?? throw new InvalidOperationException ("Query callback is not initialized."),
+                                                         callBack: this.queryRecordReplyHandler ??
+                                                                   throw new
+                                                                     InvalidOperationException ("Query callback is not initialized."),
                                                          context: IntPtr.Zero);
 
       if (error != ServiceError.NoError)
@@ -142,7 +144,7 @@ public sealed class BrowseService : Service, IResolvableService
       sd_ref.Process ();
     }
 
-    if ((this.AddressProtocol == AddressProtocol.Any) || (this.AddressProtocol == AddressProtocol.IPv6))
+    if (this.AddressProtocol is AddressProtocol.Any or AddressProtocol.IPv6)
     {
       ServiceError error = Native.DNSServiceQueryRecord (sdRef: out sd_ref,
                                                          flags: ServiceFlags.None,
@@ -150,7 +152,9 @@ public sealed class BrowseService : Service, IResolvableService
                                                          fullname: hosttarget,
                                                          rrtype: ServiceType.AAAA,
                                                          rrclass: ServiceClass.IN,
-                                                         callBack: this.queryRecordReplyHandler ?? throw new InvalidOperationException ("Query callback is not initialized."),
+                                                         callBack: this.queryRecordReplyHandler ??
+                                                                   throw new
+                                                                     InvalidOperationException ("Query callback is not initialized."),
                                                          context: IntPtr.Zero);
 
       if (error != ServiceError.NoError)
@@ -202,20 +206,13 @@ public sealed class BrowseService : Service, IResolvableService
         }
         else { break; }
 
-        if (this.hostentry == null)
-          this.hostentry = new IPHostEntry { HostName = this.hosttarget ?? string.Empty };
+        this.hostentry ??= new IPHostEntry { HostName = this.hosttarget ?? string.Empty };
 
-        if (this.hostentry.AddressList != null)
-        {
-          var list = new ArrayList (this.hostentry.AddressList) { address };
-          this.hostentry.AddressList = list.Cast<IPAddress> ().ToArray ();
-        }
-        else { this.hostentry.AddressList = new[] { address }; }
+        this.hostentry.AddressList = this.hostentry.AddressList != null ? [.. this.hostentry.AddressList, address] : [address];
 
         //ServiceResolvedEventHandler handler = this.Resolved ;
         //if (handler != null)
         //    handler (this, new ServiceResolvedEventArgs (this)) ;
-
         break;
 
       case ServiceType.TXT:

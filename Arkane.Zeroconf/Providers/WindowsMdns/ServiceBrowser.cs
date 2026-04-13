@@ -108,7 +108,7 @@ public sealed class ServiceBrowser : IServiceBrowser
         if (discoveredKeys.Contains (existing))
           continue;
 
-        if (this.services.TryRemove (key: existing, value: out BrowseService? removed) && removed != null)
+        if (this.services.TryRemove (key: existing, value: out BrowseService? removed) && (removed != null))
           this.ServiceRemoved?.Invoke (o: this, args: new ServiceBrowseEventArgs (removed));
       }
 

@@ -29,11 +29,11 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
   }
 
   private readonly CancellationTokenSource cts = new ();
+  private          bool                    disposed;
 
   private Native.DNSServiceRegisterReply? registerReplyHandler;
   private ServiceRef                      sdRef;
   private Task?                           task;
-  private bool                            disposed;
 
   public bool AutoRename { get; set; } = true;
 
@@ -103,7 +103,9 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
                                                     port: (ushort)IPAddress.HostToNetworkOrder ((short)this.port),
                                                     txtLen: txtRecLength,
                                                     txtRecord: txtRec,
-                                                    callBack: this.registerReplyHandler ?? throw new InvalidOperationException ("Register callback is not initialized."),
+                                                    callBack: this.registerReplyHandler ??
+                                                              throw new
+                                                                InvalidOperationException ("Register callback is not initialized."),
                                                     context: IntPtr.Zero);
 
     if (error != ServiceError.NoError)

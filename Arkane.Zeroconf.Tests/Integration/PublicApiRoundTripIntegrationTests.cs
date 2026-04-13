@@ -32,9 +32,10 @@ public class PublicApiRoundTripIntegrationTests
     var   serviceName = $"arkane-roundtrip-{Guid.NewGuid ():N}";
     short servicePort = 28081;
 
-    using var             browser         = new ServiceBrowser ();
-    using RegisterService service         = CreateRegisterService (serviceName: serviceName, port: servicePort, txtValue: "browse");
-    using var             discoveredEvent = new ManualResetEventSlim (false);
+    using var browser = new ServiceBrowser ();
+    using RegisterService service =
+      PublicApiRoundTripIntegrationTests.CreateRegisterService (serviceName: serviceName, port: servicePort, txtValue: "browse");
+    using var discoveredEvent = new ManualResetEventSlim (false);
 
     IResolvableService? discoveredService = null;
 
@@ -47,18 +48,20 @@ public class PublicApiRoundTripIntegrationTests
                               discoveredEvent.Set ();
                             };
 
-    browser.Browse (regtype: TestRegType, domain: TestDomain);
+    browser.Browse (regtype: PublicApiRoundTripIntegrationTests.TestRegType, domain: PublicApiRoundTripIntegrationTests.TestDomain);
     Thread.Sleep (100);
 
     service.Register ();
 
-    bool discovered = discoveredEvent.Wait (TimeSpan.FromSeconds (10), TestContext.Current.CancellationToken);
+    bool discovered =
+      discoveredEvent.Wait (timeout: TimeSpan.FromSeconds (10), cancellationToken: TestContext.Current.CancellationToken);
 
     Assert.True (condition: discovered,
                  userMessage: "Expected published service to be discovered by ServiceBrowser via public API.");
     Assert.NotNull (discoveredService);
-    Assert.Equal (expected: serviceName,               actual: discoveredService.Name);
-    Assert.Equal (expected: TestRegType.TrimEnd ('.'), actual: discoveredService.RegType.TrimEnd ('.'));
+    Assert.Equal (expected: serviceName, actual: discoveredService.Name);
+    Assert.Equal (expected: PublicApiRoundTripIntegrationTests.TestRegType.TrimEnd ('.'),
+                  actual: discoveredService.RegType.TrimEnd ('.'));
   }
 
   [Fact]
@@ -71,9 +74,10 @@ public class PublicApiRoundTripIntegrationTests
     var   txtValue    = Guid.NewGuid ().ToString ("N");
     short servicePort = 28082;
 
-    using var             browser         = new ServiceBrowser ();
-    using RegisterService service         = CreateRegisterService (serviceName: serviceName, port: servicePort, txtValue: txtValue);
-    using var             discoveredEvent = new ManualResetEventSlim (false);
+    using var browser = new ServiceBrowser ();
+    using RegisterService service =
+      PublicApiRoundTripIntegrationTests.CreateRegisterService (serviceName: serviceName, port: servicePort, txtValue: txtValue);
+    using var discoveredEvent = new ManualResetEventSlim (false);
 
     IResolvableService? discoveredService = null;
 
@@ -86,18 +90,20 @@ public class PublicApiRoundTripIntegrationTests
                               discoveredEvent.Set ();
                             };
 
-    browser.Browse (regtype: TestRegType, domain: TestDomain);
+    browser.Browse (regtype: PublicApiRoundTripIntegrationTests.TestRegType, domain: PublicApiRoundTripIntegrationTests.TestDomain);
     Thread.Sleep (100);
 
     service.Register ();
 
-    bool discovered = discoveredEvent.Wait (TimeSpan.FromSeconds (10), TestContext.Current.CancellationToken);
+    bool discovered =
+      discoveredEvent.Wait (timeout: TimeSpan.FromSeconds (10), cancellationToken: TestContext.Current.CancellationToken);
 
     Assert.True (condition: discovered,
                  userMessage: "Expected published service to be discovered before resolve.");
     Assert.NotNull (discoveredService);
-    Assert.Equal (expected: serviceName,               actual: discoveredService.Name);
-    Assert.Equal (expected: TestRegType.TrimEnd ('.'), actual: discoveredService.RegType.TrimEnd ('.'));
+    Assert.Equal (expected: serviceName, actual: discoveredService.Name);
+    Assert.Equal (expected: PublicApiRoundTripIntegrationTests.TestRegType.TrimEnd ('.'),
+                  actual: discoveredService.RegType.TrimEnd ('.'));
 
     discoveredService.Resolve ();
 
@@ -117,8 +123,8 @@ public class PublicApiRoundTripIntegrationTests
     return new RegisterService
            {
              Name        = serviceName,
-             RegType     = TestRegType,
-             ReplyDomain = TestDomain,
+             RegType     = PublicApiRoundTripIntegrationTests.TestRegType,
+             ReplyDomain = PublicApiRoundTripIntegrationTests.TestDomain,
              Port        = port,
              TxtRecord   = txtRecord,
            };

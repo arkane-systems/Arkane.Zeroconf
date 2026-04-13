@@ -55,7 +55,7 @@ public sealed class BrowseService : IResolvableService
 
   public event ServiceResolvedEventHandler? Resolved;
 
-  public void Resolve () { this.ResolveAsync ().ConfigureAwait (false).GetAwaiter ().GetResult (); }
+  public void Resolve () => this.ResolveAsync ().ConfigureAwait (false).GetAwaiter ().GetResult ();
 
   public async Task ResolveAsync (CancellationToken cancellationToken = default)
   {
