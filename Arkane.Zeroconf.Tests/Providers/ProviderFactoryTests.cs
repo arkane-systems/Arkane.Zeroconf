@@ -6,30 +6,34 @@
 
 #region using
 
+using System;
+
+using ArkaneSystems.Arkane.Zeroconf.Providers;
+
 using Xunit;
 
 #endregion
 
 namespace ArkaneSystems.Arkane.Zeroconf.Tests.Providers;
 
-/// <summary>
-///   Note: ProviderFactory is internal to the Arkane.Zeroconf library.
-///   These tests verify provider behavior through the public facade classes instead.
-///   This test class is currently commented out as ProviderFactory is not publicly accessible.
-/// </summary>
 public class ProviderFactoryTests
 {
-  [Fact (Skip = "ProviderFactory is internal API")]
+  [Fact]
   public void SelectedProvider_DefaultsToAvailableProvider ()
   {
-    // ProviderFactory testing would be done through public APIs
-    // like ServiceBrowser, RegisterService, and TxtRecord
+    IZeroconfProvider provider = ProviderFactory.SelectedProvider;
+
+    Assert.NotNull (provider);
+    Assert.True (condition: provider.IsAvailable ());
   }
 
-  [Fact (Skip = "ProviderFactory is internal API")]
+  [Fact]
   public void SelectedProvider_HasValidServiceBrowserType ()
   {
-    // Provider validation happens implicitly when using public facades
+    IZeroconfProvider provider = ProviderFactory.SelectedProvider;
+
+    Assert.NotNull (provider.ServiceBrowser);
+    Assert.True (condition: typeof (IServiceBrowser).IsAssignableFrom (provider.ServiceBrowser));
   }
 
   [Fact]

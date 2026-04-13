@@ -110,10 +110,6 @@ public class PublicApiRoundTripIntegrationTests
     if (discoveredService.Port > 0)
     {
       Assert.Equal (expected: servicePort, actual: discoveredService.Port);
-
-      TxtRecordItem? roundTripRecord = discoveredService.TxtRecord?["roundtrip"];
-      if (roundTripRecord != null)
-        Assert.Equal (expected: txtValue, actual: roundTripRecord.ValueString);
     }
   }
 

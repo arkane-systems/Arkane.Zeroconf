@@ -8,6 +8,8 @@
     <IsTestProject>true</IsTestProject>
     <AssemblyName>$(MSBuildProjectName)</AssemblyName>
     <RootNamespace>ArkaneSystems.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\Arkane.Zeroconf\zeroconf.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
