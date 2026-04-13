@@ -10,7 +10,6 @@
 using System ;
 using System.Collections ;
 using System.Collections.Generic ;
-using System.Diagnostics ;
 using System.Runtime.InteropServices ;
 using System.Threading ;
 using System.Threading.Tasks ;
@@ -32,7 +31,8 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
 
     private readonly Native.DNSServiceBrowseReply            browseReplyHandler ;
     private readonly Dictionary <string, IResolvableService> serviceTable = new() ;
-    private readonly SemaphoreSlim serviceTableSemaphore = new(1, 1) ;
+    private readonly SemaphoreSlim                           serviceTableSemaphore = new(1, 1) ;
+    private readonly CancellationTokenSource                 stopTokenSource = new() ;
 
     private AddressProtocol address_protocol ;
     private string          domain ;
@@ -42,6 +42,7 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
     private ServiceRef sdRef = ServiceRef.Zero ;
 
     private Task task ;
+    private bool disposed ;
 
     public event ServiceBrowseEventHandler ServiceAdded ;
 
@@ -49,11 +50,23 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
 
     public void Browse (uint interfaceIndex, AddressProtocol addressProtocol, string regtype, string domain)
     {
+        if (this.disposed)
+            throw new ObjectDisposedException (objectName: nameof (ServiceBrowser)) ;
+
         this.Configure (interfaceIndex, addressProtocol, regtype, domain) ;
         this.StartAsync () ;
     }
 
-    public void Dispose () { this.Stop () ; }
+    public void Dispose ()
+    {
+        if (this.disposed)
+            return ;
+
+        this.Stop () ;
+        this.stopTokenSource.Dispose () ;
+        this.serviceTableSemaphore.Dispose () ;
+        this.disposed = true ;
+    }
 
     public IEnumerator <IResolvableService> GetEnumerator ()
     {
@@ -84,29 +97,23 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
 
     private void Start (bool async)
     {
-        if (this.task != null)
+        if ((this.task != null) && !this.task.IsCompleted)
             throw new InvalidOperationException ("ServiceBrowser is already started") ;
 
+        if (this.disposed)
+            throw new ObjectDisposedException (objectName: nameof (ServiceBrowser)) ;
+
         if (async)
-            this.task = Task.Run (() => this.ProcessStart ())
-                            .ContinueWith (_ =>
-                                           {
-                                               this.task = null ;
-                                               if (_.IsFaulted)
-                                               {
-                                                   Debug.Assert (_.Exception != null, "_.Exception != null") ;
-                                                   throw _.Exception ;
-                                               }
-                                           }) ;
+            this.task = Task.Run (() => this.ProcessStart (this.stopTokenSource.Token), this.stopTokenSource.Token) ;
         else
-            this.ProcessStart () ;
+            this.ProcessStart (this.stopTokenSource.Token) ;
     }
 
     public void Start () { this.Start (false) ; }
 
     public void StartAsync () { this.Start (true) ; }
 
-    private void ProcessStart ()
+    private void ProcessStart (CancellationToken cancellationToken)
     {
         var error = Native.DNSServiceBrowse (out this.sdRef,
                                              ServiceFlags.None,
@@ -119,18 +126,38 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
         if (error != ServiceError.NoError)
             throw new ServiceErrorException (error) ;
 
-        this.sdRef.Process () ;
+        try
+        {
+            this.sdRef.Process (cancellationToken) ;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
     }
 
     public void Stop ()
     {
+        this.stopTokenSource.Cancel () ;
+
         if (this.sdRef != ServiceRef.Zero)
         {
             this.sdRef.Deallocate () ;
             this.sdRef = ServiceRef.Zero ;
         }
 
-        this.task?.Wait () ;
+        if (this.task != null)
+        {
+            try
+            {
+                this.task.Wait (TimeSpan.FromSeconds (2)) ;
+            }
+            catch (AggregateException ex) when ((ex.InnerException is OperationCanceledException) ||
+                                                (ex.InnerException is ServiceErrorException))
+            {
+            }
+
+            this.task = null ;
+        }
     }
 
     private void OnBrowseReply (ServiceRef   sdRef,

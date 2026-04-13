@@ -38,7 +38,7 @@ public class ServiceBrowser : IServiceBrowser
     public event ServiceBrowseEventHandler ServiceAdded
     {
         add => this.browser.ServiceAdded += value ;
-        remove => this.browser.ServiceRemoved -= value ;
+        remove => this.browser.ServiceAdded -= value ;
     }
 
     public event ServiceBrowseEventHandler ServiceRemoved

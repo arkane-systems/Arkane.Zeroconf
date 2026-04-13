@@ -9,6 +9,8 @@
 using System;
 using System.Runtime.InteropServices;
 
+using ArkaneSystems.Arkane.Zeroconf;
+
 using Xunit;
 
 #endregion
@@ -32,55 +34,58 @@ public class PlatformSpecificTests
     Assert.True (condition: isWindows || isMacOS || isLinux, userMessage: "Should be running on a supported platform");
   }
 
-  [Fact (Skip = "Requires platform-specific native libraries")]
+  [Fact]
   public void NativeInitialization_Succeeds ()
   {
-    // This test is skipped by default as it requires Bonjour/Avahi installation
-    // To run: install Bonjour (Windows/macOS) or Avahi (Linux) and remove Skip attribute
-
-    // Act
     try
     {
-      var browser = new ServiceBrowser ();
-      browser.Dispose ();
+      using var browser = new ServiceBrowser ();
     }
-    catch (Exception ex)
+    catch (InvalidOperationException ex)
     {
-      // If daemon not available, exception is expected
-      Assert.True (ex is not null);
+      Assert.True (condition: false,
+                   userMessage: $"Native zeroconf initialization failed. Ensure platform dependency is installed and running (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
+    }
+    catch (DllNotFoundException ex)
+    {
+      Assert.True (condition: false,
+                   userMessage: $"Native zeroconf library was not found. Install platform dependency (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
+    }
+    catch (EntryPointNotFoundException ex)
+    {
+      Assert.True (condition: false,
+                   userMessage: $"Native zeroconf entry point was not found. Verify a compatible platform dependency installation (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
     }
   }
 
-  [Fact (Skip = "Platform-specific behavior verification")]
+  [Fact]
   public void WindowsBonjour_IsAvailable ()
   {
-    // This test is skipped on non-Windows platforms
     if (!OperatingSystem.IsWindows ())
       return;
 
-    // Test would verify Windows Bonjour service is installed
-    // Implementation depends on Windows service enumeration
+    Assert.True (condition: ZeroconfSupport.CanBrowse,
+                 userMessage: "Windows zeroconf browsing is unavailable. Ensure Bonjour is installed and running.");
   }
 
-  [Fact (Skip = "Platform-specific behavior verification")]
+  [Fact]
   public void MacOSMDNS_IsAvailable ()
   {
-    // This test is skipped on non-macOS platforms
     if (!OperatingSystem.IsMacOS ())
       return;
 
-    // macOS has mDNS built-in, so this should generally succeed
+    Assert.True (condition: ZeroconfSupport.CanBrowse,
+                 userMessage: "macOS zeroconf browsing is unavailable. Ensure mDNSResponder is running.");
   }
 
-  [Fact (Skip = "Platform-specific behavior verification")]
+  [Fact]
   public void LinuxAvahi_IsAvailable ()
   {
-    // This test is skipped on non-Linux platforms
     if (!OperatingSystem.IsLinux ())
       return;
 
-    // Test would verify Avahi daemon is installed and running
-    // Could check for dbus availability or avahi-daemon process
+    Assert.True (condition: ZeroconfSupport.CanBrowse,
+                 userMessage: "Linux zeroconf browsing is unavailable. Ensure Avahi is installed and running.");
   }
 
   [Theory]
@@ -94,13 +99,15 @@ public class PlatformSpecificTests
     bool actualIsMacOS   = OperatingSystem.IsMacOS ();
     bool actualIsLinux   = OperatingSystem.IsLinux ();
 
-    // Only verify the platform we're expecting
-    if (actualIsWindows)
-      Assert.True (condition: isWin, userMessage: $"Expected {expectedName} but running on a different platform");
-    else if (actualIsMacOS)
-      Assert.True (condition: isMac, userMessage: $"Expected {expectedName} but running on a different platform");
-    else if (actualIsLinux)
-      Assert.True (condition: isLinux, userMessage: $"Expected {expectedName} but running on a different platform");
+    bool rowMatchesCurrentPlatform = (actualIsWindows && isWin) ||
+                                     (actualIsMacOS   && isMac) ||
+                                     (actualIsLinux   && isLinux);
+
+    if (!rowMatchesCurrentPlatform)
+      return;
+
+    Assert.Equal (expected: expectedName,
+                  actual: actualIsWindows ? "Windows" : actualIsMacOS ? "macOS" : "Linux");
   }
 
   [Fact]

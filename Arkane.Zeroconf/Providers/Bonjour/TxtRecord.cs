@@ -96,7 +96,7 @@ public class TxtRecord : ITxtRecord
 
         var error = Native.TXTRecordRemoveValue (this.handle, TxtRecord.Encoding.GetBytes (key)) ;
 
-        if (error != ServiceError.NoError)
+        if ((error != ServiceError.NoError) && (error != ServiceError.NoSuchKey))
             throw new ServiceErrorException (error) ;
     }
 

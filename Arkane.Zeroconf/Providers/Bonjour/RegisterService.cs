@@ -33,6 +33,7 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
   private Native.DNSServiceRegisterReply registerReplyHandler;
   private ServiceRef                     sdRef;
   private Task                           task;
+  private bool                           disposed;
 
   public bool AutoRename { get; set; } = true;
 
@@ -42,10 +43,20 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
 
   public void Dispose ()
   {
-    this.cts?.Cancel ();
+    if (this.disposed)
+      return;
+
+    this.disposed = true;
+
+    this.cts.Cancel ();
+
+    if (this.sdRef != ServiceRef.Zero)
+    {
+      this.sdRef.Deallocate ();
+      this.sdRef = ServiceRef.Zero;
+    }
 
     this.cts.Dispose ();
-    this.sdRef.Deallocate ();
   }
 
   private void SetupCallback () { this.registerReplyHandler = this.OnRegisterReply; }
@@ -54,6 +65,9 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
   {
     if (this.task != null)
       throw new InvalidOperationException ("RegisterService registration already in process");
+
+    if (this.disposed)
+      throw new ObjectDisposedException (objectName: nameof (RegisterService));
 
     if (async)
       this.task = Task.Run (() => this.ProcessRegister ())
