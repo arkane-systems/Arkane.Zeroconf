@@ -15,7 +15,7 @@ using System.Runtime.InteropServices;
 
 namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour;
 
-public static class Native
+internal static class Native
 {
   #region Nested type: DNSServiceBrowseReply
 

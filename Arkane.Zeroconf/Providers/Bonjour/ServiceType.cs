@@ -4,10 +4,20 @@
 
 #endregion
 
+/// <summary>
+/// Bonjour DNS record type constants used by the provider interop layer.
+/// </summary>
+/// <remarks>
+/// These values mirror the native Bonjour DNS-SD constants used when resolving and querying records.
+/// The enum intentionally retains the broader set of native record types for consistency and completeness,
+/// even though only a subset is currently used by the provider implementation.
+/// The enum is kept provider-internal because it supports Bonjour interop implementation details,
+/// not the public Arkane.Zeroconf API surface.
+/// </remarks>
 // ReSharper disable InconsistentNaming
 namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour;
 
-public enum ServiceType : ushort
+internal enum ServiceType : ushort
 {
   A        = 1,   /* Host address. */
   NS       = 2,   /* Authoritative server. */

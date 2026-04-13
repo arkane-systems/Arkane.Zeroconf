@@ -9,8 +9,17 @@ Basically, this is my forked version of Mono.Zeroconf for my .NET projects, whic
 
 ## Provider behavior by platform
 
+Arkane.Zeroconf uses a simple provider selection model:
+
+- **Bonjour provider** is preferred whenever it is available.
+- On **Windows 11+**, if Bonjour is not available, Arkane.Zeroconf falls back to the **WindowsMdns** provider.
+- This is a fallback mechanism, not a general-purpose configurable provider priority system.
+
+Provider behavior:
+
 - **Bonjour provider** (preferred): lookup and publish support.
 - **Windows fallback provider** (`WindowsMdns`): used when Bonjour is unavailable on Windows 11+, and provides **lookup-only** behavior using Windows DNS-SD APIs (`DnsServiceBrowse`/`DnsServiceResolve`).
+- **Linux**: Bonjour provider operates through Avahi compatibility mode when available.
 
 ## Capability checks
 
@@ -32,7 +41,9 @@ For full lookup-and-publish behavior on Windows, install Bonjour:
 
     winget install Apple.Bonjour
 
+When Bonjour is installed, it remains the preferred provider on Windows.
 When Bonjour is not installed but the OS supports Windows DNS-SD lookup (Windows 11+), browsing and resolving continue to work through the fallback provider.
+If neither provider is available, Zeroconf initialization will fail because no compatible provider can be selected.
 
 As per the original readme:
 

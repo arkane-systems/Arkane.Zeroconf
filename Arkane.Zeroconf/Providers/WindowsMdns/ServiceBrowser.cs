@@ -20,6 +20,11 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns;
 
 public sealed class ServiceBrowser : IServiceBrowser
 {
+  private static readonly TimeSpan DefaultPollingInterval = TimeSpan.FromSeconds (5);
+
+  private static readonly object pollingIntervalLock = new ();
+  private static          TimeSpan pollingInterval     = DefaultPollingInterval;
+
   private readonly ConcurrentDictionary<string, BrowseService> services = new (StringComparer.OrdinalIgnoreCase);
   private          AddressProtocol                             addressProtocol;
 
@@ -29,6 +34,42 @@ public sealed class ServiceBrowser : IServiceBrowser
   private uint   interfaceIndex;
   private Task?  pollingTask;
   private string regtype = string.Empty;
+
+  /// <summary>
+  /// Gets or sets the interval between Windows mDNS polling cycles.
+  /// Default is 5 seconds.
+  /// </summary>
+  /// <remarks>
+  /// <para>
+  /// This property is thread-safe and can be configured before using the Windows mDNS service browser
+  /// to tune discovery responsiveness and polling frequency.
+  /// </para>
+  /// <para>
+  /// Changes to this property take effect on the next polling delay cycle. If a delay is already in progress
+  /// when the interval is changed, the current delay will complete with the previously read interval value.
+  /// </para>
+  /// <para>
+  /// Example:
+  /// <code>
+  /// ServiceBrowser.PollingInterval = TimeSpan.FromSeconds(2);
+  /// var browser = new ServiceBrowser();
+  /// browser.Browse(0, AddressProtocol.Any, "_http._tcp", "local");
+  /// </code>
+  /// </para>
+  /// </remarks>
+  public static TimeSpan PollingInterval
+  {
+    get
+    {
+      lock (pollingIntervalLock)
+        return pollingInterval;
+    }
+    set
+    {
+      lock (pollingIntervalLock)
+        pollingInterval = value;
+    }
+  }
 
   public event ServiceBrowseEventHandler? ServiceAdded;
 
@@ -129,7 +170,11 @@ public sealed class ServiceBrowser : IServiceBrowser
           this.ServiceRemoved?.Invoke (o: this, args: new ServiceBrowseEventArgs (removed));
       }
 
-      await Task.Delay (delay: TimeSpan.FromSeconds (5), cancellationToken: cancellationToken).ConfigureAwait (false);
+      TimeSpan delay;
+      lock (pollingIntervalLock)
+        delay = pollingInterval;
+
+      await Task.Delay (delay: delay, cancellationToken: cancellationToken).ConfigureAwait (false);
     }
   }
 }

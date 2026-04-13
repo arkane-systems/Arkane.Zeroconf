@@ -14,7 +14,7 @@ The library uses a **plugin architecture** with dynamic provider selection:
 - `ProviderFactory` discovers and instantiates providers via `ZeroconfProviderAttribute`
 - Providers implement `IZeroconfProvider` and expose three types: `ServiceBrowser`, `RegisterService`, `TxtRecord`
 - Providers now expose capabilities and availability checks (`Capabilities`, `IsAvailable()`)
-- Provider selection uses priority and availability probing
+- Provider selection treats the Windows fallback system as a simple mechanism rather than a general configurable provider-priority system; do not add configurable priorities unless explicitly requested.
 
 **Current provider behavior:**
 - **Bonjour provider**: preferred when available; supports browse + publish
@@ -80,6 +80,10 @@ using System;
 - Use `ArgumentException.ThrowIfNullOrWhiteSpace(param)` for required strings
 - Use `string.IsNullOrWhiteSpace(param)` for checks
 - For nullability migrations, prioritize contract correctness even if nullable metadata changes require consumers to update code, as long as underlying API behavior/contracts do not change.
+
+### Interop Constants
+- For Bonjour interop enums like `ServiceType` and `ServiceClass`, document them as interop constants.
+- Keep unused `ServiceType` members for consistency/completeness; if they are not part of the intended public API, prefer making them internal.
 
 ## Testing & Build
 

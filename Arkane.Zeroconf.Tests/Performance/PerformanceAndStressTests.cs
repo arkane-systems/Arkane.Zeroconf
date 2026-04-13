@@ -22,8 +22,87 @@ namespace ArkaneSystems.Arkane.Zeroconf.Tests.Performance;
 ///   Performance and stress tests for the Arkane.Zeroconf library.
 ///   These tests verify library behavior under load and stress conditions.
 /// </summary>
+[Collection ("WindowsMdns polling interval")]
 public class PerformanceAndStressTests
 {
+  [Fact]
+  public async Task WindowsMdnsServiceBrowser_Concurrent_StartAndDispose_DoesNotHang ()
+  {
+    // Arrange
+    const int concurrentTasks = 8;
+    var       tasks           = new List<Task> ();
+    TimeSpan  original        = ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns.ServiceBrowser.PollingInterval;
+
+    ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns.ServiceBrowser.PollingInterval = TimeSpan.FromMilliseconds (50);
+
+    try
+    {
+      // Act
+      for (var i = 0; i < concurrentTasks; i++)
+      {
+        tasks.Add (Task.Run (action: () =>
+                                     {
+                                       using var browser = new ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns.ServiceBrowser ();
+                                       browser.Browse (interfaceIndex: 0,
+                                                       addressProtocol: AddressProtocol.Any,
+                                                       regtype: "_workstation._tcp",
+                                                       domain: "local");
+                                       Thread.Sleep (75);
+                                     },
+                             cancellationToken: TestContext.Current.CancellationToken));
+      }
+
+      await Task.WhenAll (tasks);
+
+      // Assert
+      Assert.Equal (expected: concurrentTasks, actual: tasks.Count);
+    }
+    finally
+    {
+      ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns.ServiceBrowser.PollingInterval = original;
+    }
+  }
+
+  [Fact]
+  public async Task WindowsMdnsServiceBrowser_Concurrent_EnumerationDuringPolling_Completes ()
+  {
+    // Arrange
+    TimeSpan original = ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns.ServiceBrowser.PollingInterval;
+    ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns.ServiceBrowser.PollingInterval = TimeSpan.FromMilliseconds (50);
+
+    using var browser = new ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns.ServiceBrowser ();
+
+    try
+    {
+      browser.Browse (interfaceIndex: 0,
+                      addressProtocol: AddressProtocol.Any,
+                      regtype: "_workstation._tcp",
+                      domain: "local");
+
+      // Act
+      Task enumerationTask = Task.Run (action: () =>
+                                               {
+                                                 for (var i = 0; i < 10; i++)
+                                                 {
+                                                   foreach (IResolvableService? service in browser)
+                                                     _ = service?.Name;
+
+                                                   Thread.Sleep (10);
+                                                 }
+                                               },
+                                       cancellationToken: TestContext.Current.CancellationToken);
+
+      await enumerationTask.WaitAsync (timeout: TimeSpan.FromSeconds (3), cancellationToken: TestContext.Current.CancellationToken);
+
+      // Assert
+      Assert.True (condition: enumerationTask.IsCompletedSuccessfully);
+    }
+    finally
+    {
+      ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns.ServiceBrowser.PollingInterval = original;
+    }
+  }
+
   [Fact]
   public void TxtRecord_AddManyItems_Completes ()
   {

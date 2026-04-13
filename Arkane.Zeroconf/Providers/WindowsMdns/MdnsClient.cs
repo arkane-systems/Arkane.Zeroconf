@@ -564,15 +564,27 @@ internal static class MdnsClient
     if (string.IsNullOrWhiteSpace (fullName))
       return string.Empty;
 
-    string normalizedRegType = NormalizeName (regtype).TrimEnd ('.');
-    var    marker            = $".{normalizedRegType}.";
-    int    markerIndex       = fullName.IndexOf (value: marker, comparisonType: StringComparison.OrdinalIgnoreCase);
+    string             normalizedRegType = NormalizeName (regtype);
+    ReadOnlySpan<char> fullNameSpan      = fullName.AsSpan ();
+    ReadOnlySpan<char> regTypeSpan       = normalizedRegType.AsSpan ();
+    int                searchIndex       = 0;
 
-    if (markerIndex > 0)
-      return fullName[..markerIndex];
+    while (searchIndex < fullNameSpan.Length)
+    {
+      int relativeIndex = fullNameSpan[searchIndex..].IndexOf (value: regTypeSpan, comparisonType: StringComparison.OrdinalIgnoreCase);
 
-    string[] labels = fullName.Split (separator: '.', options: StringSplitOptions.RemoveEmptyEntries);
+      if (relativeIndex < 0)
+        break;
 
-    return labels.Length > 0 ? labels[0] : fullName;
+      int regTypeIndex = searchIndex + relativeIndex;
+
+      if ((regTypeIndex > 0) && (fullNameSpan[regTypeIndex - 1] == '.'))
+        return fullName[..(regTypeIndex - 1)];
+
+      searchIndex = regTypeIndex + regTypeSpan.Length;
+    }
+
+    int firstDotIndex = fullName.IndexOf ('.');
+    return firstDotIndex > 0 ? fullName[..firstDotIndex] : fullName.TrimEnd ('.');
   }
 }

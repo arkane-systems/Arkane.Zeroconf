@@ -82,6 +82,82 @@ public class AzClientE2ETests
        };
 
   [Fact]
+  public async Task AzClient_InvalidTimeout_Shows_Error ()
+  {
+    // Act
+    var (exitCode, output, error) = await this.RunAzClientAsync ("--timeout -1");
+
+    // Assert
+    Assert.NotEqual (expected: 0, actual: exitCode);
+    Assert.Contains (expectedSubstring: "invalid timeout", actualString: (output + error).ToLowerInvariant ());
+  }
+
+  [Fact]
+  public async Task AzClient_InvalidAddressProtocol_Shows_Error ()
+  {
+    // Act
+    var (exitCode, output, error) = await this.RunAzClientAsync ("--timeout 1 -a invalid");
+
+    // Assert
+    Assert.NotEqual (expected: 0, actual: exitCode);
+    Assert.Contains (expectedSubstring: "invalid ip address protocol", actualString: (output + error).ToLowerInvariant ());
+  }
+
+  [Fact]
+  public async Task AzClient_ResolveFlag_ResolvesPublishedService ()
+  {
+    var regType     = "_arkanee2er._tcp";
+    var serviceName = $"azclient-resolve-{Guid.NewGuid ():N}";
+
+    using RegisterService service =
+      AzClientE2ETests.CreatePublishedService (regType: regType, serviceName: serviceName, port: 28104);
+    service.Register ();
+    await Task.Delay (millisecondsDelay: 250, cancellationToken: TestContext.Current.CancellationToken);
+
+    // Act
+    var (exitCode, output, error) = await this.RunAzClientAsync ($"--timeout 3 --resolve -t {regType}");
+
+    // Assert
+    Assert.Equal (expected: 0, actual: exitCode);
+    Assert.Contains (expectedSubstring: serviceName, actualString: output + error);
+    Assert.Contains (expectedSubstring: "resolved name", actualString: (output + error).ToLowerInvariant ());
+  }
+
+  [Fact]
+  public async Task AzClient_Publish_RegistersService ()
+  {
+    var regType     = "_arkanepublish._tcp";
+    var serviceName = $"azclient-publish-{Guid.NewGuid ():N}";
+
+    // Act
+    var (exitCode, output, error) = await this.RunAzClientAsync ($"--timeout 1 --publish \"{regType} 28105 {serviceName}\"");
+
+    // Assert
+    if (ZeroconfSupport.CanPublish)
+    {
+      Assert.Equal (expected: 0, actual: exitCode);
+      Assert.Contains (expectedSubstring: "registering name", actualString: (output + error).ToLowerInvariant ());
+      Assert.Contains (expectedSubstring: serviceName, actualString: output + error);
+    }
+    else
+    {
+      Assert.Equal (expected: 2, actual: exitCode);
+      Assert.Contains (expectedSubstring: "publishing is not supported", actualString: (output + error).ToLowerInvariant ());
+    }
+  }
+
+  [Fact]
+  public async Task AzClient_Publish_WithInvalidDescription_Fails ()
+  {
+    // Act
+    var (exitCode, output, error) = await this.RunAzClientAsync ("--timeout 1 --publish \"invalid\"");
+
+    // Assert
+    Assert.NotEqual (expected: 0, actual: exitCode);
+    Assert.Contains (expectedSubstring: "invalid service description syntax", actualString: (output + error).ToLowerInvariant ());
+  }
+
+  [Fact]
   public async Task AzClient_HelpFlag_Shows_Usage ()
   {
     // Act
@@ -120,10 +196,13 @@ public class AzClientE2ETests
     using RegisterService service =
       AzClientE2ETests.CreatePublishedService (regType: regType, serviceName: serviceName, port: 28102);
     service.Register ();
-    await Task.Delay (millisecondsDelay: 250, cancellationToken: TestContext.Current.CancellationToken);
+    await Task.Delay (millisecondsDelay: 500, cancellationToken: TestContext.Current.CancellationToken);
 
     // Act
     var (exitCode, output, error) = await this.RunAzClientAsync ($"--timeout 3 -t {regType}");
+
+    if (!(output + error).Contains (value: serviceName, comparisonType: StringComparison.Ordinal))
+      (exitCode, output, error) = await this.RunAzClientAsync ($"--timeout 3 -t {regType}");
 
     // Assert
     Assert.Equal (expected: 0, actual: exitCode);

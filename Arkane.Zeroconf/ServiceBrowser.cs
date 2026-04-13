@@ -63,7 +63,7 @@ public class ServiceBrowser : IServiceBrowser
 
   private static T CreateRequiredInstance<T> (Type type) where T : class
     => Activator.CreateInstance (type) as T ??
-       throw new ZeroconfException ($"Unable to create instance of '{type.FullName}'. Ensure a Zeroconf provider (Bonjour, Avahi, or Windows mDNS) is installed and properly configured.");
+       throw new ZeroconfException ("Unable to create the requested Zeroconf service. Ensure a compatible Zeroconf provider is installed and properly configured.");
 
   public void Browse (uint interfaceIndex, string regtype, string domain)
     => this.Browse (interfaceIndex: interfaceIndex, addressProtocol: AddressProtocol.Any, regtype: regtype, domain: domain);

@@ -57,6 +57,18 @@ public static class Zeroconf
   }
 }
 
+/// <summary>
+/// Preferred Zeroconf provider backed by Bonjour-compatible DNS-SD APIs.
+/// </summary>
+/// <remarks>
+/// <para>
+/// This provider is preferred whenever it is available and supports both browsing and publishing.
+/// On Windows, if Bonjour is unavailable, Arkane.Zeroconf may fall back to the <c>WindowsMdns</c> provider for lookup-only behavior.
+/// </para>
+/// <para>
+/// This provider remains the primary implementation across supported platforms, including Avahi-compatible environments on Linux.
+/// </para>
+/// </remarks>
 public class ZeroconfProvider : IZeroconfProvider
 {
   public Type ServiceBrowser => typeof (ServiceBrowser);
@@ -67,6 +79,10 @@ public class ZeroconfProvider : IZeroconfProvider
 
   public ZeroconfCapability Capabilities => ZeroconfCapability.Browse | ZeroconfCapability.Publish;
 
+  /// <summary>
+  /// Determines whether the Bonjour provider can be initialized on the current system.
+  /// </summary>
+  /// <returns><see langword="true"/> when Bonjour-compatible APIs are available; otherwise, <see langword="false"/>.</returns>
   public bool IsAvailable ()
   {
     try
@@ -80,5 +96,8 @@ public class ZeroconfProvider : IZeroconfProvider
     catch (EntryPointNotFoundException) { return false; }
   }
 
+  /// <summary>
+  /// Initializes the Bonjour provider.
+  /// </summary>
   public void Initialize () { Zeroconf.Initialize (); }
 }
