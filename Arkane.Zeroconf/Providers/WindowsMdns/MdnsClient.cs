@@ -136,9 +136,18 @@ internal static class MdnsClient
   /// <para>
   /// This property is thread-safe and can be configured before using the Zeroconf provider
   /// to accommodate slow networks or high-latency environments.
-  /// For example:
+  /// </para>
+  /// <para>
+  /// Changes to this property take effect on the next browse operation. If a browse operation
+  /// is already in progress when the timeout is changed, the current operation will complete
+  /// with the previously read timeout value.
+  /// </para>
+  /// <para>
+  /// Example:
   /// <code>
   /// MdnsClient.BrowseTimeout = TimeSpan.FromSeconds(10);
+  /// var browser = new ServiceBrowser();
+  /// browser.Browse(0, AddressProtocol.Any, "_http._tcp", "local");
   /// </code>
   /// </para>
   /// </remarks>
@@ -164,7 +173,14 @@ internal static class MdnsClient
   /// <para>
   /// This property is thread-safe and can be configured before using the Zeroconf provider
   /// to accommodate slow networks or high-latency environments.
-  /// For example:
+  /// </para>
+  /// <para>
+  /// Changes to this property take effect on the next resolve operation. If a resolve operation
+  /// is already in progress when the timeout is changed, the current operation will complete
+  /// with the previously read timeout value.
+  /// </para>
+  /// <para>
+  /// Example:
   /// <code>
   /// MdnsClient.ResolveTimeout = TimeSpan.FromSeconds(10);
   /// </code>

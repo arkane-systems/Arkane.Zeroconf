@@ -25,7 +25,7 @@ public class RegisterService : IRegisterService
   /// The underlying provider instance is created via reflection using <see cref="Activator.CreateInstance"/>.
   /// </para>
   /// </remarks>
-  /// <exception cref="InvalidOperationException">
+  /// <exception cref="ZeroconfException">
   /// Thrown when the Zeroconf provider's <see cref="IRegisterService"/> type cannot be instantiated.
   /// This typically indicates that no suitable Zeroconf provider (Bonjour, Avahi, or Windows mDNS) is available on the current system.
   /// Ensure that at least one supported mDNS/Bonjour implementation is installed and properly configured.
@@ -60,5 +60,5 @@ public class RegisterService : IRegisterService
 
   private static T CreateRequiredInstance<T> (Type type) where T : class
     => Activator.CreateInstance (type) as T ??
-       throw new InvalidOperationException ($"Unable to create instance of '{type.FullName}'.");
+       throw new ZeroconfException ($"Unable to create instance of '{type.FullName}'. Ensure a Zeroconf provider (Bonjour, Avahi, or Windows mDNS) is installed and properly configured.");
 }

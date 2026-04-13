@@ -18,13 +18,13 @@ namespace ArkaneSystems.Arkane.Zeroconf.Client;
 
 public class MZClient
 {
-  private static          bool            resolve_shares;
-  private static          uint            @interface;
-  private static          AddressProtocol address_protocol = AddressProtocol.Any;
+  private static          bool            resolveShares;
+  private static          uint            interfaceIndex;
+  private static          AddressProtocol addressProtocol = AddressProtocol.Any;
   private static          string          domain           = "local";
-  private static readonly string          app_name         = "azclient";
+  private static readonly string          appName          = "azclient";
   private static          bool            verbose;
-  private static          int             timeout_seconds;
+  private static          int             timeoutSeconds;
 
   public static int Main (string[] args)
   {
@@ -47,7 +47,7 @@ public class MZClient
 
         case "-r":
         case "--resolve":
-          MZClient.resolve_shares = true;
+          MZClient.resolveShares = true;
 
           break;
 
@@ -59,7 +59,7 @@ public class MZClient
 
         case "-i":
         case "--interface":
-          if (!uint.TryParse (s: args[++i], result: out MZClient.@interface))
+          if (!uint.TryParse (s: args[++i], result: out MZClient.interfaceIndex))
           {
             Console.Error.WriteLine (format: "Invalid interface index, '{0}'", arg0: args[i]);
             show_help = true;
@@ -75,19 +75,19 @@ public class MZClient
           {
             case "ipv4":
             case "4":
-              MZClient.address_protocol = AddressProtocol.IPv4;
+              MZClient.addressProtocol = AddressProtocol.IPv4;
 
               break;
 
             case "ipv6":
             case "6":
-              MZClient.address_protocol = AddressProtocol.IPv6;
+              MZClient.addressProtocol = AddressProtocol.IPv6;
 
               break;
 
             case "any":
             case "all":
-              MZClient.address_protocol = AddressProtocol.Any;
+              MZClient.addressProtocol = AddressProtocol.Any;
 
               break;
 
@@ -109,7 +109,7 @@ public class MZClient
         case "-w":
         case "--wait":
         case "--timeout":
-          if (!int.TryParse (s: args[++i], result: out MZClient.timeout_seconds) || (MZClient.timeout_seconds < 0))
+          if (!int.TryParse (s: args[++i], result: out MZClient.timeoutSeconds) || (MZClient.timeoutSeconds < 0))
           {
             Console.Error.WriteLine (format: "Invalid timeout, '{0}'", arg0: args[i]);
             show_help = true;
@@ -139,7 +139,7 @@ public class MZClient
 
     if (show_help)
     {
-      Console.WriteLine (format: "Usage: {0} [-t type] [--resolve] [--publish \"description\"]", arg0: MZClient.app_name);
+      Console.WriteLine (format: "Usage: {0} [-t type] [--resolve] [--publish \"description\"]", arg0: MZClient.appName);
       Console.WriteLine ();
       Console.WriteLine ("    -h|--help       shows this help");
       Console.WriteLine ("    -v|--verbose    print verbose details of what's happening");
@@ -154,7 +154,7 @@ public class MZClient
       Console.WriteLine ("                    (default is to continue until interrupted)");
       Console.WriteLine ("    -p|--publish    publish a service of 'description'");
       Console.WriteLine ();
-      Console.WriteLine (format: "The -d, -i and -a options are optional. By default {0} will listen", arg0: MZClient.app_name);
+      Console.WriteLine (format: "The -d, -i and -a options are optional. By default {0} will listen", arg0: MZClient.appName);
       Console.WriteLine ("on all network interfaces ('0') on the 'local' domain, and will resolve ");
       Console.WriteLine ("all address types, IPv4 and IPv6, as available.");
       Console.WriteLine ();
@@ -179,8 +179,8 @@ public class MZClient
         return 2;
       }
 
-      foreach (string service_description in services)
-        MZClient.RegisterService (service_description);
+      foreach (string serviceDescription in services)
+        MZClient.RegisterService (serviceDescription);
     }
     else
     {
@@ -195,11 +195,11 @@ public class MZClient
       {
         Console.WriteLine ("Creating a ServiceBrowser with the following settings:");
         Console.WriteLine (format: "  Interface         = {0}",
-                           arg0: MZClient.@interface == 0 ? "0 (All)" : MZClient.@interface.ToString ());
-        Console.WriteLine (format: "  Address Protocol  = {0}", arg0: MZClient.address_protocol);
+                           arg0: MZClient.interfaceIndex == 0 ? "0 (All)" : MZClient.interfaceIndex.ToString ());
+        Console.WriteLine (format: "  Address Protocol  = {0}", arg0: MZClient.addressProtocol);
         Console.WriteLine (format: "  Domain            = {0}", arg0: MZClient.domain);
         Console.WriteLine (format: "  Registration Type = {0}", arg0: type);
-        Console.WriteLine (format: "  Resolve Shares    = {0}", arg0: MZClient.resolve_shares);
+        Console.WriteLine (format: "  Resolve Shares    = {0}", arg0: MZClient.resolveShares);
         Console.WriteLine ();
       }
 
@@ -210,15 +210,15 @@ public class MZClient
       var browser = new ServiceBrowser ();
       browser.ServiceAdded   += MZClient.OnServiceAdded;
       browser.ServiceRemoved += MZClient.OnServiceRemoved;
-      browser.Browse (interfaceIndex: MZClient.@interface,
-                      addressProtocol: MZClient.address_protocol,
+      browser.Browse (interfaceIndex: MZClient.interfaceIndex,
+                      addressProtocol: MZClient.addressProtocol,
                       regtype: type,
                       domain: MZClient.domain);
     }
 
-    if (MZClient.timeout_seconds > 0)
+    if (MZClient.timeoutSeconds > 0)
     {
-      Thread.Sleep (TimeSpan.FromSeconds (MZClient.timeout_seconds));
+      Thread.Sleep (TimeSpan.FromSeconds (MZClient.timeoutSeconds));
 
       return 0;
     }
@@ -300,7 +300,7 @@ public class MZClient
                        arg1: args.Service.RegType,
                        arg2: args.Service.ReplyDomain);
 
-    if (MZClient.resolve_shares)
+    if (MZClient.resolveShares)
     {
       args.Service.Resolved += MZClient.OnServiceResolved;
       args.Service.Resolve ();

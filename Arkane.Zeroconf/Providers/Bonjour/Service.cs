@@ -23,42 +23,42 @@ public abstract class Service : IService
     this.RegType     = regtype;
   }
 
-  protected AddressProtocol address_protocol;
+  protected AddressProtocol addressProtocol;
   protected ServiceFlags    flags    = ServiceFlags.None;
-  protected string          fullname = string.Empty;
-  protected IPHostEntry?    hostentry;
-  protected string?         hosttarget;
-  protected uint            interface_index;
+  protected string          fullName = string.Empty;
+  protected IPHostEntry?    hostEntry;
+  protected string?         hostTarget;
+  protected uint            interfaceIndex;
   protected string          name = string.Empty;
   protected ushort          port;
-  protected string          regtype      = string.Empty;
-  protected string          reply_domain = string.Empty;
+  protected string          regType      = string.Empty;
+  protected string          replyDomain = string.Empty;
 
-  protected ITxtRecord? txt_record;
+  protected ITxtRecord? txtRecord;
 
   public ServiceFlags Flags { get => this.flags; internal set => this.flags = value; }
 
-  public uint InterfaceIndex { get => this.interface_index; set => this.interface_index = value; }
+  public uint InterfaceIndex { get => this.interfaceIndex; set => this.interfaceIndex = value; }
 
-  public AddressProtocol AddressProtocol { get => this.address_protocol; set => this.address_protocol = value; }
+  public AddressProtocol AddressProtocol { get => this.addressProtocol; set => this.addressProtocol = value; }
 
   public string Name { get => this.name; set => this.name = value ?? string.Empty; }
 
-  public string ReplyDomain { get => this.reply_domain; set => this.reply_domain = value ?? string.Empty; }
+  public string ReplyDomain { get => this.replyDomain; set => this.replyDomain = value ?? string.Empty; }
 
-  public string RegType { get => this.regtype; set => this.regtype = value ?? string.Empty; }
+  public string RegType { get => this.regType; set => this.regType = value ?? string.Empty; }
 
   // Resolved Properties
 
-  public ITxtRecord? TxtRecord { get => this.txt_record; set => this.txt_record = value; }
+  public ITxtRecord? TxtRecord { get => this.txtRecord; set => this.txtRecord = value; }
 
-  public string FullName { get => this.fullname; internal set => this.fullname = value ?? string.Empty; }
+  public string FullName { get => this.fullName; internal set => this.fullName = value ?? string.Empty; }
 
-  public string? HostTarget => this.hosttarget;
+  public string? HostTarget => this.hostTarget;
 
-  public IPHostEntry? HostEntry => this.hostentry;
+  public IPHostEntry? HostEntry => this.hostEntry;
 
-  public uint NetworkInterface => this.interface_index;
+  public uint NetworkInterface => this.interfaceIndex;
 
   public short Port { get => (short)this.UPort; set => this.UPort = (ushort)value; }
 

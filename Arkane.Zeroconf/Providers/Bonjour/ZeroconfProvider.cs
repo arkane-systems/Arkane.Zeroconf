@@ -7,6 +7,7 @@
 #region using
 
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 using ArkaneSystems.Arkane.Zeroconf.Providers;
@@ -23,6 +24,15 @@ public static class Zeroconf
   [DllImport ("c")]
   private static extern void setenv (string key, string value);
 
+  /// <summary>
+  /// Initializes the Bonjour/mDNS provider.
+  /// </summary>
+  /// <remarks>
+  /// On Linux, this method configures Avahi compatibility mode and returns early, as Avahi does not support
+  /// DNSServiceCreateConnection. This is a platform-specific limitation of the Avahi mDNS implementation.
+  /// On macOS and Windows (when Bonjour is installed), creates a shared DNS-SD connection to validate availability.
+  /// </remarks>
+  /// <exception cref="ServiceErrorException">Thrown when DNSServiceCreateConnection fails (non-Linux platforms).</exception>
   public static void Initialize ()
   {
     if (OperatingSystem.IsLinux ())
@@ -34,6 +44,7 @@ public static class Zeroconf
 
       // DNSServiceCreateConnection is not supported on Linux
       // See https://github.com/lathiat/avahi/blob/55d783d9d11ced838d73a2757273c5f6958ccd5c/avahi-compat-libdns_sd/unsupported.c#L62-L66
+      Debug.WriteLine ("Bonjour initialization on Linux: skipping DNSServiceCreateConnection (Avahi limitation)");
       return;
     }
 

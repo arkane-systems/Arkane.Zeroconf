@@ -86,7 +86,7 @@ public sealed class BrowseService : Service, IResolvableService
     ServiceError error = Native.DNSServiceQueryRecord (sdRef: out ServiceRef sdRef,
                                                        flags: ServiceFlags.None,
                                                        interfaceIndex: 0,
-                                                       fullname: this.fullname,
+                                                       fullname: this.fullName,
                                                        rrtype: ServiceType.TXT,
                                                        rrclass: ServiceClass.IN,
                                                        callBack: this.queryRecordReplyHandler ??
@@ -118,7 +118,7 @@ public sealed class BrowseService : Service, IResolvableService
     this.FullName       = Marshal.PtrToStringUTF8 (fullname) ?? string.Empty;
     this.port           = (ushort)IPAddress.NetworkToHostOrder ((short)port);
     this.TxtRecord      = new TxtRecord (length: txtLen, buffer: txtRecord);
-    this.hosttarget     = hosttarget;
+    this.hostTarget     = hosttarget;
 
     sdRef.Deallocate ();
 
@@ -163,7 +163,7 @@ public sealed class BrowseService : Service, IResolvableService
       sd_ref.Process ();
     }
 
-    if (this.hostentry?.AddressList != null)
+    if (this.hostEntry?.AddressList != null)
     {
       ServiceResolvedEventHandler? handler = this.Resolved;
       handler?.Invoke (o: this, args: new ServiceResolvedEventArgs (this));
@@ -206,9 +206,9 @@ public sealed class BrowseService : Service, IResolvableService
         }
         else { break; }
 
-        this.hostentry ??= new IPHostEntry { HostName = this.hosttarget ?? string.Empty };
+        this.hostEntry ??= new IPHostEntry { HostName = this.hostTarget ?? string.Empty };
 
-        this.hostentry.AddressList = this.hostentry.AddressList != null ? [.. this.hostentry.AddressList, address] : [address];
+        this.hostEntry.AddressList = this.hostEntry.AddressList != null ? [.. this.hostEntry.AddressList, address] : [address];
 
         //ServiceResolvedEventHandler handler = this.Resolved ;
         //if (handler != null)
