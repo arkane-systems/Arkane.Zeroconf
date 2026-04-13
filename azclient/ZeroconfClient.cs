@@ -24,6 +24,7 @@ public class MZClient
   private static          string          domain           = "local";
   private static readonly string          app_name         = "azclient";
   private static          bool            verbose;
+  private static          int             timeout_seconds;
 
   public static int Main (string[] args)
   {
@@ -33,7 +34,7 @@ public class MZClient
 
     for (var i = 0; i < args.Length; i++)
     {
-      if (args[i][0] != '-')
+      if (string.IsNullOrWhiteSpace (args[i]) || (args[i][0] != '-'))
         continue;
 
       switch (args[i])
@@ -105,6 +106,17 @@ public class MZClient
 
           break;
 
+        case "-w":
+        case "--wait":
+        case "--timeout":
+          if (!int.TryParse (s: args[++i], result: out MZClient.timeout_seconds) || (MZClient.timeout_seconds < 0))
+          {
+            Console.Error.WriteLine (format: "Invalid timeout, '{0}'", arg0: args[i]);
+            show_help = true;
+          }
+
+          break;
+
         case "-h":
         case "--help":
           show_help = true;
@@ -114,6 +126,12 @@ public class MZClient
         case "-v":
         case "--verbose":
           MZClient.verbose = true;
+
+          break;
+
+        default:
+          Console.Error.WriteLine (format: "Unknown option, '{0}'", arg0: args[i]);
+          show_help = true;
 
           break;
       }
@@ -132,6 +150,8 @@ public class MZClient
       Console.WriteLine ("    -i|--interface  which network interface index to listen");
       Console.WriteLine ("                    on (default is '0', meaning 'all')");
       Console.WriteLine ("    -a|--aprotocol  which address protocol to use (Any, IPv4, IPv6)");
+      Console.WriteLine ("    -w|--wait       how many seconds to run before exiting");
+      Console.WriteLine ("                    (default is to continue until interrupted)");
       Console.WriteLine ("    -p|--publish    publish a service of 'description'");
       Console.WriteLine ();
       Console.WriteLine (format: "The -d, -i and -a options are optional. By default {0} will listen", arg0: MZClient.app_name);
@@ -194,6 +214,12 @@ public class MZClient
                       addressProtocol: MZClient.address_protocol,
                       regtype: type,
                       domain: MZClient.domain);
+    }
+
+    if (MZClient.timeout_seconds > 0)
+    {
+      Thread.Sleep (TimeSpan.FromSeconds (MZClient.timeout_seconds));
+      return 0;
     }
 
     while (true)

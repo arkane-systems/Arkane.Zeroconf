@@ -24,6 +24,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Arkane.Zeroconf\Arkane.Zeroconf.csproj" />
+    <ProjectReference Include="..\azclient\azclient.csproj"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

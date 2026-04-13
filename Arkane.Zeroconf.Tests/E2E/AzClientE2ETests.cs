@@ -12,6 +12,8 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
+using ArkaneSystems.Arkane.Zeroconf;
+
 using Xunit;
 
 #endregion
@@ -24,13 +26,15 @@ namespace ArkaneSystems.Arkane.Zeroconf.Tests.E2E;
 /// </summary>
 public class AzClientE2ETests
 {
+  private const string TestDomain = "local";
+
   private string GetAzClientPath ()
   {
     string exeName  = RuntimeInformation.IsOSPlatform (OSPlatform.Windows) ? "azclient.exe" : "azclient";
     string basePath = Path.Combine (AppContext.BaseDirectory, "..", "..", "..", "..", "azclient", "bin", "Debug", "net10.0");
-    string fullPath = Path.Combine (path1: basePath,          path2: exeName);
+    string fullPath = Path.Combine (path1: basePath, path2: exeName);
 
-    return fullPath;
+    return Path.GetFullPath (fullPath);
   }
 
   private async Task<(int ExitCode, string Output, string Error)> RunAzClientAsync (string arguments)
@@ -38,9 +42,7 @@ public class AzClientE2ETests
     string azclientPath = this.GetAzClientPath ();
 
     if (!File.Exists (azclientPath))
-
-      // Build azclient if it doesn't exist
-      return (-1, "", $"azclient not found at {azclientPath}");
+      return (-1, string.Empty, $"azclient not found at {azclientPath}");
 
     var psi = new ProcessStartInfo
               {
@@ -49,69 +51,90 @@ public class AzClientE2ETests
                 UseShellExecute        = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError  = true,
-                CreateNoWindow         = true
+                CreateNoWindow         = true,
               };
 
-    try
+    using Process? process = Process.Start (psi);
+
+    if (process == null)
+      return (-1, string.Empty, "Failed to start process");
+
+    Task<string> outputTask = process.StandardOutput.ReadToEndAsync ();
+    Task<string> errorTask  = process.StandardError.ReadToEndAsync ();
+
+    bool completed = process.WaitForExit (TimeSpan.FromSeconds (10));
+
+    if (!completed)
     {
-      using Process? process = Process.Start (psi);
-
-      if (process == null)
-        return (-1, "", "Failed to start process");
-
-      Task<string> outputTask = process.StandardOutput.ReadToEndAsync ();
-      Task<string> errorTask  = process.StandardError.ReadToEndAsync ();
-
-      bool completed = process.WaitForExit (TimeSpan.FromSeconds (5));
-
-      if (!completed)
-      {
-        process.Kill ();
-
-        return (-1, "", "Process timeout");
-      }
-
-      string output = await outputTask;
-      string error  = await errorTask;
-
-      return (process.ExitCode, output, error);
+      process.Kill (entireProcessTree: true);
+      return (-1, string.Empty, "Process timeout");
     }
-    catch (Exception ex) { return (-1, "", ex.Message); }
+
+    string output = await outputTask;
+    string error  = await errorTask;
+
+    return (process.ExitCode, output, error);
   }
 
-  [Fact (Skip = "Requires built azclient")]
+  private static RegisterService CreatePublishedService (string regType, string serviceName, short port)
+  {
+    return new RegisterService
+           {
+             Name        = serviceName,
+             RegType     = regType,
+             ReplyDomain = TestDomain,
+             Port        = port,
+           };
+  }
+
+  [Fact]
   public async Task AzClient_HelpFlag_Shows_Usage ()
   {
     // Act
     var (exitCode, output, error) = await this.RunAzClientAsync ("--help");
 
     // Assert
-    Assert.True (condition: (exitCode == 0) || !string.IsNullOrEmpty (output), userMessage: "Help should succeed or show output");
-    Assert.Contains (expectedSubstring: "type", actualString: output.ToLower () + error.ToLower ());
+    Assert.NotEqual (expected: -1, actual: exitCode);
+    Assert.Contains (expectedSubstring: "usage", actualString: (output + error).ToLowerInvariant ());
+    Assert.Contains (expectedSubstring: "type", actualString: (output + error).ToLowerInvariant ());
   }
 
-  [Fact (Skip = "Requires built azclient and mDNS daemon")]
+  [Fact]
   public async Task AzClient_Browse_WithDefaultType_FindsServices ()
   {
+    string serviceName = $"azclient-default-{Guid.NewGuid ():N}";
+
+    using var service = CreatePublishedService (regType: "_workstation._tcp", serviceName: serviceName, port: 28101);
+    service.Register ();
+    await Task.Delay (250);
+
     // Act
-    var (exitCode, output, error) = await this.RunAzClientAsync ("");
+    var (exitCode, output, error) = await this.RunAzClientAsync ("--timeout 3");
 
     // Assert
-    // Exit code 0 or services found is acceptable
-    Assert.True (condition: (exitCode == 0) || output.Contains ("_workstation._tcp"), userMessage: "Browse should complete");
+    Assert.Equal (expected: 0, actual: exitCode);
+    Assert.Contains (expectedSubstring: serviceName, actualString: output + error);
   }
 
-  [Fact (Skip = "Requires built azclient and mDNS daemon")]
+  [Fact]
   public async Task AzClient_Browse_WithCustomType_Works ()
   {
+    string regType     = "_arkanee2e._tcp";
+    string serviceName = $"azclient-custom-{Guid.NewGuid ():N}";
+
+    using var service = CreatePublishedService (regType: regType, serviceName: serviceName, port: 28102);
+    service.Register ();
+    await Task.Delay (250);
+
     // Act
-    var (exitCode, output, error) = await this.RunAzClientAsync ("-t _http._tcp");
+    var (exitCode, output, error) = await this.RunAzClientAsync ($"--timeout 3 -t {regType}");
 
     // Assert
-    Assert.NotNull (output);
+    Assert.Equal (expected: 0, actual: exitCode);
+    Assert.Contains (expectedSubstring: serviceName, actualString: output + error);
   }
 
-  [Fact (Skip = "Requires built azclient")]
+  [Fact]
   public async Task AzClient_InvalidArgument_Shows_Error ()
   {
     // Act
@@ -119,38 +142,47 @@ public class AzClientE2ETests
 
     // Assert
     Assert.NotEqual (expected: 0, actual: exitCode);
-    Assert.True (condition: !string.IsNullOrEmpty (output) || !string.IsNullOrEmpty (error),
-                 userMessage: "Should show help or error");
+    Assert.Contains (expectedSubstring: "unknown option", actualString: (output + error).ToLowerInvariant ());
   }
 
-  [Fact (Skip = "Requires built azclient and mDNS daemon")]
+  [Fact]
   public async Task AzClient_WithVerboseFlag_ProducesOutput ()
   {
+    string regType     = "_arkanee2ev._tcp";
+    string serviceName = $"azclient-verbose-{Guid.NewGuid ():N}";
+
+    using var service = CreatePublishedService (regType: regType, serviceName: serviceName, port: 28103);
+    service.Register ();
+    await Task.Delay (250);
+
     // Act
-    var (exitCode, output, error) = await this.RunAzClientAsync ("-v -t _workstation._tcp");
+    var (exitCode, output, error) = await this.RunAzClientAsync ($"--timeout 3 -v -t {regType}");
 
     // Assert
-    // Should produce some output with verbose flag
-    Assert.True (condition: !string.IsNullOrEmpty (output) || (exitCode == 0), userMessage: "Verbose should produce output");
+    Assert.Equal (expected: 0, actual: exitCode);
+    Assert.Contains (expectedSubstring: "creating a servicebrowser", actualString: (output + error).ToLowerInvariant ());
+    Assert.Contains (expectedSubstring: serviceName, actualString: output + error);
   }
 
-  [Fact (Skip = "Requires built azclient")]
+  [Fact]
   public async Task AzClient_WithIPv4Protocol_Works ()
   {
     // Act
-    var (exitCode, output, error) = await this.RunAzClientAsync ("-a ipv4 -t _workstation._tcp");
+    var (exitCode, output, error) = await this.RunAzClientAsync ("--timeout 2 -v -a ipv4 -t _workstation._tcp");
 
     // Assert
-    Assert.NotNull (output);
+    Assert.Equal (expected: 0, actual: exitCode);
+    Assert.Contains (expectedSubstring: "ipv4", actualString: (output + error).ToLowerInvariant ());
   }
 
-  [Fact (Skip = "Requires built azclient")]
+  [Fact]
   public async Task AzClient_WithIPv6Protocol_Works ()
   {
     // Act
-    var (exitCode, output, error) = await this.RunAzClientAsync ("-a ipv6 -t _workstation._tcp");
+    var (exitCode, output, error) = await this.RunAzClientAsync ("--timeout 2 -v -a ipv6 -t _workstation._tcp");
 
     // Assert
-    Assert.NotNull (output);
+    Assert.Equal (expected: 0, actual: exitCode);
+    Assert.Contains (expectedSubstring: "ipv6", actualString: (output + error).ToLowerInvariant ());
   }
 }
