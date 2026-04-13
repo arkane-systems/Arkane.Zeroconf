@@ -17,16 +17,14 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers;
 
 internal static class ProviderFactory
 {
-  private static IZeroconfProvider[]? providers;
+  private static readonly Lazy<IZeroconfProvider[]> providers = new(GetProviders);
   private static IZeroconfProvider?   selectedProvider;
 
   private static IZeroconfProvider DefaultProvider
   {
     get
     {
-      providers ??= GetProviders ();
-
-      return providers[0];
+      return providers.Value[0];
     }
   }
 
@@ -34,9 +32,6 @@ internal static class ProviderFactory
 
   private static IZeroconfProvider[] GetProviders ()
   {
-    if (providers != null)
-      return providers;
-
     var providersList = new List<IZeroconfProvider> ();
 
     var asm = Assembly.GetExecutingAssembly ();
@@ -66,8 +61,6 @@ internal static class ProviderFactory
       throw new
         InvalidOperationException ("No Zeroconf providers could be found or initialized. Necessary daemon may not be running.");
 
-    providers = providersList.ToArray ();
-
-    return providers;
+    return providersList.ToArray ();
   }
 }

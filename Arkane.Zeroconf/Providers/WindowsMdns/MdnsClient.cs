@@ -365,20 +365,36 @@ internal static class MdnsClient
 
     if (instance.Ip4Address != IntPtr.Zero)
     {
-      var    ipv4Raw = (uint)Marshal.ReadInt32 (instance.Ip4Address);
-      byte[] bytes   = BitConverter.GetBytes (ipv4Raw);
+      try
+      {
+        var    ipv4Raw = (uint)Marshal.ReadInt32 (instance.Ip4Address);
+        byte[] bytes   = BitConverter.GetBytes (ipv4Raw);
 
-      if (BitConverter.IsLittleEndian)
-        Array.Reverse (bytes);
+        if (BitConverter.IsLittleEndian)
+          Array.Reverse (bytes);
 
-      addresses.Add (new IPAddress (bytes));
+        addresses.Add (new IPAddress (bytes));
+      }
+      catch (Exception ex)
+      {
+        // Log warning but continue - invalid IPv4 record, skip it
+        System.Diagnostics.Debug.WriteLine ($"Failed to parse IPv4 address: {ex.Message}");
+      }
     }
 
     if (instance.Ip6Address != IntPtr.Zero)
     {
-      var bytes = new byte[16];
-      Marshal.Copy (source: instance.Ip6Address, destination: bytes, startIndex: 0, length: bytes.Length);
-      addresses.Add (new IPAddress (bytes));
+      try
+      {
+        var bytes = new byte[16];
+        Marshal.Copy (source: instance.Ip6Address, destination: bytes, startIndex: 0, length: bytes.Length);
+        addresses.Add (new IPAddress (bytes));
+      }
+      catch (Exception ex)
+      {
+        // Log warning but continue - invalid IPv6 record, skip it
+        System.Diagnostics.Debug.WriteLine ($"Failed to parse IPv6 address: {ex.Message}");
+      }
     }
 
     var txtItems = new List<TxtRecordItem> ();
@@ -386,16 +402,24 @@ internal static class MdnsClient
     if ((instance.PropertyCount > 0) && (instance.Keys != IntPtr.Zero) && (instance.Values != IntPtr.Zero))
       for (var i = 0; i < instance.PropertyCount; i++)
       {
-        IntPtr keyPtr   = Marshal.ReadIntPtr (ptr: instance.Keys,   ofs: i * IntPtr.Size);
-        IntPtr valuePtr = Marshal.ReadIntPtr (ptr: instance.Values, ofs: i * IntPtr.Size);
+        try
+        {
+          IntPtr keyPtr   = Marshal.ReadIntPtr (ptr: instance.Keys,   ofs: i * IntPtr.Size);
+          IntPtr valuePtr = Marshal.ReadIntPtr (ptr: instance.Values, ofs: i * IntPtr.Size);
 
-        string? key   = Marshal.PtrToStringUni (keyPtr);
-        string? value = Marshal.PtrToStringUni (valuePtr);
+          string? key   = Marshal.PtrToStringUni (keyPtr);
+          string? value = Marshal.PtrToStringUni (valuePtr);
 
-        if (string.IsNullOrWhiteSpace (key))
-          continue;
+          if (string.IsNullOrWhiteSpace (key))
+            continue;
 
-        txtItems.Add (new TxtRecordItem (key: key, valueString: value ?? string.Empty));
+          txtItems.Add (new TxtRecordItem (key: key, valueString: value ?? string.Empty));
+        }
+        catch (Exception ex)
+        {
+          // Log warning but continue - invalid TXT record, skip it
+          System.Diagnostics.Debug.WriteLine ($"Failed to parse TXT record at index {i}: {ex.Message}");
+        }
       }
 
     return new ResolvedInstance

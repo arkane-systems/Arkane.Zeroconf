@@ -56,7 +56,11 @@ public sealed class ServiceBrowser : IServiceBrowser
     this.cts?.Cancel ();
 
     try { this.pollingTask?.Wait (); }
-    catch (AggregateException) { }
+    catch (OperationCanceledException) { }
+    catch (AggregateException ex) when (ex.InnerException is OperationCanceledException)
+    {
+      // Expected when polling is cancelled
+    }
 
     this.cts?.Dispose ();
     this.services.Clear ();
@@ -89,9 +93,7 @@ public sealed class ServiceBrowser : IServiceBrowser
 
       foreach (MdnsClient.MdnsServiceInfo discoveredService in discovered)
       {
-        if (this.services.ContainsKey (discoveredService.FullName))
-          continue;
-
+        // Use TryAdd directly to avoid non-atomic check-then-act pattern
         var service = new BrowseService (name: discoveredService.Name,
                                          fullName: discoveredService.FullName,
                                          regType: discoveredService.RegType,
@@ -103,7 +105,8 @@ public sealed class ServiceBrowser : IServiceBrowser
           this.ServiceAdded?.Invoke (o: this, args: new ServiceBrowseEventArgs (service));
       }
 
-      foreach (string existing in this.services.Keys)
+      // Snapshot keys before iteration to prevent InvalidOperationException from concurrent modification
+      foreach (string existing in this.services.Keys.ToList ())
       {
         if (discoveredKeys.Contains (existing))
           continue;
