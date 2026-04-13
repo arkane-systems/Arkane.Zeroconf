@@ -19,7 +19,7 @@ public sealed class TxtRecord : ITxtRecord
 {
   private readonly List<TxtRecordItem> items = new ();
 
-  public TxtRecordItem this [string key]
+  public TxtRecordItem? this [string key]
     => this.items.FirstOrDefault (item => string.Equals (a: item.Key, b: key, comparisonType: StringComparison.OrdinalIgnoreCase));
 
   public int Count => this.items.Count;
@@ -52,7 +52,7 @@ public sealed class TxtRecord : ITxtRecord
   {
     ArgumentNullException.ThrowIfNull (key);
 
-    TxtRecordItem item =
+    TxtRecordItem? item =
       this.items.FirstOrDefault (current => string.Equals (a: current.Key,
                                                            b: key,
                                                            comparisonType: StringComparison.OrdinalIgnoreCase));

@@ -36,7 +36,7 @@ public class TxtRecord : ITxtRecord
     private readonly ushort length ;
     private          IntPtr handle = IntPtr.Zero ;
 
-    public TxtRecordItem this [string key]
+    public TxtRecordItem? this [string key]
     {
         get
         {

@@ -17,16 +17,14 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers;
 
 internal static class ProviderFactory
 {
-  private static IZeroconfProvider[] providers;
-  private static IZeroconfProvider   selectedProvider;
+  private static IZeroconfProvider[]? providers;
+  private static IZeroconfProvider?  selectedProvider;
 
   private static IZeroconfProvider DefaultProvider
   {
     get
     {
-      if (ProviderFactory.providers == null)
-        ProviderFactory.GetProviders ();
-
+      ProviderFactory.providers ??= ProviderFactory.GetProviders ();
       return ProviderFactory.providers[0];
     }
   }
@@ -44,18 +42,21 @@ internal static class ProviderFactory
 
     var providersList = new List<IZeroconfProvider> ();
 
-    var asm = Assembly.GetExecutingAssembly ();
+    Assembly asm = Assembly.GetExecutingAssembly ();
 
-    (IZeroconfProvider Provider, int Priority)[] candidates = asm.GetCustomAttributes (false)
-                                                                 .OfType<ZeroconfProviderAttribute> ()
-                                                                 .OrderByDescending (attr => attr.Priority)
-                                                                 .Select (attr => (Provider: (IZeroconfProvider)Activator
-                                                                                    .CreateInstance (attr.ProviderType),
-                                                                                   attr.Priority))
-                                                                 .ToArray ();
+    (IZeroconfProvider? Provider, int Priority)[] candidates = asm.GetCustomAttributes (false)
+                                                                  .OfType<ZeroconfProviderAttribute> ()
+                                                                  .OrderByDescending (attr => attr.Priority)
+                                                                  .Select (attr => (Provider: Activator
+                                                                                     .CreateInstance (attr.ProviderType) as IZeroconfProvider,
+                                                                                    attr.Priority))
+                                                                  .ToArray ();
 
-    foreach ((IZeroconfProvider Provider, int Priority) candidate in candidates)
+    foreach ((IZeroconfProvider? Provider, int Priority) candidate in candidates)
     {
+      if (candidate.Provider == null)
+        continue;
+
       if (!candidate.Provider.IsAvailable ())
         continue;
 
@@ -64,8 +65,7 @@ internal static class ProviderFactory
     }
 
     if (providersList.Count == 0)
-      throw new
-        InvalidOperationException ("No Zeroconf providers could be found or initialized. Necessary daemon may not be running.");
+      throw new InvalidOperationException ("No Zeroconf providers could be found or initialized. Necessary daemon may not be running.");
 
     ProviderFactory.providers = providersList.ToArray ();
 

@@ -24,7 +24,13 @@ public class RegisterServiceEventArgs : EventArgs
         this.ServiceError = error ;
     }
 
-    public IRegisterService Service { get ; set ; }
+    private IRegisterService? service ;
+
+    public IRegisterService Service
+    {
+        get => this.service ?? throw new InvalidOperationException ("Service was not assigned.") ;
+        set => this.service = value ?? throw new ArgumentNullException (nameof (value)) ;
+    }
 
     public bool IsRegistered { get ; set ; }
 

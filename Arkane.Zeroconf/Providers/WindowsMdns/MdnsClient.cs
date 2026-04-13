@@ -36,11 +36,11 @@ internal static class MdnsClient
 
   private sealed class DnsRecord
   {
-    public string Name { get; init; }
+    public string Name { get; init; } = string.Empty;
 
     public DnsRecordType Type { get; init; }
 
-    public string PtrTarget { get; set; }
+    public string PtrTarget { get; set; } = string.Empty;
   }
 
   #endregion
@@ -60,19 +60,20 @@ internal static class MdnsClient
   {
     public static readonly MdnsResolveResult Empty = new ()
                                                      {
+                                                       HostName   = string.Empty,
                                                        Addresses  = Array.Empty<IPAddress> (),
                                                        TxtEntries = Array.Empty<TxtRecordItem> ()
                                                      };
 
-    public string HostName { get; init; }
+    public string HostName { get; init; } = string.Empty;
 
     public ushort Port { get; init; }
 
-    public IPAddress[] Addresses { get; init; }
+    public IPAddress[] Addresses { get; init; } = Array.Empty<IPAddress> ();
 
-    public TxtRecordItem[] TxtEntries { get; init; }
+    public TxtRecordItem[] TxtEntries { get; init; } = Array.Empty<TxtRecordItem> ();
 
-    public bool IsResolved => this.Addresses?.Length > 0;
+    public bool IsResolved => this.Addresses.Length > 0;
   }
 
   #endregion
@@ -81,13 +82,13 @@ internal static class MdnsClient
 
   internal sealed class MdnsServiceInfo
   {
-    public string Name { get; init; }
+    public string Name { get; init; } = string.Empty;
 
-    public string FullName { get; init; }
+    public string FullName { get; init; } = string.Empty;
 
-    public string RegType { get; init; }
+    public string RegType { get; init; } = string.Empty;
 
-    public string ReplyDomain { get; init; }
+    public string ReplyDomain { get; init; } = string.Empty;
 
     public uint InterfaceIndex { get; init; }
   }
@@ -344,9 +345,9 @@ internal static class MdnsClient
 
         records.Add (new DnsRecord
                      {
-                       Name      = Marshal.PtrToStringUni (header.pName),
+                       Name      = Marshal.PtrToStringUni (header.pName) ?? string.Empty,
                        Type      = DnsRecordType.Ptr,
-                       PtrTarget = Marshal.PtrToStringUni (Marshal.ReadIntPtr (dataPtr)),
+                       PtrTarget = Marshal.PtrToStringUni (Marshal.ReadIntPtr (dataPtr)) ?? string.Empty,
                      });
       }
 
@@ -388,8 +389,8 @@ internal static class MdnsClient
         IntPtr keyPtr   = Marshal.ReadIntPtr (ptr: instance.Keys,   ofs: i * IntPtr.Size);
         IntPtr valuePtr = Marshal.ReadIntPtr (ptr: instance.Values, ofs: i * IntPtr.Size);
 
-        string key   = Marshal.PtrToStringUni (keyPtr);
-        string value = Marshal.PtrToStringUni (valuePtr);
+        string? key   = Marshal.PtrToStringUni (keyPtr);
+        string? value = Marshal.PtrToStringUni (valuePtr);
 
         if (string.IsNullOrWhiteSpace (key))
           continue;

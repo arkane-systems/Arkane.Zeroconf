@@ -15,5 +15,5 @@ public interface IService
 
     string ReplyDomain { get ; }
 
-    ITxtRecord TxtRecord { get ; set ; }
+    ITxtRecord? TxtRecord { get ; set ; }
 }

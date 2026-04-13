@@ -229,6 +229,8 @@ public class TxtRecordTests : IDisposable
 
     // Assert
     Assert.Equal (expected: 1,   actual: this.txtRecord.Count);
-    Assert.Equal (expected: key, actual: this.txtRecord[key].Key);
+    TxtRecordItem? item = this.txtRecord[key];
+    Assert.NotNull (item);
+    Assert.Equal (expected: key, actual: item.Key);
   }
 }

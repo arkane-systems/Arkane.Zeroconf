@@ -75,10 +75,11 @@ using System;
 #endregion
 ```
 
-### Nullability and guards
+### Nullability and Guards
 - Use `ArgumentNullException.ThrowIfNull(param)`
 - Use `ArgumentException.ThrowIfNullOrWhiteSpace(param)` for required strings
 - Use `string.IsNullOrWhiteSpace(param)` for checks
+- For nullability migrations, prioritize contract correctness even if nullable metadata changes require consumers to update code, as long as underlying API behavior/contracts do not change.
 
 ## Testing & Build
 
@@ -100,7 +101,7 @@ You can override service probe types with:
 $env:ARKANE_ZEROCONF_TEST_SERVICE_TYPES = "_http._tcp,_ipp._tcp,_printer._tcp"
 ```
 
-## Common editing patterns
+## Common Editing Patterns
 
 1. **Adding/updating a provider**
    - Implement `IZeroconfProvider`
@@ -116,7 +117,7 @@ $env:ARKANE_ZEROCONF_TEST_SERVICE_TYPES = "_http._tcp,_ipp._tcp,_printer._tcp"
    - Prefer targeted test runs first (`FullyQualifiedName~...`)
    - Keep network-dependent tests explicit about environmental prerequisites
 
-## Key files reference
+## Key Files Reference
 - `Providers/ProviderFactory.cs`
 - `ZeroconfSupport.cs`
 - `Providers/Bonjour/ZeroconfProvider.cs`

@@ -30,14 +30,14 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
 
   private readonly CancellationTokenSource cts = new ();
 
-  private Native.DNSServiceRegisterReply registerReplyHandler;
-  private ServiceRef                     sdRef;
-  private Task                           task;
-  private bool                           disposed;
+  private Native.DNSServiceRegisterReply? registerReplyHandler;
+  private ServiceRef                      sdRef;
+  private Task?                           task;
+  private bool                            disposed;
 
   public bool AutoRename { get; set; } = true;
 
-  public event RegisterServiceEventHandler Response;
+  public event RegisterServiceEventHandler? Response;
 
   public void Register () { this.Register (true); }
 
@@ -81,7 +81,7 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
   public void ProcessRegister ()
   {
     ushort txtRecLength = 0;
-    byte[] txtRec       = null;
+    byte[] txtRec       = Array.Empty<byte> ();
 
     if (this.TxtRecord != null)
     {
@@ -99,11 +99,11 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
                                                     name: Encoding.UTF8.GetBytes (this.Name),
                                                     regtype: this.RegType,
                                                     domain: this.ReplyDomain,
-                                                    host: this.HostTarget,
+                                                    host: this.HostTarget ?? string.Empty,
                                                     port: (ushort)IPAddress.HostToNetworkOrder ((short)this.port),
                                                     txtLen: txtRecLength,
                                                     txtRecord: txtRec,
-                                                    callBack: this.registerReplyHandler,
+                                                    callBack: this.registerReplyHandler ?? throw new InvalidOperationException ("Register callback is not initialized."),
                                                     context: IntPtr.Zero);
 
     if (error != ServiceError.NoError)
@@ -124,13 +124,13 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
 
     if (errorCode == ServiceError.NoError)
     {
-      this.Name         = Marshal.PtrToStringUTF8 (name);
+      this.Name         = Marshal.PtrToStringUTF8 (name) ?? string.Empty;
       this.RegType      = regtype;
       this.ReplyDomain  = domain;
       args.IsRegistered = true;
     }
 
-    RegisterServiceEventHandler handler = this.Response;
+    RegisterServiceEventHandler? handler = this.Response;
     handler?.Invoke (o: this, args: args);
   }
 }

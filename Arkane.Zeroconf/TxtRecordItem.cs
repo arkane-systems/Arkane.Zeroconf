@@ -7,6 +7,7 @@
 
 #region using
 
+using System ;
 using System.Text ;
 
 #endregion
@@ -19,21 +20,27 @@ public class TxtRecordItem
 
     public TxtRecordItem (string key, byte[] valueRaw)
     {
+        ArgumentNullException.ThrowIfNull (key) ;
+        ArgumentNullException.ThrowIfNull (valueRaw) ;
+
         this.Key      = key ;
         this.ValueRaw = valueRaw ;
     }
 
     public TxtRecordItem (string key, string valueString)
     {
+        ArgumentNullException.ThrowIfNull (key) ;
+        ArgumentNullException.ThrowIfNull (valueString) ;
+
         this.Key         = key ;
         this.ValueString = valueString ;
     }
 
-    private string valueString ;
+    private string? valueString ;
 
     public string Key { get ; }
 
-    public byte[] ValueRaw { get ; set ; }
+    public byte[] ValueRaw { get ; set ; } = [] ;
 
     public string ValueString
     {
@@ -47,6 +54,7 @@ public class TxtRecordItem
         }
         set
         {
+            ArgumentNullException.ThrowIfNull (value) ;
             this.valueString = value ;
             this.ValueRaw    = TxtRecordItem.Encoding.GetBytes (value) ;
         }

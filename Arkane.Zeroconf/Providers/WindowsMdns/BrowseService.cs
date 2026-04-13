@@ -37,13 +37,13 @@ public sealed class BrowseService : IResolvableService
 
   public string ReplyDomain { get; }
 
-  public ITxtRecord TxtRecord { get; set; }
+  public ITxtRecord? TxtRecord { get; set; }
 
   public string FullName { get; }
 
-  public IPHostEntry HostEntry { get; private set; }
+  public IPHostEntry? HostEntry { get; private set; }
 
-  public string HostTarget { get; private set; }
+  public string? HostTarget { get; private set; }
 
   public uint NetworkInterface { get; }
 
@@ -53,7 +53,7 @@ public sealed class BrowseService : IResolvableService
 
   public ushort UPort { get; private set; }
 
-  public event ServiceResolvedEventHandler Resolved;
+  public event ServiceResolvedEventHandler? Resolved;
 
   public void Resolve () { this.ResolveAsync ().ConfigureAwait (false).GetAwaiter ().GetResult (); }
 
@@ -80,7 +80,7 @@ public sealed class BrowseService : IResolvableService
 
     this.HostTarget = result.HostName;
     this.UPort      = result.Port;
-    this.HostEntry  = new IPHostEntry { HostName = result.HostName, AddressList = result.Addresses };
+    this.HostEntry  = new IPHostEntry { HostName = result.HostName ?? string.Empty, AddressList = result.Addresses };
     this.TxtRecord  = WindowsMdns.TxtRecord.FromEntries (result.TxtEntries);
 
     this.Resolved?.Invoke (o: this, args: new ServiceResolvedEventArgs (this));

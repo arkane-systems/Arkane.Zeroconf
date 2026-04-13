@@ -7,6 +7,7 @@
 
 #region using
 
+using System ;
 using System.Collections ;
 
 #endregion
@@ -19,10 +20,10 @@ internal class TxtRecordEnumerator : IEnumerator
 
     private readonly TxtRecord record ;
 
-    private TxtRecordItem currentItem ;
-    private int           index ;
+    private TxtRecordItem? currentItem ;
+    private int            index ;
 
-    public object Current => this.currentItem ;
+    public object Current => this.currentItem ?? throw new InvalidOperationException ("Enumeration has not started.") ;
 
     public void Reset ()
     {

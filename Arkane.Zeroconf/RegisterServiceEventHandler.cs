@@ -7,4 +7,4 @@
 
 namespace ArkaneSystems.Arkane.Zeroconf ;
 
-public delegate void RegisterServiceEventHandler (object o, RegisterServiceEventArgs args) ;
+public delegate void RegisterServiceEventHandler (object? o, RegisterServiceEventArgs args) ;

@@ -42,12 +42,12 @@ public struct ServiceRef
 
     public IntPtr Raw { get ; }
 
-    public override bool Equals (object o)
+    public override bool Equals (object? o)
     {
-        if (!(o is ServiceRef))
+        if (o is not ServiceRef serviceRef)
             return false ;
 
-        return ((ServiceRef) o).Raw == this.Raw ;
+        return serviceRef.Raw == this.Raw ;
     }
 
     public override int GetHashCode () => this.Raw.GetHashCode () ;

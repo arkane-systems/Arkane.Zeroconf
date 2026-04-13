@@ -1,47 +1,50 @@
 #region header
 
 // Arkane.ZeroConf - RegisterService.cs
-// 
 
 #endregion
 
 #region using
 
-using System ;
+using System;
 
-using ArkaneSystems.Arkane.Zeroconf.Providers ;
+using ArkaneSystems.Arkane.Zeroconf.Providers;
 
 #endregion
 
-namespace ArkaneSystems.Arkane.Zeroconf ;
+namespace ArkaneSystems.Arkane.Zeroconf;
 
 public class RegisterService : IRegisterService
 {
-    public RegisterService () => this.registerService =
-                                     (IRegisterService) Activator.CreateInstance (ProviderFactory
-                                                                                 .SelectedProvider.RegisterService) ;
+  public RegisterService ()
+    => this.registerService = CreateRequiredInstance<IRegisterService> (ProviderFactory
+                                                                         .SelectedProvider.RegisterService);
 
-    private readonly IRegisterService registerService ;
+  private readonly IRegisterService registerService;
 
-    public string Name { get => this.registerService.Name ; set => this.registerService.Name = value ; }
+  private static T CreateRequiredInstance<T> (Type type) where T : class
+    => Activator.CreateInstance (type) as T ??
+       throw new InvalidOperationException ($"Unable to create instance of '{type.FullName}'.");
 
-    public string RegType { get => this.registerService.RegType ; set => this.registerService.RegType = value ; }
+  public string Name { get => this.registerService.Name; set => this.registerService.Name = value; }
 
-    public string ReplyDomain { get => this.registerService.ReplyDomain ; set => this.registerService.ReplyDomain = value ; }
+  public string RegType { get => this.registerService.RegType; set => this.registerService.RegType = value; }
 
-    public ITxtRecord TxtRecord { get => this.registerService.TxtRecord ; set => this.registerService.TxtRecord = value ; }
+  public string ReplyDomain { get => this.registerService.ReplyDomain; set => this.registerService.ReplyDomain = value; }
 
-    public short Port { get => this.registerService.Port ; set => this.registerService.Port = value ; }
+  public ITxtRecord? TxtRecord { get => this.registerService.TxtRecord; set => this.registerService.TxtRecord = value; }
 
-    public ushort UPort { get => this.registerService.UPort ; set => this.registerService.UPort = value ; }
+  public short Port { get => this.registerService.Port; set => this.registerService.Port = value; }
 
-    public void Register () { this.registerService.Register () ; }
+  public ushort UPort { get => this.registerService.UPort; set => this.registerService.UPort = value; }
 
-    public void Dispose () { this.registerService.Dispose () ; }
+  public void Register () { this.registerService.Register (); }
 
-    public event RegisterServiceEventHandler Response
-    {
-        add => this.registerService.Response += value ;
-        remove => this.registerService.Response -= value ;
-    }
+  public void Dispose () { this.registerService.Dispose (); }
+
+  public event RegisterServiceEventHandler Response
+  {
+    add => this.registerService.Response += value;
+    remove => this.registerService.Response -= value;
+  }
 }

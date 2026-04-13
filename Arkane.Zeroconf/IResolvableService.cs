@@ -19,9 +19,9 @@ public interface IResolvableService : IService
 {
     string FullName { get ; }
 
-    IPHostEntry HostEntry { get ; }
+    IPHostEntry? HostEntry { get ; }
 
-    string HostTarget { get ; }
+    string? HostTarget { get ; }
 
     uint NetworkInterface { get ; }
 

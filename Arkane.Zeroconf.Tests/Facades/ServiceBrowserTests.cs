@@ -89,7 +89,7 @@ public class ServiceBrowserTests : IDisposable
   public void Browse_WithNullDomain_DefaultsToLocal ()
   {
     // Act
-    this.browser.Browse (regtype: "_http._tcp", domain: null);
+    this.browser.Browse (regtype: "_http._tcp", domain: null!);
 
     // Assert - no exception thrown (defaults to "local")
     Assert.True (true);
@@ -101,7 +101,7 @@ public class ServiceBrowserTests : IDisposable
     // Act & Assert
     Assert.Throws<ArgumentNullException> (() => this.browser.Browse (interfaceIndex: 0,
                                                                      addressProtocol: AddressProtocol.Any,
-                                                                     regtype: null,
+                                                                     regtype: null!,
                                                                      domain: "local"));
   }
 

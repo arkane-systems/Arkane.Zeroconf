@@ -35,17 +35,17 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
 
   private AddressProtocol address_protocol;
   private bool            disposed;
-  private string          domain;
+  private string?         domain;
   private uint            interfaceIndex;
-  private string          regtype;
+  private string?         regtype;
 
   private ServiceRef sdRef = ServiceRef.Zero;
 
-  private Task task;
+  private Task? task;
 
-  public event ServiceBrowseEventHandler ServiceAdded;
+  public event ServiceBrowseEventHandler? ServiceAdded;
 
-  public event ServiceBrowseEventHandler ServiceRemoved;
+  public event ServiceBrowseEventHandler? ServiceRemoved;
 
   public void Browse (uint interfaceIndex, AddressProtocol addressProtocol, string regtype, string domain)
   {
@@ -116,8 +116,8 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
     ServiceError error = Native.DNSServiceBrowse (sdRef: out this.sdRef,
                                                   flags: ServiceFlags.None,
                                                   interfaceIndex: this.interfaceIndex,
-                                                  regtype: this.regtype,
-                                                  domain: this.domain,
+                                                  regtype: this.regtype ?? string.Empty,
+                                                  domain: this.domain ?? string.Empty,
                                                   callBack: this.browseReplyHandler,
                                                   context: IntPtr.Zero);
 
@@ -157,7 +157,7 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
                               string       replyDomain,
                               IntPtr       context)
   {
-    string name = Marshal.PtrToStringUTF8 (serviceName);
+    string name = Marshal.PtrToStringUTF8 (serviceName) ?? string.Empty;
 
     var service = new BrowseService
                   {
@@ -179,7 +179,7 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
       try { this.serviceTable[name] = service; }
       finally { this.serviceTableSemaphore.Release (); }
 
-      ServiceBrowseEventHandler handler = this.ServiceAdded;
+      ServiceBrowseEventHandler? handler = this.ServiceAdded;
       handler?.Invoke (o: this, args: args);
     }
     else
@@ -189,7 +189,7 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
       try { this.serviceTable.Remove (name); }
       finally { this.serviceTableSemaphore.Release (); }
 
-      ServiceBrowseEventHandler handler = this.ServiceRemoved;
+      ServiceBrowseEventHandler? handler = this.ServiceRemoved;
       handler?.Invoke (o: this, args: args);
     }
   }

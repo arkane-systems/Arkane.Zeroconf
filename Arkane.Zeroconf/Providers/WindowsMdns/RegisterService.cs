@@ -14,13 +14,13 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns;
 
 public sealed class RegisterService : IRegisterService
 {
-  public string Name { get; set; }
+  public string Name { get; set; } = string.Empty;
 
-  public string RegType { get; set; }
+  public string RegType { get; set; } = string.Empty;
 
-  public string ReplyDomain { get; set; }
+  public string ReplyDomain { get; set; } = string.Empty;
 
-  public ITxtRecord TxtRecord { get; set; }
+  public ITxtRecord? TxtRecord { get; set; }
 
   public short Port { get; set; }
 

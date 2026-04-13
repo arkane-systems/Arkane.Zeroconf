@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections;
+using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -29,15 +30,15 @@ public sealed class BrowseService : Service, IResolvableService
     this.SetupCallbacks ();
   }
 
-  private Native.DNSServiceQueryRecordReply queryRecordReplyHandler;
+  private Native.DNSServiceQueryRecordReply? queryRecordReplyHandler;
 
   private bool resolvePending;
 
-  private Native.DNSServiceResolveReply resolveReplyHandler;
+  private Native.DNSServiceResolveReply? resolveReplyHandler;
 
   public bool IsResolved { get; private set; }
 
-  public event ServiceResolvedEventHandler Resolved;
+  public event ServiceResolvedEventHandler? Resolved;
 
   public void Resolve ()
   {
@@ -71,7 +72,7 @@ public sealed class BrowseService : Service, IResolvableService
                                                    name: Encoding.UTF8.GetBytes (this.Name),
                                                    regtype: this.RegType,
                                                    domain: this.ReplyDomain,
-                                                   callBack: this.resolveReplyHandler,
+                                                   callBack: this.resolveReplyHandler ?? throw new InvalidOperationException ("Resolve callback is not initialized."),
                                                    context: IntPtr.Zero);
 
     if (error != ServiceError.NoError)
@@ -90,7 +91,7 @@ public sealed class BrowseService : Service, IResolvableService
                                                        fullname: this.fullname,
                                                        rrtype: ServiceType.TXT,
                                                        rrclass: ServiceClass.IN,
-                                                       callBack: this.queryRecordReplyHandler,
+                                                       callBack: this.queryRecordReplyHandler ?? throw new InvalidOperationException ("Query callback is not initialized."),
                                                        context: IntPtr.Zero);
 
     if (error != ServiceError.NoError)
@@ -114,7 +115,7 @@ public sealed class BrowseService : Service, IResolvableService
     this.resolvePending = false;
 
     this.InterfaceIndex = interfaceIndex;
-    this.FullName       = Marshal.PtrToStringUTF8 (fullname);
+    this.FullName       = Marshal.PtrToStringUTF8 (fullname) ?? string.Empty;
     this.port           = (ushort)IPAddress.NetworkToHostOrder ((short)port);
     this.TxtRecord      = new TxtRecord (length: txtLen, buffer: txtRecord);
     this.hosttarget     = hosttarget;
@@ -132,7 +133,7 @@ public sealed class BrowseService : Service, IResolvableService
                                                          fullname: hosttarget,
                                                          rrtype: ServiceType.A,
                                                          rrclass: ServiceClass.IN,
-                                                         callBack: this.queryRecordReplyHandler,
+                                                         callBack: this.queryRecordReplyHandler ?? throw new InvalidOperationException ("Query callback is not initialized."),
                                                          context: IntPtr.Zero);
 
       if (error != ServiceError.NoError)
@@ -149,7 +150,7 @@ public sealed class BrowseService : Service, IResolvableService
                                                          fullname: hosttarget,
                                                          rrtype: ServiceType.AAAA,
                                                          rrclass: ServiceClass.IN,
-                                                         callBack: this.queryRecordReplyHandler,
+                                                         callBack: this.queryRecordReplyHandler ?? throw new InvalidOperationException ("Query callback is not initialized."),
                                                          context: IntPtr.Zero);
 
       if (error != ServiceError.NoError)
@@ -158,9 +159,9 @@ public sealed class BrowseService : Service, IResolvableService
       sd_ref.Process ();
     }
 
-    if (this.hostentry.AddressList != null)
+    if (this.hostentry?.AddressList != null)
     {
-      ServiceResolvedEventHandler handler = this.Resolved;
+      ServiceResolvedEventHandler? handler = this.Resolved;
       handler?.Invoke (o: this, args: new ServiceResolvedEventArgs (this));
     }
   }
@@ -202,12 +203,12 @@ public sealed class BrowseService : Service, IResolvableService
         else { break; }
 
         if (this.hostentry == null)
-          this.hostentry = new IPHostEntry { HostName = this.hosttarget };
+          this.hostentry = new IPHostEntry { HostName = this.hosttarget ?? string.Empty };
 
         if (this.hostentry.AddressList != null)
         {
           var list = new ArrayList (this.hostentry.AddressList) { address };
-          this.hostentry.AddressList = list.ToArray (typeof (IPAddress)) as IPAddress[];
+          this.hostentry.AddressList = list.Cast<IPAddress> ().ToArray ();
         }
         else { this.hostentry.AddressList = new[] { address }; }
 

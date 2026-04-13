@@ -67,9 +67,10 @@ public class WindowsMdnsProviderTests
 
     // Act
     record.Add (key: "k", value: "v");
-    TxtRecordItem item = record["k"];
+    TxtRecordItem? item = record["k"];
 
     // Assert
+    Assert.NotNull (item);
     Assert.Equal (expected: "v", actual: item.ValueString);
   }
 
@@ -82,7 +83,7 @@ public class WindowsMdnsProviderTests
     // Act & Assert
     Assert.Throws<ArgumentNullException> (() => browser.Browse (interfaceIndex: 0,
                                                                 addressProtocol: AddressProtocol.Any,
-                                                                regtype: null,
+                                                                regtype: null!,
                                                                 domain: "local"));
   }
 }

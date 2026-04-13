@@ -18,9 +18,13 @@ namespace ArkaneSystems.Arkane.Zeroconf ;
 
 public class TxtRecord : ITxtRecord
 {
-    public TxtRecord () => this.BaseRecord = (ITxtRecord) Activator.CreateInstance (ProviderFactory.SelectedProvider.TxtRecord) ;
+    public TxtRecord () => this.BaseRecord = CreateRequiredInstance<ITxtRecord> (ProviderFactory.SelectedProvider.TxtRecord) ;
 
-    public TxtRecordItem this [string index] => this.BaseRecord[index] ;
+    private static T CreateRequiredInstance<T> (Type type) where T : class
+        => Activator.CreateInstance (type) as T ??
+           throw new InvalidOperationException ($"Unable to create instance of '{type.FullName}'.") ;
+
+    public TxtRecordItem? this [string index] => this.BaseRecord[index] ;
 
     public int Count => this.BaseRecord.Count ;
 

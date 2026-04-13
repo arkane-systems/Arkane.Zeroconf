@@ -16,7 +16,7 @@ namespace ArkaneSystems.Arkane.Zeroconf ;
 
 public interface ITxtRecord : IEnumerable, IDisposable
 {
-    TxtRecordItem this [string key] { get ; }
+    TxtRecordItem? this [string key] { get ; }
 
     int Count { get ; }
 

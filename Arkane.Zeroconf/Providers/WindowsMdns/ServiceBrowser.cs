@@ -23,16 +23,16 @@ public sealed class ServiceBrowser : IServiceBrowser
   private readonly ConcurrentDictionary<string, BrowseService> services = new (StringComparer.OrdinalIgnoreCase);
   private          AddressProtocol                             addressProtocol;
 
-  private CancellationTokenSource cts;
-  private string                  domain;
+  private CancellationTokenSource? cts;
+  private string?                  domain;
 
   private uint   interfaceIndex;
-  private Task   pollingTask;
-  private string regtype;
+  private Task?  pollingTask;
+  private string regtype = string.Empty;
 
-  public event ServiceBrowseEventHandler ServiceAdded;
+  public event ServiceBrowseEventHandler? ServiceAdded;
 
-  public event ServiceBrowseEventHandler ServiceRemoved;
+  public event ServiceBrowseEventHandler? ServiceRemoved;
 
   public void Browse (uint interfaceIndex, AddressProtocol addressProtocol, string regtype, string domain)
   {
@@ -78,7 +78,7 @@ public sealed class ServiceBrowser : IServiceBrowser
     {
       IReadOnlyList<MdnsClient.MdnsServiceInfo> discovered =
         await Task.Run (function: () => MdnsClient.Browse (regtype: this.regtype,
-                                                           domain: this.domain,
+                                                           domain: this.domain ?? "local",
                                                            addressProtocol: this.addressProtocol,
                                                            cancellationToken: cancellationToken),
                         cancellationToken: cancellationToken)
@@ -108,7 +108,7 @@ public sealed class ServiceBrowser : IServiceBrowser
         if (discoveredKeys.Contains (existing))
           continue;
 
-        if (this.services.TryRemove (key: existing, value: out BrowseService removed))
+        if (this.services.TryRemove (key: existing, value: out BrowseService? removed) && removed != null)
           this.ServiceRemoved?.Invoke (o: this, args: new ServiceBrowseEventArgs (removed));
       }
 

@@ -19,9 +19,13 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 public class ServiceBrowser : IServiceBrowser
 {
   public ServiceBrowser ()
-    => this.browser = (IServiceBrowser)Activator.CreateInstance (ProviderFactory.SelectedProvider.ServiceBrowser);
+    => this.browser = CreateRequiredInstance<IServiceBrowser> (ProviderFactory.SelectedProvider.ServiceBrowser);
 
   private readonly IServiceBrowser browser;
+
+  private static T CreateRequiredInstance<T> (Type type) where T : class
+    => Activator.CreateInstance (type) as T ??
+       throw new InvalidOperationException ($"Unable to create instance of '{type.FullName}'.");
 
   public void Dispose () { this.browser.Dispose (); }
 

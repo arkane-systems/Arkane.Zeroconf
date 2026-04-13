@@ -12,8 +12,6 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
-using ArkaneSystems.Arkane.Zeroconf;
-
 using Xunit;
 
 #endregion
@@ -32,7 +30,7 @@ public class AzClientE2ETests
   {
     string exeName  = RuntimeInformation.IsOSPlatform (OSPlatform.Windows) ? "azclient.exe" : "azclient";
     string basePath = Path.Combine (AppContext.BaseDirectory, "..", "..", "..", "..", "azclient", "bin", "Debug", "net10.0");
-    string fullPath = Path.Combine (path1: basePath, path2: exeName);
+    string fullPath = Path.Combine (path1: basePath,          path2: exeName);
 
     return Path.GetFullPath (fullPath);
   }
@@ -67,6 +65,7 @@ public class AzClientE2ETests
     if (!completed)
     {
       process.Kill (entireProcessTree: true);
+
       return (-1, string.Empty, "Process timeout");
     }
 
@@ -77,15 +76,10 @@ public class AzClientE2ETests
   }
 
   private static RegisterService CreatePublishedService (string regType, string serviceName, short port)
-  {
-    return new RegisterService
-           {
-             Name        = serviceName,
-             RegType     = regType,
-             ReplyDomain = TestDomain,
-             Port        = port,
-           };
-  }
+    => new ()
+       {
+         Name = serviceName, RegType = regType, ReplyDomain = AzClientE2ETests.TestDomain, Port = port,
+       };
 
   [Fact]
   public async Task AzClient_HelpFlag_Shows_Usage ()
@@ -96,15 +90,16 @@ public class AzClientE2ETests
     // Assert
     Assert.NotEqual (expected: -1, actual: exitCode);
     Assert.Contains (expectedSubstring: "usage", actualString: (output + error).ToLowerInvariant ());
-    Assert.Contains (expectedSubstring: "type", actualString: (output + error).ToLowerInvariant ());
+    Assert.Contains (expectedSubstring: "type",  actualString: (output + error).ToLowerInvariant ());
   }
 
   [Fact]
   public async Task AzClient_Browse_WithDefaultType_FindsServices ()
   {
-    string serviceName = $"azclient-default-{Guid.NewGuid ():N}";
+    var serviceName = $"azclient-default-{Guid.NewGuid ():N}";
 
-    using var service = CreatePublishedService (regType: "_workstation._tcp", serviceName: serviceName, port: 28101);
+    using RegisterService service =
+      AzClientE2ETests.CreatePublishedService (regType: "_workstation._tcp", serviceName: serviceName, port: 28101);
     service.Register ();
     await Task.Delay (250);
 
@@ -119,10 +114,11 @@ public class AzClientE2ETests
   [Fact]
   public async Task AzClient_Browse_WithCustomType_Works ()
   {
-    string regType     = "_arkanee2e._tcp";
-    string serviceName = $"azclient-custom-{Guid.NewGuid ():N}";
+    var regType     = "_arkanee2e._tcp";
+    var serviceName = $"azclient-custom-{Guid.NewGuid ():N}";
 
-    using var service = CreatePublishedService (regType: regType, serviceName: serviceName, port: 28102);
+    using RegisterService service =
+      AzClientE2ETests.CreatePublishedService (regType: regType, serviceName: serviceName, port: 28102);
     service.Register ();
     await Task.Delay (250);
 
@@ -148,10 +144,11 @@ public class AzClientE2ETests
   [Fact]
   public async Task AzClient_WithVerboseFlag_ProducesOutput ()
   {
-    string regType     = "_arkanee2ev._tcp";
-    string serviceName = $"azclient-verbose-{Guid.NewGuid ():N}";
+    var regType     = "_arkanee2ev._tcp";
+    var serviceName = $"azclient-verbose-{Guid.NewGuid ():N}";
 
-    using var service = CreatePublishedService (regType: regType, serviceName: serviceName, port: 28103);
+    using RegisterService service =
+      AzClientE2ETests.CreatePublishedService (regType: regType, serviceName: serviceName, port: 28103);
     service.Register ();
     await Task.Delay (250);
 
@@ -161,7 +158,7 @@ public class AzClientE2ETests
     // Assert
     Assert.Equal (expected: 0, actual: exitCode);
     Assert.Contains (expectedSubstring: "creating a servicebrowser", actualString: (output + error).ToLowerInvariant ());
-    Assert.Contains (expectedSubstring: serviceName, actualString: output + error);
+    Assert.Contains (expectedSubstring: serviceName,                 actualString: output + error);
   }
 
   [Fact]
