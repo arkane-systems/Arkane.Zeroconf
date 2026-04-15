@@ -8,6 +8,8 @@
 
 using System;
 
+using JetBrains.Annotations;
+
 #endregion
 
 namespace ArkaneSystems.Arkane.Zeroconf;
@@ -15,6 +17,7 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 /// <summary>
 ///   Describes the operations supported by a Zeroconf provider.
 /// </summary>
+[PublicAPI]
 [Flags]
 public enum ZeroconfCapability
 {

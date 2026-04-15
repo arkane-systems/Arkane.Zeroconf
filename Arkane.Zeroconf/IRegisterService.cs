@@ -8,6 +8,8 @@
 
 using System;
 
+using JetBrains.Annotations;
+
 #endregion
 
 namespace ArkaneSystems.Arkane.Zeroconf;
@@ -24,6 +26,7 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 ///     Consumers should check <see cref="ZeroconfSupport.CanPublish" /> before attempting to register services.
 ///   </para>
 /// </remarks>
+[PublicAPI]
 public interface IRegisterService : IService, IDisposable
 {
   /// <summary>

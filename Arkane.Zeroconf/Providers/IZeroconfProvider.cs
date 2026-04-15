@@ -8,6 +8,8 @@
 
 using System;
 
+using JetBrains.Annotations;
+
 #endregion
 
 namespace ArkaneSystems.Arkane.Zeroconf.Providers;
@@ -20,6 +22,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers;
 ///   Bonjour is preferred when available. On Windows 11 and later, the library may fall back to the Windows lookup-only
 ///   provider when Bonjour is unavailable.
 /// </remarks>
+[PublicAPI]
 public interface IZeroconfProvider
 {
   /// <summary>

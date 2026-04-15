@@ -9,6 +9,8 @@
 using System;
 using System.Collections;
 
+using JetBrains.Annotations;
+
 #endregion
 
 namespace ArkaneSystems.Arkane.Zeroconf;
@@ -20,6 +22,7 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 ///   TXT records store service metadata as key/value entries. Providers may expose provider-specific
 ///   backing implementations through <see cref="BaseRecord" />, while the public contract remains provider-agnostic.
 /// </remarks>
+[PublicAPI]
 public interface ITxtRecord : IEnumerable, IDisposable
 {
   /// <summary>

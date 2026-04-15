@@ -11,10 +11,13 @@ using System.Collections;
 
 using ArkaneSystems.Arkane.Zeroconf.Providers;
 
+using JetBrains.Annotations;
+
 #endregion
 
 namespace ArkaneSystems.Arkane.Zeroconf;
 
+[PublicAPI]
 public class TxtRecord : ITxtRecord
 {
   /// <summary>
@@ -32,7 +35,8 @@ public class TxtRecord : ITxtRecord
   ///   current system.
   ///   Ensure that at least one supported mDNS/Bonjour implementation is installed and properly configured.
   /// </exception>
-  public TxtRecord () => this.BaseRecord = CreateRequiredInstance<ITxtRecord> (ProviderFactory.SelectedProvider.TxtRecord);
+  public TxtRecord ()
+    => this.BaseRecord = TxtRecord.CreateRequiredInstance<ITxtRecord> (ProviderFactory.SelectedProvider.TxtRecord);
 
   public TxtRecordItem? this [string index] => this.BaseRecord[index];
 

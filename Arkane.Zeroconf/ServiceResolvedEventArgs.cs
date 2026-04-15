@@ -8,6 +8,8 @@
 
 using System;
 
+using JetBrains.Annotations;
+
 #endregion
 
 namespace ArkaneSystems.Arkane.Zeroconf;
@@ -19,6 +21,7 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 ///   Initializes a new instance of the <see cref="ServiceResolvedEventArgs" /> class.
 /// </remarks>
 /// <param name="service">The resolved service.</param>
+[PublicAPI]
 public class ServiceResolvedEventArgs (IResolvableService service) : EventArgs
 {
   /// <summary>

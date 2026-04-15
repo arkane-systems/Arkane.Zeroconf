@@ -10,6 +10,8 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
+using JetBrains.Annotations;
+
 #endregion
 
 namespace ArkaneSystems.Arkane.Zeroconf;
@@ -27,6 +29,7 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 ///     On Windows fallback browsing, resolution is supported but publishing is not.
 ///   </para>
 /// </remarks>
+[PublicAPI]
 public interface IResolvableService : IService
 {
   /// <summary>

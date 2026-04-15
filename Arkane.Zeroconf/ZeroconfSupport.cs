@@ -1,12 +1,14 @@
 #region header
 
-// Arkane.ZeroConf - ZeroconfSupport.cs
+// Arkane.Zeroconf - ZeroconfSupport.cs
 
 #endregion
 
 #region using
 
 using ArkaneSystems.Arkane.Zeroconf.Providers;
+
+using JetBrains.Annotations;
 
 #endregion
 
@@ -30,6 +32,7 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 ///     authorization is denied, <see cref="CanPublish" /> will be <see langword="false" />.
 ///   </para>
 /// </remarks>
+[PublicAPI]
 public static class ZeroconfSupport
 {
   /// <summary>
@@ -50,7 +53,8 @@ public static class ZeroconfSupport
   /// <summary>
   ///   Gets whether the selected provider supports service browsing and lookup.
   /// </summary>
-  public static bool CanBrowse => IsAvailable && (Capabilities & ZeroconfCapability.Browse) == ZeroconfCapability.Browse;
+  public static bool CanBrowse
+    => ZeroconfSupport.IsAvailable && ((ZeroconfSupport.Capabilities & ZeroconfCapability.Browse) == ZeroconfCapability.Browse);
 
   /// <summary>
   ///   Gets whether the selected provider supports service publishing.
@@ -66,5 +70,6 @@ public static class ZeroconfSupport
   ///     Run the process with <c>sudo</c>, or grant the polkit rule, to obtain publish capability.
   ///   </para>
   /// </remarks>
-  public static bool CanPublish => IsAvailable && (Capabilities & ZeroconfCapability.Publish) == ZeroconfCapability.Publish;
+  public static bool CanPublish
+    => ZeroconfSupport.IsAvailable && ((ZeroconfSupport.Capabilities & ZeroconfCapability.Publish) == ZeroconfCapability.Publish);
 }

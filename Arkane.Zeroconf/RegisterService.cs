@@ -10,10 +10,13 @@ using System;
 
 using ArkaneSystems.Arkane.Zeroconf.Providers;
 
+using JetBrains.Annotations;
+
 #endregion
 
 namespace ArkaneSystems.Arkane.Zeroconf;
 
+[PublicAPI]
 public class RegisterService : IRegisterService
 {
   /// <summary>
@@ -32,8 +35,8 @@ public class RegisterService : IRegisterService
   ///   Ensure that at least one supported mDNS/Bonjour implementation is installed and properly configured.
   /// </exception>
   public RegisterService ()
-    => this.registerService = CreateRequiredInstance<IRegisterService> (ProviderFactory
-                                                                       .SelectedProvider.RegisterService);
+    => this.registerService = RegisterService.CreateRequiredInstance<IRegisterService> (ProviderFactory
+                                                                                       .SelectedProvider.RegisterService);
 
   private readonly IRegisterService registerService;
 

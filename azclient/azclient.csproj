@@ -6,6 +6,9 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Arkane.Zeroconf\Arkane.Zeroconf.csproj" />
   </ItemGroup>
 </Project>

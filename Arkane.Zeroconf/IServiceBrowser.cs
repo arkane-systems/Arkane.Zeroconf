@@ -9,6 +9,8 @@
 using System;
 using System.Collections.Generic;
 
+using JetBrains.Annotations;
+
 #endregion
 
 namespace ArkaneSystems.Arkane.Zeroconf;
@@ -25,6 +27,7 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 ///     Consumers should check <see cref="ZeroconfSupport.CanBrowse" /> before starting browse operations.
 ///   </para>
 /// </remarks>
+[PublicAPI]
 public interface IServiceBrowser : IEnumerable<IResolvableService>, IDisposable
 {
   /// <summary>

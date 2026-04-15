@@ -4,12 +4,19 @@
 
 #endregion
 
+#region using
+
+using JetBrains.Annotations;
+
+#endregion
+
 // ReSharper disable InconsistentNaming
 namespace ArkaneSystems.Arkane.Zeroconf;
 
 /// <summary>
 ///   Specifies which IP address families should be used when resolving services.
 /// </summary>
+[PublicAPI]
 public enum AddressProtocol
 {
   /// <summary>

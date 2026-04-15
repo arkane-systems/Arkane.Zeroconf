@@ -11,6 +11,8 @@ using System;
 using ArkaneSystems.Arkane.Zeroconf.Providers;
 using ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns;
 
+using JetBrains.Annotations;
+
 #endregion
 
 [assembly: ZeroconfProvider (providerType: typeof (ZeroconfProvider), priority: 10)]
@@ -31,6 +33,8 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns;
 ///     Consumers should check <see cref="ZeroconfSupport.CanPublish" /> before attempting to register services.
 ///   </para>
 /// </remarks>
+[UsedImplicitly (ImplicitUseTargetFlags.WithMembers)]
+[PublicAPI]
 public class ZeroconfProvider : IZeroconfProvider
 {
   public Type ServiceBrowser => typeof (ServiceBrowser);

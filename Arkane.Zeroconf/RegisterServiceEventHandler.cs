@@ -4,6 +4,12 @@
 
 #endregion
 
+#region using
+
+using JetBrains.Annotations;
+
+#endregion
+
 namespace ArkaneSystems.Arkane.Zeroconf;
 
 /// <summary>
@@ -11,4 +17,5 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 /// </summary>
 /// <param name="o">The event source.</param>
 /// <param name="args">The event data describing the registration result.</param>
+[PublicAPI]
 public delegate void RegisterServiceEventHandler (object? o, RegisterServiceEventArgs args);

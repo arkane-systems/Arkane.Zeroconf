@@ -13,6 +13,8 @@ using System.Runtime.InteropServices;
 using ArkaneSystems.Arkane.Zeroconf.Providers;
 using ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour;
 
+using JetBrains.Annotations;
+
 #endregion
 
 [assembly: ZeroconfProvider (providerType: typeof (ZeroconfProvider), priority: 100)]
@@ -72,6 +74,8 @@ public static class Zeroconf
 ///     environments on Linux.
 ///   </para>
 /// </remarks>
+[UsedImplicitly (ImplicitUseTargetFlags.WithMembers)]
+[PublicAPI]
 public class ZeroconfProvider : IZeroconfProvider
 {
   public Type ServiceBrowser => typeof (ServiceBrowser);

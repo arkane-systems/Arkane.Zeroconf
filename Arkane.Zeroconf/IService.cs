@@ -4,6 +4,12 @@
 
 #endregion
 
+#region using
+
+using JetBrains.Annotations;
+
+#endregion
+
 namespace ArkaneSystems.Arkane.Zeroconf;
 
 /// <summary>
@@ -14,6 +20,7 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 ///   Additional resolution data, such as host addresses and port information, is available through
 ///   <see cref="IResolvableService" /> when the underlying provider supports lookup operations.
 /// </remarks>
+[PublicAPI]
 public interface IService
 {
   /// <summary>

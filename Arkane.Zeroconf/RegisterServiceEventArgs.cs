@@ -8,6 +8,8 @@
 
 using System;
 
+using JetBrains.Annotations;
+
 #endregion
 
 namespace ArkaneSystems.Arkane.Zeroconf;
@@ -15,6 +17,7 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 /// <summary>
 ///   Provides data for service registration response events.
 /// </summary>
+[PublicAPI]
 public class RegisterServiceEventArgs : EventArgs
 {
   /// <summary>

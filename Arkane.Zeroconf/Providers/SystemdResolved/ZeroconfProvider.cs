@@ -12,6 +12,8 @@ using System.Threading.Tasks;
 using ArkaneSystems.Arkane.Zeroconf.Providers;
 using ArkaneSystems.Arkane.Zeroconf.Providers.SystemdResolved;
 
+using JetBrains.Annotations;
+
 using Tmds.DBus.Protocol;
 
 #endregion
@@ -33,6 +35,8 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.SystemdResolved;
 ///     When set to <c>resolve</c>, only browsing is supported.
 ///   </para>
 /// </remarks>
+[UsedImplicitly (ImplicitUseTargetFlags.WithMembers)]
+[PublicAPI]
 public class ZeroconfProvider : IZeroconfProvider
 {
   /// <inheritdoc />

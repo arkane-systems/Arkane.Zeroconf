@@ -12,10 +12,13 @@ using System.Collections.Generic;
 
 using ArkaneSystems.Arkane.Zeroconf.Providers;
 
+using JetBrains.Annotations;
+
 #endregion
 
 namespace ArkaneSystems.Arkane.Zeroconf;
 
+[PublicAPI]
 public class ServiceBrowser : IServiceBrowser
 {
   /// <summary>
@@ -34,7 +37,7 @@ public class ServiceBrowser : IServiceBrowser
   ///   Ensure that at least one supported mDNS/Bonjour implementation is installed and properly configured.
   /// </exception>
   public ServiceBrowser ()
-    => this.browser = CreateRequiredInstance<IServiceBrowser> (ProviderFactory.SelectedProvider.ServiceBrowser);
+    => this.browser = ServiceBrowser.CreateRequiredInstance<IServiceBrowser> (ProviderFactory.SelectedProvider.ServiceBrowser);
 
   private readonly IServiceBrowser browser;
 

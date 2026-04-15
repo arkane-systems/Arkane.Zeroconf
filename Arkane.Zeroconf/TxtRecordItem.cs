@@ -9,6 +9,8 @@
 using System;
 using System.Text;
 
+using JetBrains.Annotations;
+
 #endregion
 
 namespace ArkaneSystems.Arkane.Zeroconf;
@@ -16,6 +18,7 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 /// <summary>
 ///   Represents a single Zeroconf TXT record item.
 /// </summary>
+[PublicAPI]
 public class TxtRecordItem
 {
   private static readonly Encoding Encoding = new UTF8Encoding ();

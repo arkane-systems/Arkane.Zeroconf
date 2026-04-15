@@ -8,6 +8,8 @@
 
 using System;
 
+using JetBrains.Annotations;
+
 #endregion
 
 namespace ArkaneSystems.Arkane.Zeroconf;
@@ -23,6 +25,7 @@ namespace ArkaneSystems.Arkane.Zeroconf;
 /// about particular failure scenarios (e.g., <see cref="ServiceErrorException"/> for DNS-SD service errors).
 /// </para>
 /// </remarks>
+[PublicAPI]
 public class ZeroconfException : Exception
 {
   /// <summary>
