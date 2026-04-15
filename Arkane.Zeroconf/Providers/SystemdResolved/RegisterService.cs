@@ -16,6 +16,23 @@ using Tmds.DBus.Protocol;
 
 namespace ArkaneSystems.Arkane.Zeroconf.Providers.SystemdResolved;
 
+/// <summary>
+///   Publishes a service via <c>org.freedesktop.resolve1.Manager.RegisterService</c> on the system D-Bus.
+/// </summary>
+/// <remarks>
+///   <para>
+///     Publishing requires polkit authorization.  On systems where the calling process does not hold the
+///     necessary privilege, <see cref="Register" /> throws <see cref="PlatformNotSupportedException" />.
+///     Check <see cref="ZeroconfSupport.CanPublish" /> before calling <see cref="Register" />.
+///   </para>
+///   <para>
+///     To obtain publish capability on a system where polkit blocks unprivileged access, run with
+///     <c>sudo</c> or configure a polkit rule for <c>org.freedesktop.resolve1</c>.
+///   </para>
+///   <para>
+///     Dispose this instance to unregister the service.  Disposal is idempotent.
+///   </para>
+/// </remarks>
 public sealed class RegisterService : IRegisterService, IDisposable
 {
   private string? _registeredObjectPath;
@@ -37,6 +54,14 @@ public sealed class RegisterService : IRegisterService, IDisposable
 
   public event RegisterServiceEventHandler? Response;
 
+  /// <summary>
+  ///   Registers this service with systemd-resolved via D-Bus.
+  /// </summary>
+  /// <exception cref="PlatformNotSupportedException">
+  ///   The calling process is not authorized to register services (polkit denied).
+  ///   Check <see cref="ZeroconfSupport.CanPublish" /> before calling this method.
+  /// </exception>
+  /// <exception cref="ObjectDisposedException">This instance has already been disposed.</exception>
   public void Register ()
   {
     if (this._disposed)

@@ -29,8 +29,9 @@ Arkane.Zeroconf uses a simple provider selection model:
 Platform behavior:
 
 - **Bonjour provider**: supports browsing, resolving, and publishing.
-- **Windows fallback provider**: supports browsing and resolving only.
-- **Linux**: Bonjour-compatible behavior relies on Avahi compatibility mode when available.
+- **Windows fallback provider** (`WindowsMdns`): supports browsing and resolving only; no publishing.
+- **Linux Avahi**: Bonjour-compatible behavior relies on Avahi compatibility mode when available.
+- **Linux fallback provider** (`SystemdResolved`): used when Avahi is unavailable; supports browsing and resolving; publish available when `MulticastDNS=yes` in systemd-resolved **and** polkit authorizes the call.
 
 ## Capability checks
 
@@ -234,6 +235,7 @@ Notes:
 
 - Some properties remain unset until resolution completes.
 - On Windows fallback, resolution is supported even though publishing is not.
+- On Linux fallback (`SystemdResolved`), resolution is supported; publishing requires polkit authorization.
 
 ### `RegisterService`
 
@@ -254,6 +256,7 @@ Notes:
 
 - Publishing requires `ZeroconfSupport.CanPublish == true`.
 - On Windows fallback, attempting to publish throws `PlatformNotSupportedException`.
+- On Linux fallback (`SystemdResolved`), attempting to publish without polkit authorization throws `PlatformNotSupportedException`.
 
 ### `TxtRecord`
 
@@ -342,6 +345,25 @@ If Bonjour is not available, Windows 11+ can still browse and resolve services t
 
 On Linux, Bonjour-compatible support depends on Avahi compatibility mode being available.
 Browsing and resolving can work through the Bonjour provider in Avahi-backed environments.
+
+When Avahi is not installed, the library falls back to the `SystemdResolved` provider, which
+communicates with `systemd-resolved` via D-Bus (`org.freedesktop.resolve1.Manager`).
+
+### systemd-resolved prerequisites
+
+- systemd-resolved must be running (`systemctl status systemd-resolved`)
+- MulticastDNS must be enabled: set `MulticastDNS=yes` in `/etc/systemd/resolved.conf`, then `sudo systemctl restart systemd-resolved`
+- Publishing requires polkit authorization: either run with `sudo` or grant the appropriate `org.freedesktop.resolve1` polkit policy
+
+### Linux capability matrix
+
+| Avahi available | systemd-resolved mode | `CanBrowse` | `CanPublish` |
+|---|---|---|---|
+| Yes | any | true | true |
+| No | `yes` (+ polkit authorized) | true | true |
+| No | `yes` (polkit denied) | true | false |
+| No | `resolve` | true | false |
+| No | not running / `no` | false | false |
 
 ## Related documentation
 

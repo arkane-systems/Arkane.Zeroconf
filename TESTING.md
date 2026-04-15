@@ -21,6 +21,7 @@ The main test project targeting .NET 10.0 with the following test categories:
 #### 2. **Provider Tests** (`Providers/`)
 - `ProviderFactoryTests.cs` - Tests for provider discovery and selection
 - `WindowsMdnsProviderTests.cs` - Tests for Windows fallback provider capability and lookup-only publish behavior
+- `SystemdResolvedProviderTests.cs` - Tests for Linux systemd-resolved fallback provider capability and publish behavior
 
 **Purpose**: Verify provider discovery and runtime fallback behavior.
 
@@ -48,7 +49,7 @@ $env:ARKANE_ZEROCONF_TEST_SERVICE_TYPES = "_http._tcp,_ipp._tcp,_printer._tcp"
 ```
 
 #### 4. **Platform-Specific Tests** (`Platform/`)
-- `PlatformSpecificTests.cs` - Tests for platform detection and native interop
+- `PlatformSpecificTests.cs` - Tests for platform detection and native interop, including Linux Avahi availability, Linux systemd-resolved availability, and Windows Bonjour/DNS-SD availability
 
 #### 5. **End-to-End Tests** (`E2E/`)
 - `AzClientE2ETests.cs` - Tests using the azclient CLI tool
@@ -64,6 +65,19 @@ $env:ARKANE_ZEROCONF_TEST_SERVICE_TYPES = "_http._tcp,_ipp._tcp,_printer._tcp"
 ```bash
 dotnet test Arkane.Zeroconf.Tests --filter "FullyQualifiedName!~Integration"
 ```
+
+#### For systemd-resolved provider tests (Linux)
+
+```bash
+# Non-privileged: tests that require publish skip automatically
+dotnet test Arkane.Zeroconf.Tests --filter "FullyQualifiedName~SystemdResolvedProviderTests"
+
+# Privileged: enables publish-path tests (requires polkit authorization)
+sudo dotnet test Arkane.Zeroconf.Tests --filter "FullyQualifiedName~SystemdResolvedProviderTests"
+```
+
+**Note**: Running tests under `sudo` may leave build artifacts (`obj/`) owned by root.
+Fix with: `sudo find . -path '*/obj/*' | xargs sudo chown $USER`
 
 #### For Windows DNS-SD fallback integration test
 
@@ -114,6 +128,9 @@ dotnet test Arkane.Zeroconf.Tests --filter "Arkane.Zeroconf.Tests.Integration"
 # Run only Windows fallback integration test
 dotnet test Arkane.Zeroconf.Tests --filter "FullyQualifiedName~WindowsMdnsBrowserIntegrationTests"
 
+# Run systemd-resolved provider tests (with sudo for publish paths)
+sudo dotnet test Arkane.Zeroconf.Tests --filter "FullyQualifiedName~SystemdResolvedProviderTests"
+
 # Run with detailed output
 dotnet test Arkane.Zeroconf.Tests -v n
 
@@ -131,7 +148,17 @@ dotnet-coverage collect -f cobertura -o coverage.cobertura.xml dotnet test Arkan
 ### "No Zeroconf providers could be found"
 - Bonjour unavailable and no supported fallback available for current OS.
 - On Windows, fallback lookup requires Windows 11+.
+- On Linux, ensure systemd-resolved is running and `MulticastDNS` is not `no` in `/etc/systemd/resolved.conf`.
 
 ### Publishing fails on Windows fallback provider
 - Expected behavior (`PlatformNotSupportedException`).
 - Check `ZeroconfSupport.CanPublish` before attempting publish.
+
+### Publishing fails on Linux systemd-resolved fallback provider
+- Check `ZeroconfSupport.CanPublish` — if `false`, polkit denied authorization.
+- Run with `sudo` or configure a polkit rule for `org.freedesktop.resolve1`.
+- Ensure `MulticastDNS=yes` (not just `resolve`) in `/etc/systemd/resolved.conf`.
+
+### SystemdResolved tests are all skipped
+- The provider is only available on Linux with systemd-resolved running and `MulticastDNS` ≠ `no`.
+- Check: `systemctl status systemd-resolved` and `resolvectl status | grep -i multicast`.

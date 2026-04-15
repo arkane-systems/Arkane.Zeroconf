@@ -15,6 +15,14 @@ using System.Linq;
 
 namespace ArkaneSystems.Arkane.Zeroconf.Providers.SystemdResolved;
 
+/// <summary>
+///   An <see cref="ITxtRecord" /> implementation backed by a simple list, used by the
+///   systemd-resolved provider.
+/// </summary>
+/// <remarks>
+///   TXT record items are stored as <see cref="TxtRecordItem" /> instances supporting both
+///   string and raw-byte values.  Key comparison is case-insensitive (ordinal).
+/// </remarks>
 public sealed class TxtRecord : ITxtRecord
 {
   private readonly List<TxtRecordItem> items = new ();

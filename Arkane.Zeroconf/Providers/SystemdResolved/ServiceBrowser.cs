@@ -18,6 +18,24 @@ using System.Threading.Tasks;
 
 namespace ArkaneSystems.Arkane.Zeroconf.Providers.SystemdResolved;
 
+/// <summary>
+///   Polls systemd-resolved via <c>org.freedesktop.resolve1.Manager.ResolveRecord</c> to
+///   discover DNS-SD services of a given type, and fires <see cref="IServiceBrowser.ServiceAdded" />
+///   and <see cref="IServiceBrowser.ServiceRemoved" /> events as the set of discovered instances
+///   changes.
+/// </summary>
+/// <remarks>
+///   <para>
+///     systemd-resolved does not natively expose a push-based browse API, so discovery is
+///     emulated by periodically querying for PTR records and diffing the result set.
+///     The default polling interval is 5 seconds; it can be tuned via
+///     <see cref="PollingInterval" />.
+///   </para>
+///   <para>
+///     Each discovered service is represented as a <see cref="BrowseService" /> that supports
+///     lazy resolution via <see cref="BrowseService.Resolve" />.
+///   </para>
+/// </remarks>
 public sealed class ServiceBrowser : IServiceBrowser
 {
   private static readonly TimeSpan DefaultPollingInterval = TimeSpan.FromSeconds (5);

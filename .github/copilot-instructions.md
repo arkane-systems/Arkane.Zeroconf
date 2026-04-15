@@ -17,8 +17,9 @@ The library uses a **plugin architecture** with dynamic provider selection:
 - Provider selection treats the Windows fallback system as a simple mechanism rather than a general configurable provider-priority system; do not add configurable priorities unless explicitly requested.
 
 **Current provider behavior:**
-- **Bonjour provider**: preferred when available; supports browse + publish
-- **WindowsMdns provider**: fallback on Windows 11+ when Bonjour is unavailable; supports browse/resolve only
+- **Bonjour provider**: preferred when available; supports browse + publish; priority 100
+- **SystemdResolved provider**: fallback on Linux when Avahi is unavailable; supports browse + resolve always; publish when `MulticastDNS=yes` AND polkit authorized; priority 50
+- **WindowsMdns provider**: fallback on Windows 11+ when Bonjour is unavailable; supports browse/resolve only; priority 10
 
 ### Public Facade Pattern
 Wrapper classes like `ServiceBrowser` and `RegisterService` delegate to provider implementations:
@@ -35,6 +36,7 @@ Use `ZeroconfSupport` before operations:
 - `ZeroconfSupport.CanPublish`
 
 Publishing with lookup-only providers is expected to throw `PlatformNotSupportedException`.
+Publishing with the `SystemdResolved` provider also throws `PlatformNotSupportedException` when polkit denies the D-Bus call; check `ZeroconfSupport.CanPublish`.
 
 ## Windows fallback implementation
 
@@ -52,6 +54,40 @@ Publishing with lookup-only providers is expected to throw `PlatformNotSupported
 - Ensure native resources are always freed in callback/finally paths (`DnsRecordListFree`, `DnsServiceFreeInstance`)
 - Keep OS checks for fallback availability (`OperatingSystem.IsWindowsVersionAtLeast(10,0,22000)`)
 
+## Linux fallback implementation
+
+### SystemdResolved provider
+- Namespace: `ArkaneSystems.Arkane.Zeroconf.Providers.SystemdResolved`
+- Uses D-Bus via `Tmds.DBus.Protocol` NuGet package to call `org.freedesktop.resolve1.Manager`:
+  - `ResolveRecord` — PTR queries for browse emulation
+  - `ResolveService` — SRV/address/TXT resolution
+  - `RegisterService` / `UnregisterService` — service publishing
+- D-Bus proxy and property types are in `Providers/SystemdResolved/ResolveManagerProxy.cs`
+- Core client logic is in `Providers/SystemdResolved/SystemdResolvedClient.cs`
+
+### SystemdResolved provider availability
+- `IsAvailable()` creates a temporary D-Bus connection and reads the `MulticastDNS` property
+- Returns `false` when not on Linux, systemd-resolved is unreachable, or `MulticastDNS="no"`
+- `Initialize()` sets capabilities: `Browse` always; adds `Publish` when `MulticastDNS="yes"` **and** `ProbePublishAuthorized()` succeeds
+
+### Publish authorization probe
+- `ProbePublishAuthorized()` attempts a dummy `RegisterService` D-Bus call; polkit denial
+  (error names: `InteractiveAuthorizationRequired`, `AccessDenied`, `AuthFailed`, `NotSupported`)
+  causes downgrade to browse-only capability
+- Running with `sudo` or granting a polkit rule for `org.freedesktop.resolve1` enables publish
+
+### BrowseService.Resolve() pattern
+- `Resolve()` = fire-and-forget: `_ = Task.Run(() => ResolveAsync())`
+- `ResolveAsync()` only rethrows `OperationCanceledException` when the caller's token is cancelled;
+  internal D-Bus timeouts (`TaskCanceledException` with default token) are swallowed and logged
+
+### Important constraints
+- Keep Linux fallback **browse-only by default**; publish capability depends on polkit at runtime
+- Preserve facade API compatibility
+- D-Bus errors from `DBusErrorReplyException` (not the obsolete `DBusException`)
+- `SystemdResolvedClient.BrowseTimeout` and `ResolveTimeout` are public static settable (used in tests)
+- Keep OS check: `OperatingSystem.IsLinux()`
+
 ## Code Conventions
 
 ### Namespace Structure
@@ -60,6 +96,7 @@ ArkaneSystems.Arkane.Zeroconf
 ArkaneSystems.Arkane.Zeroconf.Providers
 ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour
 ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns
+ArkaneSystems.Arkane.Zeroconf.Providers.SystemdResolved
 ArkaneSystems.Arkane.Zeroconf.Client
 ```
 
@@ -95,7 +132,16 @@ dotnet build
 ### Key test classes
 - `Facades/ZeroconfSupportTests.cs`
 - `Providers/WindowsMdnsProviderTests.cs`
+- `Providers/SystemdResolvedProviderTests.cs`
 - `Integration/WindowsMdnsBrowserIntegrationTests.cs`
+- `Platform/PlatformSpecificTests.cs`
+
+### SystemdResolved provider tests behavior
+`SystemdResolvedProviderTests` mirrors the `WindowsMdnsProviderTests` structure.
+- All tests skip when `new ZeroconfProvider().IsAvailable()` returns `false`.
+- Publish-path tests skip when polkit denies authorization (i.e. non-sudo run).
+- Run with `sudo` to exercise the full publish path.
+- `BrowseService_ResolveAsync_WithUnknownService` shortens `ResolveTimeout` to 300ms to avoid blocking.
 
 ### WindowsMdns integration test behavior
 `WindowsMdnsBrowserIntegrationTests` probes multiple common service types in parallel and passes when at least one service is discovered.
@@ -104,6 +150,10 @@ You can override service probe types with:
 ```powershell
 $env:ARKANE_ZEROCONF_TEST_SERVICE_TYPES = "_http._tcp,_ipp._tcp,_printer._tcp"
 ```
+
+### sudo and obj/ permissions
+Running `dotnet test` under `sudo` leaves obj/ cache files owned by root.
+Fix: `sudo find . -path '*/obj/*' | xargs sudo chown $USER`
 
 ## Common Editing Patterns
 
@@ -134,16 +184,33 @@ $env:ARKANE_ZEROCONF_TEST_SERVICE_TYPES = "_http._tcp,_ipp._tcp,_printer._tcp"
 - `Providers/WindowsMdns/ZeroconfProvider.cs`
 - `Providers/WindowsMdns/NativeWindowsDns.cs`
 - `Providers/WindowsMdns/MdnsClient.cs`
+- `Providers/SystemdResolved/ZeroconfProvider.cs`
+- `Providers/SystemdResolved/ResolveManagerProxy.cs`
+- `Providers/SystemdResolved/SystemdResolvedClient.cs`
+- `Providers/SystemdResolved/BrowseService.cs`
+- `Providers/SystemdResolved/ServiceBrowser.cs`
+- `Providers/SystemdResolved/RegisterService.cs`
+- `Arkane.Zeroconf.Tests/Providers/SystemdResolvedProviderTests.cs`
+- `Arkane.Zeroconf.Tests/Platform/PlatformSpecificTests.cs`
 - `Integration/WindowsMdnsBrowserIntegrationTests.cs`
 
 ## Troubleshooting
 
 - **"No Zeroconf providers could be found"**
   - No available provider initialized on current OS/runtime.
+  - On Linux: ensure Avahi is installed, or systemd-resolved is running with `MulticastDNS` ≠ `no`.
 
 - **Windows lookup works but publish fails**
   - Expected when fallback `WindowsMdns` provider is active; check `ZeroconfSupport.CanPublish`.
 
+- **Linux lookup works but publish fails**
+  - Expected when systemd-resolved provider is active and polkit denies authorization.
+  - Check `ZeroconfSupport.CanPublish`; run with `sudo` or configure a polkit rule.
+
 - **Windows fallback integration test discovers nothing**
   - Ensure mDNS-advertised services exist on the network.
   - Override `ARKANE_ZEROCONF_TEST_SERVICE_TYPES` to match local environment.
+
+- **SystemdResolved tests are all skipped**
+  - systemd-resolved may not be running, or `MulticastDNS` is set to `no`.
+  - Check: `systemctl status systemd-resolved` and `resolvectl status | grep -i multicast`.

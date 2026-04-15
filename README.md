@@ -17,13 +17,15 @@ Arkane.Zeroconf uses a simple provider selection model:
 
 - **Bonjour provider** is preferred whenever it is available.
 - On **Windows 11+**, if Bonjour is not available, Arkane.Zeroconf falls back to the **WindowsMdns** provider.
+- On **Linux**, if Avahi is not available, Arkane.Zeroconf falls back to the **SystemdResolved** provider.
 - This is a fallback mechanism, not a general-purpose configurable provider priority system.
 
 Provider behavior:
 
 - **Bonjour provider** (preferred): lookup and publish support.
 - **Windows fallback provider** (`WindowsMdns`): used when Bonjour is unavailable on Windows 11+, and provides **lookup-only** behavior using Windows DNS-SD APIs (`DnsServiceBrowse`/`DnsServiceResolve`).
-- **Linux**: Bonjour provider operates through Avahi compatibility mode when available.
+- **Linux Avahi**: Bonjour provider operates through Avahi compatibility mode when available.
+- **Linux fallback provider** (`SystemdResolved`): used when Avahi is unavailable on Linux.  Supports browse and resolve via the `org.freedesktop.resolve1` D-Bus interface.  Publishing is additionally supported when the system's `MulticastDNS` mode is `yes` **and** the calling process is authorized by polkit (requires `sudo` or a polkit rule).
 
 ## Capability checks
 
@@ -38,6 +40,9 @@ if (!ZeroconfSupport.CanPublish)
 ```
 
 Publishing with the Windows fallback provider throws `PlatformNotSupportedException` by design.
+Publishing with the Linux `SystemdResolved` fallback provider also throws `PlatformNotSupportedException`
+when the calling process is not polkit-authorized for service registration; check `ZeroconfSupport.CanPublish`
+before calling `Register()`.
 
 ## Windows notes
 
@@ -48,6 +53,25 @@ For full lookup-and-publish behavior on Windows, install Bonjour:
 When Bonjour is installed, it remains the preferred provider on Windows.
 When Bonjour is not installed but the OS supports Windows DNS-SD lookup (Windows 11+), browsing and resolving continue to work through the fallback provider.
 If neither provider is available, Zeroconf initialization will fail because no compatible provider can be selected.
+
+## Linux notes
+
+For full lookup-and-publish behavior on Linux, install Avahi:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install avahi-daemon libavahi-compat-libdnssd1
+
+# Fedora/RHEL
+sudo dnf install avahi avahi-compat-libdns_sd
+```
+
+When Avahi is not installed, Arkane.Zeroconf automatically falls back to the `SystemdResolved` provider
+if systemd-resolved is running and MulticastDNS is enabled.  To enable MulticastDNS in systemd-resolved,
+set `MulticastDNS=yes` in `/etc/systemd/resolved.conf` and restart the service.
+
+Publishing via `SystemdResolved` requires polkit authorization.  Running with `sudo` or granting the
+`org.freedesktop.resolve1` polkit policy to the user is necessary for full publish capability.
 
 As per the original readme:
 
