@@ -172,6 +172,10 @@ public class MZClient
 
     if (services.Count > 0)
     {
+      // Validate all descriptions before checking capability, so syntax errors are always reported.
+      foreach (string serviceDescription in services)
+        MZClient.ValidateServiceDescription (serviceDescription);
+
       if (!ZeroconfSupport.CanPublish)
       {
         Console.Error.WriteLine ("mDNS publishing is not supported by the active provider. Check ZeroconfSupport.Capabilities before publishing.");
@@ -225,6 +229,14 @@ public class MZClient
 
     while (true)
       Thread.Sleep (1000);
+  }
+
+  private static void ValidateServiceDescription (string serviceDescription)
+  {
+    Match match = Regex.Match (input: serviceDescription, pattern: @"(_[a-z]+._tcp|udp)\s*(\d+)\s*(.*)");
+
+    if (match.Groups.Count < 4)
+      throw new ApplicationException ("Invalid service description syntax");
   }
 
   private static void RegisterService (string serviceDescription)

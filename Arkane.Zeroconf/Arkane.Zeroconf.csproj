@@ -34,4 +34,8 @@ Please see project web site for more information.</Description>
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.92.0" />
+  </ItemGroup>
+
 </Project>

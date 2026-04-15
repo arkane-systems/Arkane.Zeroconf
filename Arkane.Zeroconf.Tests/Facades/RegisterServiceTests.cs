@@ -123,6 +123,8 @@ public class RegisterServiceTests : IDisposable
   [Fact]
   public void Register_DoesNotThrow ()
   {
+    ZeroconfTestHelper.SkipIfCannotPublish ();
+
     // Arrange
     this.registerService.Name    = "Test Service";
     this.registerService.RegType = "_http._tcp";

@@ -29,6 +29,15 @@ internal static class ZeroconfTestHelper
   }
 
   /// <summary>
+  ///   Skips the current test when the active Zeroconf provider does not support publishing.
+  /// </summary>
+  public static void SkipIfCannotPublish ()
+  {
+    if (!ZeroconfSupport.CanPublish)
+      Assert.Skip ("mDNS service publishing is not supported by the active Zeroconf provider on this system.");
+  }
+
+  /// <summary>
   ///   Skips the current test when not running on Windows.
   /// </summary>
   public static void SkipIfNotWindows ()

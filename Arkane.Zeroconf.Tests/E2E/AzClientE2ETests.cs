@@ -109,6 +109,7 @@ public class AzClientE2ETests
   public async Task AzClient_ResolveFlag_ResolvesPublishedService ()
   {
     ZeroconfTestHelper.SkipIfNoProvider ();
+    ZeroconfTestHelper.SkipIfCannotPublish ();
     var regType     = "_arkanee2er._tcp";
     var serviceName = $"azclient-resolve-{Guid.NewGuid ():N}";
 
@@ -177,6 +178,7 @@ public class AzClientE2ETests
   public async Task AzClient_Browse_WithDefaultType_FindsServices ()
   {
     ZeroconfTestHelper.SkipIfNoProvider ();
+    ZeroconfTestHelper.SkipIfCannotPublish ();
     var serviceName = $"azclient-default-{Guid.NewGuid ():N}";
 
     using RegisterService service =
@@ -196,6 +198,7 @@ public class AzClientE2ETests
   public async Task AzClient_Browse_WithCustomType_Works ()
   {
     ZeroconfTestHelper.SkipIfNoProvider ();
+    ZeroconfTestHelper.SkipIfCannotPublish ();
     var regType     = "_arkanee2e._tcp";
     var serviceName = $"azclient-custom-{Guid.NewGuid ():N}";
 
@@ -230,6 +233,7 @@ public class AzClientE2ETests
   public async Task AzClient_WithVerboseFlag_ProducesOutput ()
   {
     ZeroconfTestHelper.SkipIfNoProvider ();
+    ZeroconfTestHelper.SkipIfCannotPublish ();
     var regType     = "_arkanee2ev._tcp";
     var serviceName = $"azclient-verbose-{Guid.NewGuid ():N}";
 
