@@ -8,6 +8,8 @@
 
 using System;
 
+using ArkaneSystems.Arkane.Zeroconf.Providers.SystemdResolved;
+
 using Xunit;
 
 #endregion
@@ -44,5 +46,25 @@ internal static class ZeroconfTestHelper
   {
     if (!OperatingSystem.IsWindows ())
       Assert.Skip ("This test requires Windows.");
+  }
+
+  /// <summary>
+  ///   Skips the current test when not running on Linux.
+  /// </summary>
+  public static void SkipIfNotLinux ()
+  {
+    if (!OperatingSystem.IsLinux ())
+      Assert.Skip ("This test requires Linux.");
+  }
+
+  /// <summary>
+  ///   Skips the current test when the systemd-resolved D-Bus provider is not available on this system.
+  ///   This checks only the systemd-resolved provider directly, regardless of which provider is currently
+  ///   selected by the provider factory.
+  /// </summary>
+  public static void SkipIfSystemdResolvedUnavailable ()
+  {
+    if (!OperatingSystem.IsLinux () || !new ZeroconfProvider ().IsAvailable ())
+      Assert.Skip ("systemd-resolved mDNS is not available on this system. Ensure MulticastDNS is enabled in /etc/systemd/resolved.conf.");
   }
 }

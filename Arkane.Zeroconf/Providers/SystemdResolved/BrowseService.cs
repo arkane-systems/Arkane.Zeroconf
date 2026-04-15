@@ -82,7 +82,7 @@ public sealed class BrowseService : IResolvableService
 
       this.Resolved?.Invoke (o: this, args: new ServiceResolvedEventArgs (this));
     }
-    catch (OperationCanceledException)
+    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
     {
       throw;
     }

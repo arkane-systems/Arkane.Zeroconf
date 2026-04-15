@@ -9,6 +9,7 @@
 using System;
 using System.Runtime.InteropServices;
 
+using ArkaneSystems.Arkane.Zeroconf.Providers.SystemdResolved;
 using ArkaneSystems.Arkane.Zeroconf.Tests.Helpers;
 
 using Xunit;
@@ -18,8 +19,8 @@ using Xunit;
 namespace ArkaneSystems.Arkane.Zeroconf.Tests.Platform;
 
 /// <summary>
-///   Platform-specific tests for Bonjour native interop.
-///   These tests verify platform detection and basic native functionality.
+///   Platform-specific tests for native mDNS availability and initialization.
+///   Tests verify platform detection and that at least one provider is functional.
 /// </summary>
 public class PlatformSpecificTests
 {
@@ -38,7 +39,8 @@ public class PlatformSpecificTests
   public void NativeInitialization_Succeeds ()
   {
     if (!ZeroconfSupport.IsAvailable)
-      Assert.Skip ("No Zeroconf provider available on this system. Install Avahi (Linux), Bonjour (Windows/macOS), or run on Windows 11+ for the Windows mDNS fallback.");
+      Assert.Skip ("No Zeroconf provider available on this system. " +
+                   "Install Avahi or enable systemd-resolved mDNS (Linux), Bonjour (Windows/macOS), or run on Windows 11+ for the Windows mDNS fallback.");
 
     try
     {
@@ -46,26 +48,34 @@ public class PlatformSpecificTests
     }
     catch (InvalidOperationException ex)
     {
-      Assert.Fail ($"Native zeroconf initialization failed. Ensure platform dependency is installed and running (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
+      Assert.Fail ($"Native zeroconf initialization failed. " +
+                   $"Ensure a platform dependency is installed and running " +
+                   $"(Windows/macOS: Bonjour; Linux: Avahi or systemd-resolved with MulticastDNS=yes). " +
+                   $"Details: {ex.Message}");
     }
     catch (DllNotFoundException ex)
     {
-      Assert.Fail ($"Native zeroconf library was not found. Install platform dependency (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
+      Assert.Fail ($"Native zeroconf library was not found. " +
+                   $"Install a platform dependency (Windows/macOS: Bonjour; Linux: Avahi). " +
+                   $"Details: {ex.Message}");
     }
     catch (EntryPointNotFoundException ex)
     {
-      Assert.Fail ($"Native zeroconf entry point was not found. Verify a compatible platform dependency installation (Windows/macOS: Bonjour, Linux: Avahi). Details: {ex.Message}");
+      Assert.Fail ($"Native zeroconf entry point was not found. " +
+                   $"Verify a compatible platform dependency installation (Windows/macOS: Bonjour; Linux: Avahi). " +
+                   $"Details: {ex.Message}");
     }
   }
 
   [Fact]
-  public void WindowsBonjour_IsAvailable ()
+  public void WindowsMDNS_IsAvailable ()
   {
     if (!OperatingSystem.IsWindows ())
       return;
 
     Assert.True (condition: ZeroconfSupport.CanBrowse,
-                 userMessage: "Windows zeroconf browsing is unavailable. Ensure Bonjour is installed and running.");
+                 userMessage: "Windows zeroconf browsing is unavailable. " +
+                              "Install Bonjour, or run on Windows 11+ where the built-in mDNS fallback is supported.");
   }
 
   [Fact]
@@ -79,16 +89,34 @@ public class PlatformSpecificTests
   }
 
   [Fact]
-  public void LinuxAvahi_IsAvailable ()
+  public void LinuxMDNS_IsAvailable ()
   {
     if (!OperatingSystem.IsLinux ())
       return;
 
     if (!ZeroconfSupport.IsAvailable)
-      Assert.Skip ("Avahi (libdns_sd) is not available on this Linux system. Install libavahi-compat-libdnssd1 and ensure the Avahi daemon is running.");
+      Assert.Skip ("No mDNS provider is available on this Linux system. " +
+                   "Install libavahi-compat-libdnssd1 and start the Avahi daemon, " +
+                   "or enable MulticastDNS in /etc/systemd/resolved.conf.");
 
     Assert.True (condition: ZeroconfSupport.CanBrowse,
-                 userMessage: "Linux zeroconf browsing is unavailable. Ensure Avahi is installed and running.");
+                 userMessage: "Linux mDNS browsing is unavailable despite a provider being detected.");
+  }
+
+  [Fact]
+  public void LinuxSystemdResolved_IsAvailable ()
+  {
+    if (!OperatingSystem.IsLinux ())
+      return;
+
+    if (!new ZeroconfProvider ().IsAvailable ())
+      Assert.Skip ("systemd-resolved mDNS is not available on this Linux system. " +
+                   "Enable MulticastDNS in /etc/systemd/resolved.conf to activate this provider.");
+
+    // systemd-resolved is available; the active provider may be Avahi (preferred) or
+    // systemd-resolved itself — either way, browsing must be supported.
+    Assert.True (condition: ZeroconfSupport.CanBrowse,
+                 userMessage: "systemd-resolved reports mDNS available, but browsing is not supported by the active provider.");
   }
 
   [Theory]
@@ -127,3 +155,4 @@ public class PlatformSpecificTests
     Assert.NotEmpty (description);
   }
 }
+
