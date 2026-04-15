@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - ServiceBrowser.cs
+// Arkane.Zeroconf - ServiceBrowser.cs
 
 #endregion
 
@@ -38,7 +38,11 @@ public class ServiceBrowser : IServiceBrowser
 
   private readonly IServiceBrowser browser;
 
-  public void Dispose () => this.browser.Dispose ();
+  public void Dispose ()
+  {
+    GC.SuppressFinalize (this);
+    this.browser.Dispose ();
+  }
 
   public void Browse (uint interfaceIndex, AddressProtocol addressProtocol, string regtype, string domain)
     => this.browser.Browse (interfaceIndex: interfaceIndex,

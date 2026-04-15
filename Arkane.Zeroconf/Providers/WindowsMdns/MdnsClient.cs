@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -236,11 +237,14 @@ internal static class MdnsClient
                     });
     }
 
-    return services.GroupBy (keySelector: service => service.FullName, comparer: StringComparer.OrdinalIgnoreCase)
-                   .Select (group => group.First ())
-                   .ToArray ();
+    return
+    [
+      .. services.GroupBy (keySelector: service => service.FullName, comparer: StringComparer.OrdinalIgnoreCase)
+                 .Select (group => group.First ())
+    ];
   }
 
+  [SuppressMessage (category: "Style", checkId: "IDE0060:Remove unused parameter", Justification = "Should fit pattern.")]
   public static MdnsResolveResult Resolve (MdnsServiceInfo   service,
                                            AddressProtocol   addressProtocol,
                                            CancellationToken cancellationToken)
@@ -256,20 +260,21 @@ internal static class MdnsClient
     if (resolved == null)
       return MdnsResolveResult.Empty;
 
-    IPAddress[] addresses = resolved.Addresses.Where (address => address != null)
-                                    .Distinct ()
-                                    .ToArray ();
+    IPAddress[] addresses =
+    [
+      .. resolved.Addresses.Where (address => address != null)
+                 .Distinct ()
+    ];
 
-    if (addresses.Length == 0)
-      return MdnsResolveResult.Empty;
-
-    return new MdnsResolveResult
-           {
-             HostName   = NormalizeName (resolved.HostName),
-             Port       = resolved.Port,
-             Addresses  = addresses,
-             TxtEntries = resolved.TxtItems.ToArray (),
-           };
+    return addresses.Length == 0
+             ? MdnsResolveResult.Empty
+             : new MdnsResolveResult
+               {
+                 HostName   = NormalizeName (resolved.HostName),
+                 Port       = resolved.Port,
+                 Addresses  = addresses,
+                 TxtEntries = [.. resolved.TxtItems],
+               };
   }
 
   private static IReadOnlyList<DnsRecord> BrowseRecords (string queryName, uint interfaceIndex, CancellationToken cancellationToken)
@@ -292,13 +297,13 @@ internal static class MdnsClient
 
       int status = NativeWindowsDns.DnsServiceBrowse (request: ref request, cancel: ref cancel);
 
-      if ((status != 0) && (status != NativeWindowsDns.DnsRequestPending))
+      if (status is not 0 and not NativeWindowsDns.DnsRequestPending)
         return [];
 
-      state.WaitHandle.Wait (timeout: BrowseTimeout, cancellationToken: cancellationToken);
+      _ = state.WaitHandle.Wait (timeout: BrowseTimeout, cancellationToken: cancellationToken);
 
       lock (state.SyncRoot)
-        return state.Records.ToArray ();
+        return [.. state.Records];
     }
     finally
     {
@@ -332,10 +337,10 @@ internal static class MdnsClient
 
       int status = NativeWindowsDns.DnsServiceResolve (request: ref request, cancel: ref cancel);
 
-      if ((status != 0) && (status != NativeWindowsDns.DnsRequestPending))
+      if (status is not 0 and not NativeWindowsDns.DnsRequestPending)
         return null;
 
-      state.WaitHandle.Wait (timeout: ResolveTimeout, cancellationToken: cancellationToken);
+      _ = state.WaitHandle.Wait (timeout: ResolveTimeout, cancellationToken: cancellationToken);
 
       return state.Result;
     }
@@ -528,12 +533,7 @@ internal static class MdnsClient
   }
 
   private static string NormalizeName (string value)
-  {
-    if (string.IsNullOrWhiteSpace (value))
-      return string.Empty;
-
-    return value.Trim ().TrimEnd ('.') + ".";
-  }
+    => string.IsNullOrWhiteSpace (value) ? string.Empty : value.Trim ().TrimEnd ('.') + ".";
 
   private static string ParseServiceName (string fullName, string regtype)
   {

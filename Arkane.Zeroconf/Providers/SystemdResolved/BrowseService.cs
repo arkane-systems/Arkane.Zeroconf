@@ -1,12 +1,13 @@
 #region header
 
-// Arkane.ZeroConf - BrowseService.cs
+// Arkane.Zeroconf - BrowseService.cs
 
 #endregion
 
 #region using
 
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,40 +36,32 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.SystemdResolved;
 ///     until a successful resolution completes.
 ///   </para>
 /// </remarks>
-public sealed class BrowseService : IResolvableService
+public sealed class BrowseService (
+  string          name,
+  string          fullName,
+  string          regType,
+  string          replyDomain,
+  uint            interfaceIndex,
+  AddressProtocol addressProtocol)
+  : IResolvableService
 {
-  public BrowseService (string          name,
-                        string          fullName,
-                        string          regType,
-                        string          replyDomain,
-                        uint            interfaceIndex,
-                        AddressProtocol addressProtocol)
-  {
-    this.Name             = name;
-    this.FullName         = fullName;
-    this.RegType          = regType;
-    this.ReplyDomain      = replyDomain;
-    this.NetworkInterface = interfaceIndex;
-    this.AddressProtocol  = addressProtocol;
-  }
+  public string Name { get; } = name;
 
-  public string Name { get; }
+  public string RegType { get; } = regType;
 
-  public string RegType { get; }
-
-  public string ReplyDomain { get; }
+  public string ReplyDomain { get; } = replyDomain;
 
   public ITxtRecord? TxtRecord { get; set; }
 
-  public string FullName { get; }
+  public string FullName { get; } = fullName;
 
   public IPHostEntry? HostEntry { get; private set; }
 
   public string? HostTarget { get; private set; }
 
-  public uint NetworkInterface { get; }
+  public uint NetworkInterface { get; } = interfaceIndex;
 
-  public AddressProtocol AddressProtocol { get; }
+  public AddressProtocol AddressProtocol { get; } = addressProtocol;
 
   public short Port => (short)this.UPort;
 
@@ -119,13 +112,7 @@ public sealed class BrowseService : IResolvableService
 
       this.Resolved?.Invoke (o: this, args: new ServiceResolvedEventArgs (this));
     }
-    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-    {
-      throw;
-    }
-    catch (Exception ex)
-    {
-      System.Diagnostics.Debug.WriteLine ($"systemd-resolved service resolve failed for '{this.Name}': {ex.Message}");
-    }
+    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+    catch (Exception ex) { Debug.WriteLine ($"systemd-resolved service resolve failed for '{this.Name}': {ex.Message}"); }
   }
 }

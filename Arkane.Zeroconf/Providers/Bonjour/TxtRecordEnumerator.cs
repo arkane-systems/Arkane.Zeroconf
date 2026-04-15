@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - TxtRecordEnumerator.cs
+// Arkane.Zeroconf - TxtRecordEnumerator.cs
 
 #endregion
 
@@ -13,12 +13,8 @@ using System.Collections;
 
 namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour;
 
-internal class TxtRecordEnumerator : IEnumerator
+internal class TxtRecordEnumerator (TxtRecord record) : IEnumerator
 {
-  public TxtRecordEnumerator (TxtRecord record) => this.record = record;
-
-  private readonly TxtRecord record;
-
   private TxtRecordItem? currentItem;
   private int            index;
 
@@ -32,10 +28,10 @@ internal class TxtRecordEnumerator : IEnumerator
 
   public bool MoveNext ()
   {
-    if ((this.index < 0) || (this.index >= this.record.Count))
+    if ((this.index < 0) || (this.index >= record.Count))
       return false;
 
-    this.currentItem = this.record.GetItemAt (this.index++);
+    this.currentItem = record.GetItemAt (this.index++);
 
     return this.currentItem != null;
   }

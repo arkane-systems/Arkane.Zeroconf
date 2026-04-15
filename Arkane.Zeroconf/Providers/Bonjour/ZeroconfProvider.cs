@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - ZeroconfProvider.cs
+// Arkane.Zeroconf - ZeroconfProvider.cs
 
 #endregion
 
@@ -25,12 +25,12 @@ public static class Zeroconf
   private static extern void setenv (string key, string value);
 
   /// <summary>
-  /// Initializes the Bonjour/mDNS provider.
+  ///   Initializes the Bonjour/mDNS provider.
   /// </summary>
   /// <remarks>
-  /// On Linux, this method configures Avahi compatibility mode and returns early, as Avahi does not support
-  /// DNSServiceCreateConnection. This is a platform-specific limitation of the Avahi mDNS implementation.
-  /// On macOS and Windows (when Bonjour is installed), creates a shared DNS-SD connection to validate availability.
+  ///   On Linux, this method configures Avahi compatibility mode and returns early, as Avahi does not support
+  ///   DNSServiceCreateConnection. This is a platform-specific limitation of the Avahi mDNS implementation.
+  ///   On macOS and Windows (when Bonjour is installed), creates a shared DNS-SD connection to validate availability.
   /// </remarks>
   /// <exception cref="ServiceErrorException">Thrown when DNSServiceCreateConnection fails (non-Linux platforms).</exception>
   public static void Initialize ()
@@ -45,6 +45,7 @@ public static class Zeroconf
       // DNSServiceCreateConnection is not supported on Linux
       // See https://github.com/lathiat/avahi/blob/55d783d9d11ced838d73a2757273c5f6958ccd5c/avahi-compat-libdns_sd/unsupported.c#L62-L66
       Debug.WriteLine ("Bonjour initialization on Linux: skipping DNSServiceCreateConnection (Avahi limitation)");
+
       return;
     }
 
@@ -58,16 +59,18 @@ public static class Zeroconf
 }
 
 /// <summary>
-/// Preferred Zeroconf provider backed by Bonjour-compatible DNS-SD APIs.
+///   Preferred Zeroconf provider backed by Bonjour-compatible DNS-SD APIs.
 /// </summary>
 /// <remarks>
-/// <para>
-/// This provider is preferred whenever it is available and supports both browsing and publishing.
-/// On Windows, if Bonjour is unavailable, Arkane.Zeroconf may fall back to the <c>WindowsMdns</c> provider for lookup-only behavior.
-/// </para>
-/// <para>
-/// This provider remains the primary implementation across supported platforms, including Avahi-compatible environments on Linux.
-/// </para>
+///   <para>
+///     This provider is preferred whenever it is available and supports both browsing and publishing.
+///     On Windows, if Bonjour is unavailable, Arkane.Zeroconf may fall back to the <c>WindowsMdns</c> provider for
+///     lookup-only behavior.
+///   </para>
+///   <para>
+///     This provider remains the primary implementation across supported platforms, including Avahi-compatible
+///     environments on Linux.
+///   </para>
 /// </remarks>
 public class ZeroconfProvider : IZeroconfProvider
 {
@@ -80,9 +83,9 @@ public class ZeroconfProvider : IZeroconfProvider
   public ZeroconfCapability Capabilities => ZeroconfCapability.Browse | ZeroconfCapability.Publish;
 
   /// <summary>
-  /// Determines whether the Bonjour provider can be initialized on the current system.
+  ///   Determines whether the Bonjour provider can be initialized on the current system.
   /// </summary>
-  /// <returns><see langword="true"/> when Bonjour-compatible APIs are available; otherwise, <see langword="false"/>.</returns>
+  /// <returns><see langword="true" /> when Bonjour-compatible APIs are available; otherwise, <see langword="false" />.</returns>
   public bool IsAvailable ()
   {
     try
@@ -91,7 +94,7 @@ public class ZeroconfProvider : IZeroconfProvider
       {
         // On Linux, Initialize() returns early without any native calls (Avahi does not support
         // DNSServiceCreateConnection), so explicitly verify the native library is loadable.
-        if (!NativeLibrary.TryLoad ("libdns_sd.so.1", out IntPtr handle))
+        if (!NativeLibrary.TryLoad (libraryPath: "libdns_sd.so.1", handle: out IntPtr handle))
           return false;
 
         NativeLibrary.Free (handle);
@@ -107,7 +110,7 @@ public class ZeroconfProvider : IZeroconfProvider
   }
 
   /// <summary>
-  /// Initializes the Bonjour provider.
+  ///   Initializes the Bonjour provider.
   /// </summary>
-  public void Initialize () { Zeroconf.Initialize (); }
+  public void Initialize () => Zeroconf.Initialize ();
 }

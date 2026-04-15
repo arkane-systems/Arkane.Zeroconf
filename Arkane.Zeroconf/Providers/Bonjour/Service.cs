@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - Service.cs
+// Arkane.Zeroconf - Service.cs
 
 #endregion
 
@@ -31,7 +31,7 @@ public abstract class Service : IService
   protected uint            interfaceIndex;
   protected string          name = string.Empty;
   protected ushort          port;
-  protected string          regType      = string.Empty;
+  protected string          regType     = string.Empty;
   protected string          replyDomain = string.Empty;
 
   protected ITxtRecord? txtRecord;
@@ -64,13 +64,7 @@ public abstract class Service : IService
 
   public ushort UPort { get => this.port; set => this.port = value; }
 
-  public override bool Equals (object? o)
-  {
-    if (o is not Service service)
-      return false;
-
-    return service.Name == this.Name;
-  }
+  public override bool Equals (object? o) => o is Service service && (service.Name == this.Name);
 
   public override int GetHashCode () => this.Name.GetHashCode ();
 }

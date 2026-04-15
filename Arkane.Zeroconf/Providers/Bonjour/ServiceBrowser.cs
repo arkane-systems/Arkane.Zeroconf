@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - ServiceBrowser.cs
+// Arkane.Zeroconf - ServiceBrowser.cs
 
 #endregion
 
@@ -9,6 +9,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,11 +18,9 @@ using System.Threading.Tasks;
 
 namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour;
 
-public class ServiceBrowseEventArgs : Arkane.Zeroconf.ServiceBrowseEventArgs
+public class ServiceBrowseEventArgs (BrowseService service, bool moreComing) : Arkane.Zeroconf.ServiceBrowseEventArgs (service)
 {
-  public ServiceBrowseEventArgs (BrowseService service, bool moreComing) : base (service) => this.MoreComing = moreComing;
-
-  public bool MoreComing { get; }
+  public bool MoreComing { get; } = moreComing;
 }
 
 public class ServiceBrowser : IServiceBrowser, IDisposable
@@ -33,7 +32,7 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
   private readonly SemaphoreSlim                          serviceTableSemaphore = new (initialCount: 1, maxCount: 1);
   private readonly CancellationTokenSource                stopTokenSource       = new ();
 
-  private AddressProtocol address_protocol;
+  private AddressProtocol addressProtocol;
   private bool            disposed;
   private string?         domain;
   private uint            interfaceIndex;
@@ -49,8 +48,7 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
 
   public void Browse (uint interfaceIndex, AddressProtocol addressProtocol, string regtype, string domain)
   {
-    if (this.disposed)
-      throw new ObjectDisposedException (objectName: nameof (ServiceBrowser));
+    ObjectDisposedException.ThrowIf (condition: this.disposed, instance: this);
 
     this.Configure (interfaceIndex: interfaceIndex, addressProtocol: addressProtocol, regtype: regtype, domain: domain);
     this.StartAsync ();
@@ -67,25 +65,20 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
     // Dispose TxtRecord objects held by services before clearing the dictionary
     try
     {
-      this.serviceTableSemaphore.Wait (TimeSpan.FromSeconds (1));
+      _ = this.serviceTableSemaphore.Wait (TimeSpan.FromSeconds (1));
 
       try
       {
         foreach (IResolvableService service in this.serviceTable.Values)
         {
           if (service.TxtRecord is IDisposable disposable)
-          {
             try { disposable.Dispose (); }
-            catch (Exception ex)
-            {
-              System.Diagnostics.Debug.WriteLine ($"Error disposing TxtRecord: {ex.Message}");
-            }
-          }
+            catch (Exception ex) { Debug.WriteLine ($"Error disposing TxtRecord: {ex.Message}"); }
         }
 
         this.serviceTable.Clear ();
       }
-      finally { this.serviceTableSemaphore.Release (); }
+      finally { _ = this.serviceTableSemaphore.Release (); }
     }
     catch (OperationCanceledException)
     {
@@ -95,6 +88,8 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
 
     this.serviceTableSemaphore.Dispose ();
     this.disposed = true;
+
+    GC.SuppressFinalize (this);
   }
 
   public IEnumerator<IResolvableService> GetEnumerator ()
@@ -106,29 +101,27 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
       foreach (IResolvableService service in this.serviceTable.Values)
         yield return service;
     }
-    finally { this.serviceTableSemaphore.Release (); }
+    finally { _ = this.serviceTableSemaphore.Release (); }
   }
 
   IEnumerator IEnumerable.GetEnumerator () => this.GetEnumerator ();
 
   public void Configure (uint interfaceIndex, AddressProtocol addressProtocol, string regtype, string domain)
   {
-    this.interfaceIndex   = interfaceIndex;
-    this.address_protocol = addressProtocol;
-    this.regtype          = regtype;
-    this.domain           = domain;
+    this.interfaceIndex  = interfaceIndex;
+    this.addressProtocol = addressProtocol;
+    this.regtype         = regtype;
+    this.domain          = domain;
 
-    if (regtype == null)
-      throw new ArgumentNullException ("regtype");
+    ArgumentNullException.ThrowIfNull (regtype);
   }
 
   private void Start (bool async)
   {
-    if ((this.task != null) && !this.task.IsCompleted)
+    if (this.task is { IsCompleted: false })
       throw new InvalidOperationException ("ServiceBrowser is already started");
 
-    if (this.disposed)
-      throw new ObjectDisposedException (objectName: nameof (ServiceBrowser));
+    ObjectDisposedException.ThrowIf (condition: this.disposed, instance: this);
 
     if (async)
       this.task = Task.Run (action: () => this.ProcessStart (this.stopTokenSource.Token),
@@ -137,9 +130,9 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
       this.ProcessStart (this.stopTokenSource.Token);
   }
 
-  public void Start () { this.Start (false); }
+  public void Start () => this.Start (false);
 
-  public void StartAsync () { this.Start (true); }
+  public void StartAsync () => this.Start (true);
 
   private void ProcessStart (CancellationToken cancellationToken)
   {
@@ -168,11 +161,10 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
       this.sdRef = ServiceRef.Zero;
     }
 
-    if (this.task != null)
+    if (this.task is { IsCompleted: false })
     {
-      try { this.task.Wait (TimeSpan.FromSeconds (2)); }
-      catch (AggregateException ex) when (ex.InnerException is OperationCanceledException ||
-                                          ex.InnerException is ServiceErrorException) { }
+      try { _ = this.task.Wait (TimeSpan.FromSeconds (2)); }
+      catch (AggregateException ex) when (ex.InnerException is OperationCanceledException or ServiceErrorException) { }
 
       this.task = null;
     }
@@ -196,7 +188,7 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
                     RegType         = regtype,
                     ReplyDomain     = replyDomain,
                     InterfaceIndex  = interfaceIndex,
-                    AddressProtocol = this.address_protocol,
+                    AddressProtocol = this.addressProtocol,
                   };
 
     var args = new ServiceBrowseEventArgs (service: service,
@@ -207,7 +199,7 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
       this.serviceTableSemaphore.Wait ();
 
       try { this.serviceTable[name] = service; }
-      finally { this.serviceTableSemaphore.Release (); }
+      finally { _                   = this.serviceTableSemaphore.Release (); }
 
       ServiceBrowseEventHandler? handler = this.ServiceAdded;
       handler?.Invoke (o: this, args: args);
@@ -216,8 +208,8 @@ public class ServiceBrowser : IServiceBrowser, IDisposable
     {
       this.serviceTableSemaphore.Wait ();
 
-      try { this.serviceTable.Remove (name); }
-      finally { this.serviceTableSemaphore.Release (); }
+      try { _     = this.serviceTable.Remove (name); }
+      finally { _ = this.serviceTableSemaphore.Release (); }
 
       ServiceBrowseEventHandler? handler = this.ServiceRemoved;
       handler?.Invoke (o: this, args: args);

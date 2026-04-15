@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - ServiceBrowser.cs
+// Arkane.Zeroconf - ServiceBrowser.cs
 
 #endregion
 
@@ -10,6 +10,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,13 +41,13 @@ public sealed class ServiceBrowser : IServiceBrowser
 {
   private static readonly TimeSpan DefaultPollingInterval = TimeSpan.FromSeconds (5);
 
-  private static readonly object   pollingIntervalLock = new ();
-  private static          TimeSpan pollingInterval      = DefaultPollingInterval;
+  private static readonly Lock     pollingIntervalLock = new ();
+  private static          TimeSpan pollingInterval     = DefaultPollingInterval;
 
   private readonly ConcurrentDictionary<string, BrowseService> services = new (StringComparer.OrdinalIgnoreCase);
-  private          AddressProtocol                             addressProtocol;
 
   private bool                     _disposed;
+  private AddressProtocol          addressProtocol;
   private CancellationTokenSource? cts;
   private string?                  domain;
 
@@ -55,17 +56,17 @@ public sealed class ServiceBrowser : IServiceBrowser
   private string regtype = string.Empty;
 
   /// <summary>
-  /// Gets or sets the interval between systemd-resolved mDNS polling cycles.
-  /// Default is 5 seconds.
+  ///   Gets or sets the interval between systemd-resolved mDNS polling cycles.
+  ///   Default is 5 seconds.
   /// </summary>
   /// <remarks>
-  /// <para>
-  /// This property is thread-safe and can be configured before using the systemd-resolved service browser
-  /// to tune discovery responsiveness and polling frequency.
-  /// </para>
-  /// <para>
-  /// Changes to this property take effect on the next polling delay cycle.
-  /// </para>
+  ///   <para>
+  ///     This property is thread-safe and can be configured before using the systemd-resolved service browser
+  ///     to tune discovery responsiveness and polling frequency.
+  ///   </para>
+  ///   <para>
+  ///     Changes to this property take effect on the next polling delay cycle.
+  ///   </para>
   /// </remarks>
   public static TimeSpan PollingInterval
   {
@@ -110,7 +111,10 @@ public sealed class ServiceBrowser : IServiceBrowser
     this._disposed = true;
 
     try { this.cts?.Cancel (); }
-    catch { /* swallow exceptions from cancellation callbacks */ }
+    catch
+    {
+      /* swallow exceptions from cancellation callbacks */
+    }
 
     try { this.pollingTask?.Wait (); }
     catch (OperationCanceledException) { }
@@ -125,13 +129,8 @@ public sealed class ServiceBrowser : IServiceBrowser
     foreach (BrowseService service in this.services.Values)
     {
       if (service.TxtRecord is IDisposable disposable)
-      {
         try { disposable.Dispose (); }
-        catch (Exception ex)
-        {
-          System.Diagnostics.Debug.WriteLine ($"Error disposing TxtRecord: {ex.Message}");
-        }
-      }
+        catch (Exception ex) { Debug.WriteLine ($"Error disposing TxtRecord: {ex.Message}"); }
     }
 
     this.services.Clear ();
@@ -155,21 +154,18 @@ public sealed class ServiceBrowser : IServiceBrowser
 
       try
       {
-        discovered = await Task.Run (function: () => SystemdResolvedClient.BrowseInstancesAsync (
-                                       regtype: this.regtype,
-                                       domain: this.domain ?? "local",
-                                       cancellationToken: cancellationToken),
+        discovered = await Task.Run (function: () => SystemdResolvedClient.BrowseInstancesAsync (regtype: this.regtype,
+                                                                                                 domain: this.domain ?? "local",
+                                                                                                 cancellationToken:
+                                                                                                 cancellationToken),
                                      cancellationToken: cancellationToken)
                                .ConfigureAwait (false);
       }
-      catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-      {
-        return;
-      }
+      catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return; }
       catch (Exception ex)
       {
-        System.Diagnostics.Debug.WriteLine ($"systemd-resolved browse error: {ex.Message}");
-        discovered = Array.Empty<SystemdResolvedClient.ServiceInstance> ();
+        Debug.WriteLine ($"systemd-resolved browse error: {ex.Message}");
+        discovered = [];
       }
 
       var discoveredKeys = new HashSet<string> (collection: discovered.Select (s => s.FullName),
@@ -185,13 +181,8 @@ public sealed class ServiceBrowser : IServiceBrowser
                                          addressProtocol: this.addressProtocol);
 
         if (this.services.TryAdd (key: discoveredService.FullName, value: service))
-        {
           try { this.ServiceAdded?.Invoke (o: this, args: new ServiceBrowseEventArgs (service)); }
-          catch (Exception ex)
-          {
-            System.Diagnostics.Debug.WriteLine ($"ServiceAdded handler threw: {ex.Message}");
-          }
-        }
+          catch (Exception ex) { Debug.WriteLine ($"ServiceAdded handler threw: {ex.Message}"); }
       }
 
       foreach (string existing in this.services.Keys.ToList ())
@@ -200,13 +191,8 @@ public sealed class ServiceBrowser : IServiceBrowser
           continue;
 
         if (this.services.TryRemove (key: existing, value: out BrowseService? removed) && (removed != null))
-        {
           try { this.ServiceRemoved?.Invoke (o: this, args: new ServiceBrowseEventArgs (removed)); }
-          catch (Exception ex)
-          {
-            System.Diagnostics.Debug.WriteLine ($"ServiceRemoved handler threw: {ex.Message}");
-          }
-        }
+          catch (Exception ex) { Debug.WriteLine ($"ServiceRemoved handler threw: {ex.Message}"); }
       }
 
       TimeSpan delay;

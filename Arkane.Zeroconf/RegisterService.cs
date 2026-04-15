@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - RegisterService.cs
+// Arkane.Zeroconf - RegisterService.cs
 
 #endregion
 
@@ -51,7 +51,11 @@ public class RegisterService : IRegisterService
 
   public void Register () => this.registerService.Register ();
 
-  public void Dispose () => this.registerService.Dispose ();
+  public void Dispose ()
+  {
+    GC.SuppressFinalize (this);
+    this.registerService.Dispose ();
+  }
 
   public event RegisterServiceEventHandler Response
   {

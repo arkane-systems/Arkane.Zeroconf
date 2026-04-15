@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - TxtRecord.cs
+// Arkane.Zeroconf - TxtRecord.cs
 
 #endregion
 
@@ -25,7 +25,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.SystemdResolved;
 /// </remarks>
 public sealed class TxtRecord : ITxtRecord
 {
-  private readonly List<TxtRecordItem> items = new ();
+  private readonly List<TxtRecordItem> items = [];
 
   public TxtRecordItem? this [string key]
     => this.items.FirstOrDefault (item => string.Equals (a: item.Key, b: key, comparisonType: StringComparison.OrdinalIgnoreCase));
@@ -62,23 +62,17 @@ public sealed class TxtRecord : ITxtRecord
 
     TxtRecordItem? item =
       this.items.FirstOrDefault (current => string.Equals (a: current.Key,
-                                                            b: key,
-                                                            comparisonType: StringComparison.OrdinalIgnoreCase));
+                                                           b: key,
+                                                           comparisonType: StringComparison.OrdinalIgnoreCase));
 
     if (item != null)
-      this.items.Remove (item);
+      _ = this.items.Remove (item);
   }
 
   public TxtRecordItem GetItemAt (int index)
   {
-    try
-    {
-      return this.items[index];
-    }
-    catch (ArgumentOutOfRangeException ex)
-    {
-      throw new IndexOutOfRangeException (ex.Message, ex);
-    }
+    try { return this.items[index]; }
+    catch (ArgumentOutOfRangeException ex) { throw new IndexOutOfRangeException (message: ex.Message, innerException: ex); }
   }
 
   public IEnumerator GetEnumerator () => this.items.GetEnumerator ();

@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - ZeroconfProviderAttribute.cs
+// Arkane.Zeroconf - ZeroconfProviderAttribute.cs
 
 #endregion
 
@@ -13,15 +13,9 @@ using System;
 namespace ArkaneSystems.Arkane.Zeroconf.Providers;
 
 [AttributeUsage (AttributeTargets.Assembly, AllowMultiple = true)]
-public class ZeroconfProviderAttribute : Attribute
+public class ZeroconfProviderAttribute (Type providerType, int priority = 0) : Attribute
 {
-  public ZeroconfProviderAttribute (Type providerType, int priority = 0)
-  {
-    this.ProviderType = providerType;
-    this.Priority     = priority;
-  }
+  public Type ProviderType { get; } = providerType;
 
-  public Type ProviderType { get; }
-
-  public int Priority { get; }
+  public int Priority { get; } = priority;
 }

@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - TxtRecord.cs
+// Arkane.Zeroconf - TxtRecord.cs
 
 #endregion
 
@@ -74,7 +74,11 @@ public class TxtRecord : ITxtRecord
 
   public IEnumerator GetEnumerator () => this.BaseRecord.GetEnumerator ();
 
-  public void Dispose () => this.BaseRecord.Dispose ();
+  public void Dispose ()
+  {
+    GC.SuppressFinalize (this);
+    this.BaseRecord.Dispose ();
+  }
 
   private static T CreateRequiredInstance<T> (Type type) where T : class
     => Activator.CreateInstance (type) as T ??

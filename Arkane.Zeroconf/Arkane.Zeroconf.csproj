@@ -25,6 +25,11 @@ Please see project web site for more information.</Description>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <LangVersion>latest</LangVersion>
+    <NoWarn>1701;1702;SYSLIB1054;CA2101</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;SYSLIB1054;CA2101</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

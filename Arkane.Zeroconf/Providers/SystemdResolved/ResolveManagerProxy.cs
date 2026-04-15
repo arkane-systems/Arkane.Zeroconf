@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - ResolveManagerProxy.cs
+// Arkane.Zeroconf - ResolveManagerProxy.cs
 
 #endregion
 
@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -21,6 +22,19 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.SystemdResolved;
 
 internal static class ResolveManagerProxy
 {
+  #region Nested type: ServiceResolveResult
+
+  internal record ServiceResolveResult (
+    string          HostName,
+    ushort          Port,
+    IPAddress[]     Addresses,
+    TxtRecordItem[] TxtItems,
+    string          CanonicalName,
+    string          CanonicalType,
+    string          CanonicalDomain);
+
+  #endregion
+
   private const string DbusService   = "org.freedesktop.resolve1";
   private const string DbusPath      = "/org/freedesktop/resolve1";
   private const string DbusInterface = "org.freedesktop.resolve1.Manager";
@@ -28,19 +42,6 @@ internal static class ResolveManagerProxy
   // AF_INET and AF_INET6 values on Linux
   private const int AfInet  = 2;
   private const int AfInet6 = 10;
-
-  #region Nested type: ServiceResolveResult
-
-  internal record ServiceResolveResult (
-    string     HostName,
-    ushort     Port,
-    IPAddress[] Addresses,
-    TxtRecordItem[] TxtItems,
-    string     CanonicalName,
-    string     CanonicalType,
-    string     CanonicalDomain);
-
-  #endregion
 
   internal static async Task<string> GetMulticastDnsModeAsync (DBusConnection    connection,
                                                                CancellationToken ct = default)
@@ -59,15 +60,15 @@ internal static class ResolveManagerProxy
 
     MessageBuffer buffer = writer.CreateMessage ();
 
-    return await connection.CallMethodAsync (buffer,
-                                             static (Message message, object? _) =>
-                                             {
-                                               Reader reader = message.GetBodyReader ();
-                                               VariantValue variant = reader.ReadVariantValue ();
+    return await connection.CallMethodAsync (message: buffer,
+                                             reader: static (message, _) =>
+                                                     {
+                                                       Reader       reader  = message.GetBodyReader ();
+                                                       VariantValue variant = reader.ReadVariantValue ();
 
-                                               return variant.GetString ();
-                                             },
-                                             null)
+                                                       return variant.GetString ();
+                                                     },
+                                             readerState: null)
                            .WaitAsync (ct);
   }
 
@@ -96,34 +97,34 @@ internal static class ResolveManagerProxy
 
     MessageBuffer buffer = writer.CreateMessage ();
 
-    return await connection.CallMethodAsync (buffer,
-                                             static (Message message, object? _) =>
-                                             {
-                                               Reader reader = message.GetBodyReader ();
+    return await connection.CallMethodAsync (message: buffer,
+                                             reader: static (message, _) =>
+                                                     {
+                                                       Reader reader = message.GetBodyReader ();
 
-                                               var rawRecords = new List<byte[]> ();
+                                                       var rawRecords = new List<byte[]> ();
 
-                                               ArrayEnd rrArrayEnd = reader.ReadArrayStart (DBusType.Struct);
+                                                       ArrayEnd rrArrayEnd = reader.ReadArrayStart (DBusType.Struct);
 
-                                               while (reader.HasNext (rrArrayEnd))
-                                               {
-                                                 reader.AlignStruct ();
+                                                       while (reader.HasNext (rrArrayEnd))
+                                                       {
+                                                         reader.AlignStruct ();
 
-                                                 // Skip ifindex (i), class (q), type (q) — we only need the raw bytes
-                                                 _ = reader.ReadInt32 ();
-                                                 _ = reader.ReadUInt16 ();
-                                                 _ = reader.ReadUInt16 ();
+                                                         // Skip ifindex (i), class (q), type (q) — we only need the raw bytes
+                                                         _ = reader.ReadInt32 ();
+                                                         _ = reader.ReadUInt16 ();
+                                                         _ = reader.ReadUInt16 ();
 
-                                                 byte[] rawRr = reader.ReadArrayOfByte ();
-                                                 rawRecords.Add (rawRr);
-                                               }
+                                                         byte[] rawRr = reader.ReadArrayOfByte ();
+                                                         rawRecords.Add (rawRr);
+                                                       }
 
-                                               // flags (t) — not used
-                                               _ = reader.ReadUInt64 ();
+                                                       // flags (t) — not used
+                                                       _ = reader.ReadUInt64 ();
 
-                                               return (IReadOnlyList<byte[]>)rawRecords;
-                                             },
-                                             null)
+                                                       return (IReadOnlyList<byte[]>)rawRecords;
+                                                     },
+                                             readerState: null)
                            .WaitAsync (ct);
   }
 
@@ -154,99 +155,99 @@ internal static class ResolveManagerProxy
 
     MessageBuffer buffer = writer.CreateMessage ();
 
-    return await connection.CallMethodAsync (buffer,
-                                             static (Message message, object? _) =>
-                                             {
-                                               Reader reader = message.GetBodyReader ();
+    return await connection.CallMethodAsync (message: buffer,
+                                             reader: static (message, _) =>
+                                                     {
+                                                       Reader reader = message.GetBodyReader ();
 
-                                               string     hostname  = string.Empty;
-                                               ushort     port      = 0;
-                                               var        addresses = new List<IPAddress> ();
-                                               var        txtItems  = new List<TxtRecordItem> ();
+                                                       var    hostname  = string.Empty;
+                                                       ushort port      = 0;
+                                                       var    addresses = new List<IPAddress> ();
+                                                       var    txtItems  = new List<TxtRecordItem> ();
 
-                                               // srv_records: a(qqqsa(iiay)s)
-                                               ArrayEnd srvArrayEnd = reader.ReadArrayStart (DBusType.Struct);
+                                                       // srv_records: a(qqqsa(iiay)s)
+                                                       ArrayEnd srvArrayEnd = reader.ReadArrayStart (DBusType.Struct);
 
-                                               while (reader.HasNext (srvArrayEnd))
-                                               {
-                                                 reader.AlignStruct ();
+                                                       while (reader.HasNext (srvArrayEnd))
+                                                       {
+                                                         reader.AlignStruct ();
 
-                                                 _ = reader.ReadUInt16 (); // priority
-                                                 _ = reader.ReadUInt16 (); // weight
-                                                 ushort srvPort = reader.ReadUInt16 ();
-                                                 string srvHost = reader.ReadString ();
+                                                         _ = reader.ReadUInt16 (); // priority
+                                                         _ = reader.ReadUInt16 (); // weight
+                                                         ushort srvPort = reader.ReadUInt16 ();
+                                                         string srvHost = reader.ReadString ();
 
-                                                 // addresses: a(iiay)
-                                                 ArrayEnd addrArrayEnd = reader.ReadArrayStart (DBusType.Struct);
+                                                         // addresses: a(iiay)
+                                                         ArrayEnd addrArrayEnd = reader.ReadArrayStart (DBusType.Struct);
 
-                                                 while (reader.HasNext (addrArrayEnd))
-                                                 {
-                                                   reader.AlignStruct ();
+                                                         while (reader.HasNext (addrArrayEnd))
+                                                         {
+                                                           reader.AlignStruct ();
 
-                                                   _ = reader.ReadInt32 (); // ifindex
-                                                   int    addrFamily = reader.ReadInt32 ();
-                                                   byte[] addrBytes  = reader.ReadArrayOfByte ();
+                                                           _ = reader.ReadInt32 (); // ifindex
+                                                           int    addrFamily = reader.ReadInt32 ();
+                                                           byte[] addrBytes  = reader.ReadArrayOfByte ();
 
-                                                   try
-                                                   {
-                                                     if ((addrFamily == AfInet && addrBytes.Length == 4) ||
-                                                         (addrFamily == AfInet6 && addrBytes.Length == 16))
-                                                       addresses.Add (new IPAddress (addrBytes));
-                                                   }
-                                                   catch (Exception ex)
-                                                   {
-                                                     System.Diagnostics.Debug.WriteLine ($"Failed to parse address: {ex.Message}");
-                                                   }
-                                                 }
+                                                           try
+                                                           {
+                                                             if (((addrFamily == AfInet)  && (addrBytes.Length == 4)) ||
+                                                                 ((addrFamily == AfInet6) && (addrBytes.Length == 16)))
+                                                               addresses.Add (new IPAddress (addrBytes));
+                                                           }
+                                                           catch (Exception ex)
+                                                           {
+                                                             Debug.WriteLine ($"Failed to parse address: {ex.Message}");
+                                                           }
+                                                         }
 
-                                                 _ = reader.ReadString (); // canon_hostname
+                                                         _ = reader.ReadString (); // canon_hostname
 
-                                                 // Use first SRV record's host and port
-                                                 if (port == 0)
-                                                 {
-                                                   port     = srvPort;
-                                                   hostname = srvHost;
-                                                 }
-                                               }
+                                                         // Use first SRV record's host and port
+                                                         if (port == 0)
+                                                         {
+                                                           port     = srvPort;
+                                                           hostname = srvHost;
+                                                         }
+                                                       }
 
-                                               // txt_records: aay
-                                               ArrayEnd txtArrayEnd = reader.ReadArrayStart (DBusType.Array);
+                                                       // txt_records: aay
+                                                       ArrayEnd txtArrayEnd = reader.ReadArrayStart (DBusType.Array);
 
-                                               while (reader.HasNext (txtArrayEnd))
-                                               {
-                                                 byte[] txtBytes = reader.ReadArrayOfByte ();
-                                                 TxtRecordItem? item = ParseTxtEntry (txtBytes);
+                                                       while (reader.HasNext (txtArrayEnd))
+                                                       {
+                                                         byte[]         txtBytes = reader.ReadArrayOfByte ();
+                                                         TxtRecordItem? item     = ParseTxtEntry (txtBytes);
 
-                                                 if (item != null)
-                                                   txtItems.Add (item);
-                                               }
+                                                         if (item != null)
+                                                           txtItems.Add (item);
+                                                       }
 
-                                               string canonicalName   = reader.ReadString ();
-                                               string canonicalType   = reader.ReadString ();
-                                               string canonicalDomain = reader.ReadString ();
-                                               _ = reader.ReadUInt64 (); // flags
+                                                       string canonicalName   = reader.ReadString ();
+                                                       string canonicalType   = reader.ReadString ();
+                                                       string canonicalDomain = reader.ReadString ();
+                                                       _ = reader.ReadUInt64 (); // flags
 
-                                               return new ServiceResolveResult (HostName: hostname,
-                                                                                Port: port,
-                                                                                Addresses: addresses.ToArray (),
-                                                                                TxtItems: txtItems.ToArray (),
-                                                                                CanonicalName: canonicalName,
-                                                                                CanonicalType: canonicalType,
-                                                                                CanonicalDomain: canonicalDomain);
-                                             },
-                                             null)
+                                                       return new ServiceResolveResult (HostName: hostname,
+                                                                                        Port: port,
+                                                                                        Addresses: [.. addresses],
+                                                                                        TxtItems: [.. txtItems],
+                                                                                        CanonicalName: canonicalName,
+                                                                                        CanonicalType: canonicalType,
+                                                                                        CanonicalDomain: canonicalDomain);
+                                                     },
+                                             readerState: null)
                            .WaitAsync (ct);
   }
 
-  internal static async Task<string> RegisterServiceAsync (DBusConnection            connection,
-                                                           string                    id,
-                                                           string                    nameTemplate,
-                                                           string                    type,
-                                                           ushort                    port,
-                                                           ushort                    priority,
-                                                           ushort                    weight,
+  internal static async Task<string> RegisterServiceAsync (DBusConnection             connection,
+                                                           string                     id,
+                                                           string                     nameTemplate,
+                                                           string                     type,
+                                                           ushort                     port,
+                                                           ushort                     priority,
+                                                           ushort                     weight,
                                                            IEnumerable<TxtRecordItem> txtItems,
-                                                           CancellationToken         ct = default)
+                                                           CancellationToken          ct = default)
   {
     MessageWriter writer = connection.GetMessageWriter ();
 
@@ -272,7 +273,7 @@ internal static class ResolveManagerProxy
       ArrayStart innerDict = writer.WriteDictionaryStart ();
       writer.WriteDictionaryEntryStart ();
       writer.WriteString (item.Key);
-      writer.WriteArray (item.ValueRaw ?? Array.Empty<byte> ());
+      writer.WriteArray (item.ValueRaw);
       writer.WriteDictionaryEnd (innerDict);
     }
 
@@ -280,14 +281,14 @@ internal static class ResolveManagerProxy
 
     MessageBuffer buffer = writer.CreateMessage ();
 
-    return await connection.CallMethodAsync (buffer,
-                                             static (Message message, object? _) =>
-                                             {
-                                               Reader reader = message.GetBodyReader ();
+    return await connection.CallMethodAsync (message: buffer,
+                                             reader: static (message, _) =>
+                                                     {
+                                                       Reader reader = message.GetBodyReader ();
 
-                                               return reader.ReadObjectPathAsString ();
-                                             },
-                                             null)
+                                                       return reader.ReadObjectPathAsString ();
+                                                     },
+                                             readerState: null)
                            .WaitAsync (ct);
   }
 
@@ -317,7 +318,7 @@ internal static class ResolveManagerProxy
   internal static string? ExtractPtrTarget (byte[] rawRr)
   {
     // Skip owner name: consume label-encoded name
-    int offset = 0;
+    var offset = 0;
 
     while (offset < rawRr.Length)
     {
@@ -326,12 +327,14 @@ internal static class ResolveManagerProxy
       if (len == 0)
       {
         offset++;
+
         break;
       }
 
       if ((len & 0xC0) == 0xC0)
       {
         offset += 2;
+
         break;
       }
 
@@ -367,21 +370,20 @@ internal static class ResolveManagerProxy
       offset += len;
     }
 
-    return string.Join (".", labels);
+    return string.Join (separator: ".", values: labels);
   }
 
   private static TxtRecordItem? ParseTxtEntry (byte[] data)
   {
-    if (data == null || data.Length == 0)
+    if ((data == null) || (data.Length == 0))
       return null;
 
-    string text   = Encoding.UTF8.GetString (data);
-    int    eqIdx  = text.IndexOf ('=');
+    string text  = Encoding.UTF8.GetString (data);
+    int    eqIdx = text.IndexOf ('=');
 
-    if (eqIdx < 0)
-      return new TxtRecordItem (key: text, valueRaw: Array.Empty<byte> ());
-
-    return new TxtRecordItem (key: text[..eqIdx],
-                              valueRaw: Encoding.UTF8.GetBytes (text[(eqIdx + 1)..]));
+    return eqIdx < 0
+             ? new TxtRecordItem (key: text, valueRaw: [])
+             : new TxtRecordItem (key: text[..eqIdx],
+                                  valueRaw: Encoding.UTF8.GetBytes (text[(eqIdx + 1)..]));
   }
 }

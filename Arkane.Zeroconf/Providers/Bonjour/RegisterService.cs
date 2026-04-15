@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - RegisterService.cs
+// Arkane.Zeroconf - RegisterService.cs
 
 #endregion
 
@@ -19,17 +19,15 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour;
 
 public sealed class RegisterService : Service, IRegisterService, IDisposable
 {
-  public RegisterService () { this.SetupCallback (); }
+  public RegisterService () => this.SetupCallback ();
 
   public RegisterService (string name, string replyDomain, string regtype) : base (name: name,
                                                                                    replyDomain: replyDomain,
                                                                                    regtype: regtype)
-  {
-    this.SetupCallback ();
-  }
+    => this.SetupCallback ();
 
   private readonly CancellationTokenSource cts      = new ();
-  private readonly object                  syncRoot = new ();
+  private readonly Lock                    syncRoot = new ();
   private          bool                    disposed;
 
   private Native.DNSServiceRegisterReply? registerReplyHandler;
@@ -40,7 +38,7 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
 
   public event RegisterServiceEventHandler? Response;
 
-  public void Register () { this.Register (true); }
+  public void Register () => this.Register (true);
 
   public void Dispose ()
   {
@@ -57,11 +55,9 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
       registrationTask = this.task;
 
     if (registrationTask != null)
-    {
-      try { registrationTask.Wait (TimeSpan.FromSeconds (1)); }
+      try { _ = registrationTask.Wait (TimeSpan.FromSeconds (1)); }
       catch (AggregateException aggregateException) when (aggregateException.InnerException is OperationCanceledException) { }
       catch (OperationCanceledException) { }
-    }
 
     lock (this.syncRoot)
     {
@@ -75,7 +71,7 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
     this.cts.Dispose ();
   }
 
-  private void SetupCallback () { this.registerReplyHandler = this.OnRegisterReply; }
+  private void SetupCallback () => this.registerReplyHandler = this.OnRegisterReply;
 
   public void Register (bool async)
   {
@@ -84,8 +80,7 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
       if (this.task != null)
         throw new InvalidOperationException ("RegisterService registration already in process");
 
-      if (this.disposed)
-        throw new ObjectDisposedException (objectName: nameof (RegisterService));
+      ObjectDisposedException.ThrowIf (condition: this.disposed, instance: this);
 
       if (async)
         this.task = Task.Run (() =>
@@ -104,14 +99,14 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
       this.ProcessRegister ();
   }
 
-  public void RegisterSync () { this.Register (false); }
+  public void RegisterSync () => this.Register (false);
 
   public void ProcessRegister ()
   {
     this.cts.Token.ThrowIfCancellationRequested ();
 
     ushort txtRecLength = 0;
-    byte[] txtRec       = Array.Empty<byte> ();
+    byte[] txtRec       = [];
 
     if (this.TxtRecord != null)
     {
@@ -123,9 +118,7 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
                     length: txtRecLength);
     }
 
-    ServiceRef localSdRef;
-
-    ServiceError error = Native.DNSServiceRegister (sdRef: out localSdRef,
+    ServiceError error = Native.DNSServiceRegister (sdRef: out ServiceRef localSdRef,
                                                     flags: this.AutoRename ? ServiceFlags.None : ServiceFlags.NoAutoRename,
                                                     interfaceIndex: this.InterfaceIndex,
                                                     name: Encoding.UTF8.GetBytes (this.Name),
@@ -148,6 +141,7 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
       if (this.disposed)
       {
         localSdRef.Deallocate ();
+
         return;
       }
 

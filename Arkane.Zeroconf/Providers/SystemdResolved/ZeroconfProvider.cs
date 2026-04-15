@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - ZeroconfProvider.cs
+// Arkane.Zeroconf - ZeroconfProvider.cs
 
 #endregion
 
@@ -35,8 +35,6 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.SystemdResolved;
 /// </remarks>
 public class ZeroconfProvider : IZeroconfProvider
 {
-  private ZeroconfCapability _capabilities = ZeroconfCapability.Browse;
-
   /// <inheritdoc />
   public Type ServiceBrowser => typeof (ServiceBrowser);
 
@@ -47,7 +45,7 @@ public class ZeroconfProvider : IZeroconfProvider
   public Type TxtRecord => typeof (TxtRecord);
 
   /// <inheritdoc />
-  public ZeroconfCapability Capabilities => this._capabilities;
+  public ZeroconfCapability Capabilities { get; private set; } = ZeroconfCapability.Browse;
 
   /// <summary>
   ///   Determines whether the systemd-resolved provider can be used on the current system.
@@ -67,10 +65,7 @@ public class ZeroconfProvider : IZeroconfProvider
 
       return !string.Equals (a: mode, b: "no", comparisonType: StringComparison.OrdinalIgnoreCase);
     }
-    catch
-    {
-      return false;
-    }
+    catch { return false; }
   }
 
   /// <summary>
@@ -86,20 +81,12 @@ public class ZeroconfProvider : IZeroconfProvider
                                        .GetAwaiter ()
                                        .GetResult ();
 
-      if (string.Equals (a: mode, b: "yes", comparisonType: StringComparison.OrdinalIgnoreCase)
-       && ProbePublishAuthorized ())
-      {
-        this._capabilities = ZeroconfCapability.Browse | ZeroconfCapability.Publish;
-      }
-      else
-      {
-        this._capabilities = ZeroconfCapability.Browse;
-      }
+      this.Capabilities =
+        string.Equals (a: mode, b: "yes", comparisonType: StringComparison.OrdinalIgnoreCase) && ProbePublishAuthorized ()
+          ? ZeroconfCapability.Browse | ZeroconfCapability.Publish
+          : ZeroconfCapability.Browse;
     }
-    catch
-    {
-      this._capabilities = ZeroconfCapability.Browse;
-    }
+    catch { this.Capabilities = ZeroconfCapability.Browse; }
   }
 
   /// <summary>
@@ -118,7 +105,7 @@ public class ZeroconfProvider : IZeroconfProvider
                                           port: 0,
                                           priority: 0,
                                           weight: 0,
-                                          txtItems: Array.Empty<TxtRecordItem> ())
+                                          txtItems: [])
                    .GetAwaiter ()
                    .GetResult ();
 
@@ -129,13 +116,14 @@ public class ZeroconfProvider : IZeroconfProvider
                            .GetAwaiter ()
                            .GetResult ();
       }
-      catch { /* best-effort cleanup */ }
+      catch
+      {
+        /* best-effort cleanup */
+      }
 
       return true;
     }
-    catch (DBusErrorReplyException ex) when (IsAuthorizationError (ex))    {
-      return false;
-    }
+    catch (DBusErrorReplyException ex) when (IsAuthorizationError (ex)) { return false; }
     catch
     {
       // Any other error (e.g. invalid type format) means polkit allowed the call.
@@ -145,10 +133,10 @@ public class ZeroconfProvider : IZeroconfProvider
 
   private static bool IsAuthorizationError (DBusErrorReplyException ex)
     => ex.ErrorName is
-       "org.freedesktop.DBus.Error.InteractiveAuthorizationRequired" or
-       "org.freedesktop.DBus.Error.AccessDenied" or
-       "org.freedesktop.DBus.Error.AuthFailed" or
-       "org.freedesktop.DBus.Error.NotSupported";
+         "org.freedesktop.DBus.Error.InteractiveAuthorizationRequired" or
+         "org.freedesktop.DBus.Error.AccessDenied" or
+         "org.freedesktop.DBus.Error.AuthFailed" or
+         "org.freedesktop.DBus.Error.NotSupported";
 
   private static async Task<string> CheckMdnsModeAsync ()
   {

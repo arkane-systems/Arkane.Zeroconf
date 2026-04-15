@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - ProviderFactory.cs
+// Arkane.Zeroconf - ProviderFactory.cs
 
 #endregion
 
@@ -17,8 +17,8 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers;
 
 internal static class ProviderFactory
 {
-  private static readonly Lazy<IZeroconfProvider[]> providers = new(GetProviders);
-  private static IZeroconfProvider?   selectedProvider;
+  private static readonly Lazy<IZeroconfProvider[]> providers = new (GetProviders);
+  private static          IZeroconfProvider?        selectedProvider;
 
   private static IZeroconfProvider DefaultProvider
   {
@@ -26,23 +26,22 @@ internal static class ProviderFactory
     {
       IZeroconfProvider[] available = providers.Value;
 
-      if (available.Length == 0)
-        throw new
-          InvalidOperationException ("No Zeroconf providers could be found or initialized. Necessary daemon may not be running.");
-
-      return available[0];
+      return available.Length == 0
+               ? throw new
+                   InvalidOperationException ("No Zeroconf providers could be found or initialized. Necessary daemon may not be running.")
+               : available[0];
     }
   }
 
   public static IZeroconfProvider SelectedProvider { get => selectedProvider ?? DefaultProvider; set => selectedProvider = value; }
 
   /// <summary>
-  /// Gets whether at least one Zeroconf provider was discovered and initialized successfully.
+  ///   Gets whether at least one Zeroconf provider was discovered and initialized successfully.
   /// </summary>
-  internal static bool HasAnyProvider => selectedProvider != null || providers.Value.Length > 0;
+  internal static bool HasAnyProvider => (selectedProvider != null) || (providers.Value.Length > 0);
 
   /// <summary>
-  /// Resets the selected provider back to the automatically discovered default.
+  ///   Resets the selected provider back to the automatically discovered default.
   /// </summary>
   internal static void ResetToDefaultProvider () => selectedProvider = null;
 
@@ -52,14 +51,16 @@ internal static class ProviderFactory
 
     var asm = Assembly.GetExecutingAssembly ();
 
-    (IZeroconfProvider? Provider, int Priority)[] candidates = asm.GetCustomAttributes (false)
-                                                                  .OfType<ZeroconfProviderAttribute> ()
-                                                                  .OrderByDescending (attr => attr.Priority)
-                                                                  .Select (attr => (Provider: Activator
-                                                                                                 .CreateInstance (attr.ProviderType)
-                                                                                                as IZeroconfProvider,
-                                                                                    attr.Priority))
-                                                                  .ToArray ();
+    (IZeroconfProvider? Provider, int Priority)[] candidates =
+    [
+      .. asm.GetCustomAttributes (false)
+            .OfType<ZeroconfProviderAttribute> ()
+            .OrderByDescending (attr => attr.Priority)
+            .Select (attr => (Provider: Activator
+                                           .CreateInstance (attr.ProviderType)
+                                          as IZeroconfProvider,
+                              attr.Priority)),
+    ];
 
     foreach ((IZeroconfProvider? Provider, int Priority) candidate in candidates)
     {
@@ -73,6 +74,6 @@ internal static class ProviderFactory
       providersList.Add (candidate.Provider);
     }
 
-    return providersList.ToArray ();
+    return [.. providersList];
   }
 }

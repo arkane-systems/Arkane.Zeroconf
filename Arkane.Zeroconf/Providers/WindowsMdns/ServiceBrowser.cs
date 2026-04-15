@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - ServiceBrowser.cs
+// Arkane.Zeroconf - ServiceBrowser.cs
 
 #endregion
 
@@ -10,6 +10,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ public sealed class ServiceBrowser : IServiceBrowser
 {
   private static readonly TimeSpan DefaultPollingInterval = TimeSpan.FromSeconds (5);
 
-  private static readonly object pollingIntervalLock = new ();
+  private static readonly Lock     pollingIntervalLock = new ();
   private static          TimeSpan pollingInterval     = DefaultPollingInterval;
 
   private readonly ConcurrentDictionary<string, BrowseService> services = new (StringComparer.OrdinalIgnoreCase);
@@ -36,26 +37,26 @@ public sealed class ServiceBrowser : IServiceBrowser
   private string regtype = string.Empty;
 
   /// <summary>
-  /// Gets or sets the interval between Windows mDNS polling cycles.
-  /// Default is 5 seconds.
+  ///   Gets or sets the interval between Windows mDNS polling cycles.
+  ///   Default is 5 seconds.
   /// </summary>
   /// <remarks>
-  /// <para>
-  /// This property is thread-safe and can be configured before using the Windows mDNS service browser
-  /// to tune discovery responsiveness and polling frequency.
-  /// </para>
-  /// <para>
-  /// Changes to this property take effect on the next polling delay cycle. If a delay is already in progress
-  /// when the interval is changed, the current delay will complete with the previously read interval value.
-  /// </para>
-  /// <para>
-  /// Example:
-  /// <code>
+  ///   <para>
+  ///     This property is thread-safe and can be configured before using the Windows mDNS service browser
+  ///     to tune discovery responsiveness and polling frequency.
+  ///   </para>
+  ///   <para>
+  ///     Changes to this property take effect on the next polling delay cycle. If a delay is already in progress
+  ///     when the interval is changed, the current delay will complete with the previously read interval value.
+  ///   </para>
+  ///   <para>
+  ///     Example:
+  ///     <code>
   /// ServiceBrowser.PollingInterval = TimeSpan.FromSeconds(2);
   /// var browser = new ServiceBrowser();
   /// browser.Browse(0, AddressProtocol.Any, "_http._tcp", "local");
   /// </code>
-  /// </para>
+  ///   </para>
   /// </remarks>
   public static TimeSpan PollingInterval
   {
@@ -109,13 +110,8 @@ public sealed class ServiceBrowser : IServiceBrowser
     foreach (BrowseService service in this.services.Values)
     {
       if (service.TxtRecord is IDisposable disposable)
-      {
         try { disposable.Dispose (); }
-        catch (Exception ex)
-        {
-          System.Diagnostics.Debug.WriteLine ($"Error disposing TxtRecord: {ex.Message}");
-        }
-      }
+        catch (Exception ex) { Debug.WriteLine ($"Error disposing TxtRecord: {ex.Message}"); }
     }
 
     this.services.Clear ();

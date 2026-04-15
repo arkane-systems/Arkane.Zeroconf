@@ -16,13 +16,13 @@ using System.Threading;
 
 namespace ArkaneSystems.Arkane.Zeroconf.Client;
 
-public class MZClient
+public partial class MZClient
 {
   private static          bool            resolveShares;
   private static          uint            interfaceIndex;
   private static          AddressProtocol addressProtocol = AddressProtocol.Any;
-  private static          string          domain           = "local";
-  private static readonly string          appName          = "azclient";
+  private static          string          domain          = "local";
+  private static readonly string          appName         = "azclient";
   private static          bool            verbose;
   private static          int             timeoutSeconds;
 
@@ -53,7 +53,7 @@ public class MZClient
 
         case "-p":
         case "--publish":
-          services.Add (args[++i]);
+          _ = services.Add (args[++i]);
 
           break;
 
@@ -233,7 +233,7 @@ public class MZClient
 
   private static void ValidateServiceDescription (string serviceDescription)
   {
-    Match match = Regex.Match (input: serviceDescription, pattern: @"(_[a-z]+._tcp|udp)\s*(\d+)\s*(.*)");
+    Match match = MZClient.ServiceDescriptionRegex ().Match (input: serviceDescription);
 
     if (match.Groups.Count < 4)
       throw new ApplicationException ("Invalid service description syntax");
@@ -241,7 +241,7 @@ public class MZClient
 
   private static void RegisterService (string serviceDescription)
   {
-    Match match = Regex.Match (input: serviceDescription, pattern: @"(_[a-z]+._tcp|udp)\s*(\d+)\s*(.*)");
+    Match match = MZClient.ServiceDescriptionRegex ().Match (input: serviceDescription);
 
     if (match.Groups.Count < 4)
       throw new ApplicationException ("Invalid service description syntax");
@@ -255,8 +255,8 @@ public class MZClient
 
     if (txt_pos > 0)
     {
-      txt_data = name.Substring (txt_pos).Trim ();
-      name     = name.Substring (startIndex: 0, length: txt_pos).Trim ();
+      txt_data = name[txt_pos..].Trim ();
+      name     = name[..txt_pos].Trim ();
 
       if (txt_data == string.Empty)
         txt_data = null;
@@ -268,27 +268,27 @@ public class MZClient
 
     if (txt_data != null)
     {
-      Match tmatch = Regex.Match (input: txt_data, pattern: @"TXT\s*\[(.*)\]");
+      Match tmatch = MZClient.TxtRecordDataRegex ().Match (input: txt_data);
 
       if (tmatch.Groups.Count != 2)
         throw new ApplicationException ("Invalid TXT record definition syntax");
 
       txt_data = tmatch.Groups[1].Value;
 
-      foreach (string part in Regex.Split (input: txt_data, pattern: @"'\s*,"))
+      foreach (string part in MZClient.TxtRecordSeparatorRegex ().Split (input: txt_data))
       {
         string expr = part.Trim ();
-        if (!expr.EndsWith ("'"))
+        if (!expr.EndsWith ('\''))
           expr += "'";
 
-        Match  pmatch = Regex.Match (input: expr, pattern: @"(\w+\s*\w*)\s*=\s*['](.*)[']\s*");
+        Match  pmatch = MZClient.TxtRecordItemRegex ().Match (input: expr);
         string key    = pmatch.Groups[1].Value.Trim ();
         string val    = pmatch.Groups[2].Value.Trim ();
 
         if (string.IsNullOrEmpty (key) || string.IsNullOrEmpty (val))
           throw new ApplicationException ("Invalid key = 'value' syntax for TXT record item");
 
-        record ??= new TxtRecord ();
+        record ??= [];
         record.Add (key: key, value: val);
       }
     }
@@ -383,4 +383,16 @@ public class MZClient
         break;
     }
   }
+
+  [GeneratedRegex (@"(_[a-z]+._tcp|udp)\s*(\d+)\s*(.*)")]
+  private static partial Regex ServiceDescriptionRegex ();
+
+  [GeneratedRegex (@"TXT\s*\[(.*)\]")]
+  private static partial Regex TxtRecordDataRegex ();
+
+  [GeneratedRegex (@"'\s*,")]
+  private static partial Regex TxtRecordSeparatorRegex ();
+
+  [GeneratedRegex (@"(\w+\s*\w*)\s*=\s*['](.*)[']\s*")]
+  private static partial Regex TxtRecordItemRegex ();
 }

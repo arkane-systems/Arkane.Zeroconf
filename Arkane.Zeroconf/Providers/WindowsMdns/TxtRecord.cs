@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - TxtRecord.cs
+// Arkane.Zeroconf - TxtRecord.cs
 
 #endregion
 
@@ -17,7 +17,7 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns;
 
 public sealed class TxtRecord : ITxtRecord
 {
-  private readonly List<TxtRecordItem> items = new ();
+  private readonly List<TxtRecordItem> items = [];
 
   public TxtRecordItem? this [string key]
     => this.items.FirstOrDefault (item => string.Equals (a: item.Key, b: key, comparisonType: StringComparison.OrdinalIgnoreCase));
@@ -57,7 +57,7 @@ public sealed class TxtRecord : ITxtRecord
                                                            b: key,
                                                            comparisonType: StringComparison.OrdinalIgnoreCase));
     if (item != null)
-      this.items.Remove (item);
+      _ = this.items.Remove (item);
   }
 
   public TxtRecordItem GetItemAt (int index) => this.items[index];

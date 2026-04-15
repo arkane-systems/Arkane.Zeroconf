@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - SystemdResolvedClient.cs
+// Arkane.Zeroconf - SystemdResolvedClient.cs
 
 #endregion
 
@@ -19,16 +19,33 @@ namespace ArkaneSystems.Arkane.Zeroconf.Providers.SystemdResolved;
 
 internal static class SystemdResolvedClient
 {
+  #region Nested type: ServiceInstance
+
+  internal sealed class ServiceInstance (string name, string fullName, string regType, string domain, uint interfaceIndex)
+  {
+    public string Name { get; } = name;
+
+    public string FullName { get; } = fullName;
+
+    public string RegType { get; } = regType;
+
+    public string Domain { get; } = domain;
+
+    public uint InterfaceIndex { get; } = interfaceIndex;
+  }
+
+  #endregion
+
   private static DBusConnection? _connection;
 
-  private static readonly object   _browseTimeoutLock  = new ();
-  private static          TimeSpan _browseTimeout       = TimeSpan.FromSeconds (4);
-  private static readonly object   _resolveTimeoutLock = new ();
-  private static          TimeSpan _resolveTimeout      = TimeSpan.FromSeconds (4);
+  private static readonly Lock     _browseTimeoutLock  = new ();
+  private static          TimeSpan _browseTimeout      = TimeSpan.FromSeconds (4);
+  private static readonly Lock     _resolveTimeoutLock = new ();
+  private static          TimeSpan _resolveTimeout     = TimeSpan.FromSeconds (4);
 
   /// <summary>
-  /// Gets or sets the timeout for mDNS browse operations via systemd-resolved.
-  /// Default is 4 seconds.
+  ///   Gets or sets the timeout for mDNS browse operations via systemd-resolved.
+  ///   Default is 4 seconds.
   /// </summary>
   public static TimeSpan BrowseTimeout
   {
@@ -45,8 +62,8 @@ internal static class SystemdResolvedClient
   }
 
   /// <summary>
-  /// Gets or sets the timeout for mDNS resolve operations via systemd-resolved.
-  /// Default is 4 seconds.
+  ///   Gets or sets the timeout for mDNS resolve operations via systemd-resolved.
+  ///   Default is 4 seconds.
   /// </summary>
   public static TimeSpan ResolveTimeout
   {
@@ -77,37 +94,14 @@ internal static class SystemdResolvedClient
     _connection = null;
   }
 
-  #region Nested type: ServiceInstance
-
-  internal sealed class ServiceInstance
-  {
-    public ServiceInstance (string name, string fullName, string regType, string domain, uint interfaceIndex)
-    {
-      this.Name           = name;
-      this.FullName       = fullName;
-      this.RegType        = regType;
-      this.Domain         = domain;
-      this.InterfaceIndex = interfaceIndex;
-    }
-
-    public string Name           { get; }
-    public string FullName       { get; }
-    public string RegType        { get; }
-    public string Domain         { get; }
-    public uint   InterfaceIndex { get; }
-  }
-
-  #endregion
-
   /// <summary>
   ///   Browses for PTR records for the given service type and domain, returning discovered service instances.
   /// </summary>
-  internal static async Task<IReadOnlyList<ServiceInstance>> BrowseInstancesAsync (
-    string            regtype,
-    string            domain,
-    CancellationToken cancellationToken = default)
+  internal static async Task<IReadOnlyList<ServiceInstance>> BrowseInstancesAsync (string            regtype,
+                                                                                   string            domain,
+                                                                                   CancellationToken cancellationToken = default)
   {
-    string queryName = $"{regtype}.{domain}";
+    var queryName = $"{regtype}.{domain}";
 
     const ushort classIn  = 1;
     const ushort typePTR  = 12;
@@ -125,8 +119,8 @@ internal static class SystemdResolvedClient
                                                     flags: dnsFlags,
                                                     ct: cts.Token);
 
-    var     results = new List<ServiceInstance> ();
-    string  suffix  = $".{regtype}.{domain}";
+    var results = new List<ServiceInstance> ();
+    var suffix  = $".{regtype}.{domain}";
 
     foreach (byte[] rawRr in rawRecords)
     {
@@ -135,12 +129,9 @@ internal static class SystemdResolvedClient
       if (string.IsNullOrEmpty (fqdn))
         continue;
 
-      string instanceName;
-
-      if (fqdn.EndsWith (value: suffix, comparisonType: StringComparison.OrdinalIgnoreCase))
-        instanceName = fqdn[..^suffix.Length];
-      else
-        instanceName = fqdn.Split ('.')[0];
+      string instanceName = fqdn.EndsWith (value: suffix, comparisonType: StringComparison.OrdinalIgnoreCase)
+                              ? fqdn[..^suffix.Length]
+                              : fqdn.Split ('.')[0];
 
       if (string.IsNullOrEmpty (instanceName))
         continue;
@@ -158,12 +149,12 @@ internal static class SystemdResolvedClient
   /// <summary>
   ///   Resolves a service instance by name, type, and domain.
   /// </summary>
-  internal static async Task<ResolveManagerProxy.ServiceResolveResult?> ResolveInstanceAsync (
-    string            name,
-    string            regtype,
-    string            domain,
-    int               family             = 0,
-    CancellationToken cancellationToken  = default)
+  internal static async Task<ResolveManagerProxy.ServiceResolveResult?> ResolveInstanceAsync (string name,
+                                                                                              string regtype,
+                                                                                              string domain,
+                                                                                              int    family = 0,
+                                                                                              CancellationToken cancellationToken =
+                                                                                                default)
   {
     using var cts = CancellationTokenSource.CreateLinkedTokenSource (cancellationToken);
     cts.CancelAfter (ResolveTimeout);
@@ -181,34 +172,28 @@ internal static class SystemdResolvedClient
   /// <summary>
   ///   Registers a DNS service via systemd-resolved and returns the D-Bus object path handle.
   /// </summary>
-  internal static async Task<string> RegisterDnsServiceAsync (
-    string                    id,
-    string                    nameTemplate,
-    string                    type,
-    ushort                    port,
-    IEnumerable<TxtRecordItem> txtItems,
-    CancellationToken         cancellationToken = default)
-  {
-    return await ResolveManagerProxy.RegisterServiceAsync (connection: Connection,
-                                                           id: id,
-                                                           nameTemplate: nameTemplate,
-                                                           type: type,
-                                                           port: port,
-                                                           priority: 0,
-                                                           weight: 0,
-                                                           txtItems: txtItems,
-                                                           ct: cancellationToken);
-  }
+  internal static async Task<string> RegisterDnsServiceAsync (string                     id,
+                                                              string                     nameTemplate,
+                                                              string                     type,
+                                                              ushort                     port,
+                                                              IEnumerable<TxtRecordItem> txtItems,
+                                                              CancellationToken          cancellationToken = default)
+    => await ResolveManagerProxy.RegisterServiceAsync (connection: Connection,
+                                                       id: id,
+                                                       nameTemplate: nameTemplate,
+                                                       type: type,
+                                                       port: port,
+                                                       priority: 0,
+                                                       weight: 0,
+                                                       txtItems: txtItems,
+                                                       ct: cancellationToken);
 
   /// <summary>
   ///   Unregisters a previously registered DNS service.
   /// </summary>
-  internal static async Task UnregisterDnsServiceAsync (
-    string            objectPath,
-    CancellationToken cancellationToken = default)
-  {
-    await ResolveManagerProxy.UnregisterServiceAsync (connection: Connection,
-                                                      objectPath: objectPath,
-                                                      ct: cancellationToken);
-  }
+  internal static async Task UnregisterDnsServiceAsync (string            objectPath,
+                                                        CancellationToken cancellationToken = default)
+    => await ResolveManagerProxy.UnregisterServiceAsync (connection: Connection,
+                                                         objectPath: objectPath,
+                                                         ct: cancellationToken);
 }

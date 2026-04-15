@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - TxtRecord.cs
+// Arkane.Zeroconf - TxtRecord.cs
 
 #endregion
 
@@ -64,6 +64,8 @@ public class TxtRecord : ITxtRecord
       Native.TXTRecordDeallocate (this.handle);
       this.handle = IntPtr.Zero;
     }
+
+    GC.SuppressFinalize (this);
   }
 
   public void Add (string key, string value)
@@ -88,7 +90,7 @@ public class TxtRecord : ITxtRecord
       throw new InvalidOperationException ("This TXT Record is read only");
 
     string key = item.Key;
-    if (key[key.Length - 1] != '\0')
+    if (key[^1] != '\0')
       key += "\0";
 
     ServiceError error = Native.TXTRecordSetValue (txtRecord: this.handle,
@@ -109,7 +111,7 @@ public class TxtRecord : ITxtRecord
 
     ServiceError error = Native.TXTRecordRemoveValue (txtRecord: this.handle, key: Encoding.GetBytes (key));
 
-    if ((error != ServiceError.NoError) && (error != ServiceError.NoSuchKey))
+    if (error is not ServiceError.NoError and not ServiceError.NoSuchKey)
       throw new ServiceErrorException (error);
   }
 

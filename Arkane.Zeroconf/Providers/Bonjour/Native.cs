@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - Native.cs
+// Arkane.Zeroconf - Native.cs
 
 #endregion
 
@@ -96,34 +96,25 @@ internal static class Native
   }
 
   public static ServiceError DNSServiceProcessResult (IntPtr sdRef)
-  {
-    if (OperatingSystem.IsWindows ())
-      return NativeWindows.DNSServiceProcessResult (sdRef);
-    if (OperatingSystem.IsMacOS ())
-      return NativeMacOS.DNSServiceProcessResult (sdRef);
-
-    return NativeLinux.DNSServiceProcessResult (sdRef);
-  }
+    => OperatingSystem.IsWindows ()
+         ? NativeWindows.DNSServiceProcessResult (sdRef)
+         : OperatingSystem.IsMacOS ()
+           ? NativeMacOS.DNSServiceProcessResult (sdRef)
+           : NativeLinux.DNSServiceProcessResult (sdRef);
 
   public static int DNSServiceRefSockFD (IntPtr sdRef)
-  {
-    if (OperatingSystem.IsWindows ())
-      return NativeWindows.DNSServiceRefSockFD (sdRef);
-    if (OperatingSystem.IsMacOS ())
-      return NativeMacOS.DNSServiceRefSockFD (sdRef);
-
-    return NativeLinux.DNSServiceRefSockFD (sdRef);
-  }
+    => OperatingSystem.IsWindows ()
+         ? NativeWindows.DNSServiceRefSockFD (sdRef)
+         : OperatingSystem.IsMacOS ()
+           ? NativeMacOS.DNSServiceRefSockFD (sdRef)
+           : NativeLinux.DNSServiceRefSockFD (sdRef);
 
   public static ServiceError DNSServiceCreateConnection (out ServiceRef sdRef)
-  {
-    if (OperatingSystem.IsWindows ())
-      return NativeWindows.DNSServiceCreateConnection (out sdRef);
-    if (OperatingSystem.IsMacOS ())
-      return NativeMacOS.DNSServiceCreateConnection (out sdRef);
-
-    return NativeLinux.DNSServiceCreateConnection (out sdRef);
-  }
+    => OperatingSystem.IsWindows ()
+         ? NativeWindows.DNSServiceCreateConnection (out sdRef)
+         : OperatingSystem.IsMacOS ()
+           ? NativeMacOS.DNSServiceCreateConnection (out sdRef)
+           : NativeLinux.DNSServiceCreateConnection (out sdRef);
 
   public static ServiceError DNSServiceBrowse (out ServiceRef        sdRef,
                                                ServiceFlags          flags,
@@ -132,32 +123,29 @@ internal static class Native
                                                string                domain,
                                                DNSServiceBrowseReply callBack,
                                                IntPtr                context)
-  {
-    if (OperatingSystem.IsWindows ())
-      return NativeWindows.DNSServiceBrowse (sdRef: out sdRef,
-                                             flags: flags,
-                                             interfaceIndex: interfaceIndex,
-                                             regtype: regtype,
-                                             domain: domain,
-                                             callBack: callBack,
-                                             context: context);
-    if (OperatingSystem.IsMacOS ())
-      return NativeMacOS.DNSServiceBrowse (sdRef: out sdRef,
+    => OperatingSystem.IsWindows ()
+         ? NativeWindows.DNSServiceBrowse (sdRef: out sdRef,
+                                           flags: flags,
+                                           interfaceIndex: interfaceIndex,
+                                           regtype: regtype,
+                                           domain: domain,
+                                           callBack: callBack,
+                                           context: context)
+         : OperatingSystem.IsMacOS ()
+           ? NativeMacOS.DNSServiceBrowse (sdRef: out sdRef,
+                                           flags: flags,
+                                           interfaceIndex: interfaceIndex,
+                                           regtype: regtype,
+                                           domain: domain,
+                                           callBack: callBack,
+                                           context: context)
+           : NativeLinux.DNSServiceBrowse (sdRef: out sdRef,
                                            flags: flags,
                                            interfaceIndex: interfaceIndex,
                                            regtype: regtype,
                                            domain: domain,
                                            callBack: callBack,
                                            context: context);
-
-    return NativeLinux.DNSServiceBrowse (sdRef: out sdRef,
-                                         flags: flags,
-                                         interfaceIndex: interfaceIndex,
-                                         regtype: regtype,
-                                         domain: domain,
-                                         callBack: callBack,
-                                         context: context);
-  }
 
   public static ServiceError DNSServiceResolve (out ServiceRef         sdRef,
                                                 ServiceFlags           flags,
@@ -167,18 +155,25 @@ internal static class Native
                                                 string                 domain,
                                                 DNSServiceResolveReply callBack,
                                                 IntPtr                 context)
-  {
-    if (OperatingSystem.IsWindows ())
-      return NativeWindows.DNSServiceResolve (sdRef: out sdRef,
-                                              flags: flags,
-                                              interfaceIndex: interfaceIndex,
-                                              name: name,
-                                              regtype: regtype,
-                                              domain: domain,
-                                              callBack: callBack,
-                                              context: context);
-    if (OperatingSystem.IsMacOS ())
-      return NativeMacOS.DNSServiceResolve (sdRef: out sdRef,
+    => OperatingSystem.IsWindows ()
+         ? NativeWindows.DNSServiceResolve (sdRef: out sdRef,
+                                            flags: flags,
+                                            interfaceIndex: interfaceIndex,
+                                            name: name,
+                                            regtype: regtype,
+                                            domain: domain,
+                                            callBack: callBack,
+                                            context: context)
+         : OperatingSystem.IsMacOS ()
+           ? NativeMacOS.DNSServiceResolve (sdRef: out sdRef,
+                                            flags: flags,
+                                            interfaceIndex: interfaceIndex,
+                                            name: name,
+                                            regtype: regtype,
+                                            domain: domain,
+                                            callBack: callBack,
+                                            context: context)
+           : NativeLinux.DNSServiceResolve (sdRef: out sdRef,
                                             flags: flags,
                                             interfaceIndex: interfaceIndex,
                                             name: name,
@@ -186,16 +181,6 @@ internal static class Native
                                             domain: domain,
                                             callBack: callBack,
                                             context: context);
-
-    return NativeLinux.DNSServiceResolve (sdRef: out sdRef,
-                                          flags: flags,
-                                          interfaceIndex: interfaceIndex,
-                                          name: name,
-                                          regtype: regtype,
-                                          domain: domain,
-                                          callBack: callBack,
-                                          context: context);
-  }
 
   public static ServiceError DNSServiceRegister (out ServiceRef          sdRef,
                                                  ServiceFlags            flags,
@@ -209,22 +194,33 @@ internal static class Native
                                                  byte[]                  txtRecord,
                                                  DNSServiceRegisterReply callBack,
                                                  IntPtr                  context)
-  {
-    if (OperatingSystem.IsWindows ())
-      return NativeWindows.DNSServiceRegister (sdRef: out sdRef,
-                                               flags: flags,
-                                               interfaceIndex: interfaceIndex,
-                                               name: name,
-                                               regtype: regtype,
-                                               domain: domain,
-                                               host: host,
-                                               port: port,
-                                               txtLen: txtLen,
-                                               txtRecord: txtRecord,
-                                               callBack: callBack,
-                                               context: context);
-    if (OperatingSystem.IsMacOS ())
-      return NativeMacOS.DNSServiceRegister (sdRef: out sdRef,
+    => OperatingSystem.IsWindows ()
+         ? NativeWindows.DNSServiceRegister (sdRef: out sdRef,
+                                             flags: flags,
+                                             interfaceIndex: interfaceIndex,
+                                             name: name,
+                                             regtype: regtype,
+                                             domain: domain,
+                                             host: host,
+                                             port: port,
+                                             txtLen: txtLen,
+                                             txtRecord: txtRecord,
+                                             callBack: callBack,
+                                             context: context)
+         : OperatingSystem.IsMacOS ()
+           ? NativeMacOS.DNSServiceRegister (sdRef: out sdRef,
+                                             flags: flags,
+                                             interfaceIndex: interfaceIndex,
+                                             name: name,
+                                             regtype: regtype,
+                                             domain: domain,
+                                             host: host,
+                                             port: port,
+                                             txtLen: txtLen,
+                                             txtRecord: txtRecord,
+                                             callBack: callBack,
+                                             context: context)
+           : NativeLinux.DNSServiceRegister (sdRef: out sdRef,
                                              flags: flags,
                                              interfaceIndex: interfaceIndex,
                                              name: name,
@@ -237,20 +233,6 @@ internal static class Native
                                              callBack: callBack,
                                              context: context);
 
-    return NativeLinux.DNSServiceRegister (sdRef: out sdRef,
-                                           flags: flags,
-                                           interfaceIndex: interfaceIndex,
-                                           name: name,
-                                           regtype: regtype,
-                                           domain: domain,
-                                           host: host,
-                                           port: port,
-                                           txtLen: txtLen,
-                                           txtRecord: txtRecord,
-                                           callBack: callBack,
-                                           context: context);
-  }
-
   public static ServiceError DNSServiceQueryRecord (out ServiceRef             sdRef,
                                                     ServiceFlags               flags,
                                                     uint                       interfaceIndex,
@@ -259,18 +241,25 @@ internal static class Native
                                                     ServiceClass               rrclass,
                                                     DNSServiceQueryRecordReply callBack,
                                                     IntPtr                     context)
-  {
-    if (OperatingSystem.IsWindows ())
-      return NativeWindows.DNSServiceQueryRecord (sdRef: out sdRef,
-                                                  flags: flags,
-                                                  interfaceIndex: interfaceIndex,
-                                                  fullname: fullname,
-                                                  rrtype: rrtype,
-                                                  rrclass: rrclass,
-                                                  callBack: callBack,
-                                                  context: context);
-    if (OperatingSystem.IsMacOS ())
-      return NativeMacOS.DNSServiceQueryRecord (sdRef: out sdRef,
+    => OperatingSystem.IsWindows ()
+         ? NativeWindows.DNSServiceQueryRecord (sdRef: out sdRef,
+                                                flags: flags,
+                                                interfaceIndex: interfaceIndex,
+                                                fullname: fullname,
+                                                rrtype: rrtype,
+                                                rrclass: rrclass,
+                                                callBack: callBack,
+                                                context: context)
+         : OperatingSystem.IsMacOS ()
+           ? NativeMacOS.DNSServiceQueryRecord (sdRef: out sdRef,
+                                                flags: flags,
+                                                interfaceIndex: interfaceIndex,
+                                                fullname: fullname,
+                                                rrtype: rrtype,
+                                                rrclass: rrclass,
+                                                callBack: callBack,
+                                                context: context)
+           : NativeLinux.DNSServiceQueryRecord (sdRef: out sdRef,
                                                 flags: flags,
                                                 interfaceIndex: interfaceIndex,
                                                 fullname: fullname,
@@ -278,16 +267,6 @@ internal static class Native
                                                 rrclass: rrclass,
                                                 callBack: callBack,
                                                 context: context);
-
-    return NativeLinux.DNSServiceQueryRecord (sdRef: out sdRef,
-                                              flags: flags,
-                                              interfaceIndex: interfaceIndex,
-                                              fullname: fullname,
-                                              rrtype: rrtype,
-                                              rrclass: rrclass,
-                                              callBack: callBack,
-                                              context: context);
-  }
 
   // TXT Record Handling
 
@@ -318,17 +297,23 @@ internal static class Native
                                                       byte[]     key,
                                                       out byte   valueLen,
                                                       out IntPtr value)
-  {
-    if (OperatingSystem.IsWindows ())
-      return NativeWindows.TXTRecordGetItemAtIndex (txtLen: txtLen,
-                                                    txtRecord: txtRecord,
-                                                    index: index,
-                                                    keyBufLen: keyBufLen,
-                                                    key: key,
-                                                    valueLen: out valueLen,
-                                                    value: out value);
-    if (OperatingSystem.IsMacOS ())
-      return NativeMacOS.TXTRecordGetItemAtIndex (txtLen: txtLen,
+    => OperatingSystem.IsWindows ()
+         ? NativeWindows.TXTRecordGetItemAtIndex (txtLen: txtLen,
+                                                  txtRecord: txtRecord,
+                                                  index: index,
+                                                  keyBufLen: keyBufLen,
+                                                  key: key,
+                                                  valueLen: out valueLen,
+                                                  value: out value)
+         : OperatingSystem.IsMacOS ()
+           ? NativeMacOS.TXTRecordGetItemAtIndex (txtLen: txtLen,
+                                                  txtRecord: txtRecord,
+                                                  index: index,
+                                                  keyBufLen: keyBufLen,
+                                                  key: key,
+                                                  valueLen: out valueLen,
+                                                  value: out value)
+           : NativeLinux.TXTRecordGetItemAtIndex (txtLen: txtLen,
                                                   txtRecord: txtRecord,
                                                   index: index,
                                                   keyBufLen: keyBufLen,
@@ -336,65 +321,41 @@ internal static class Native
                                                   valueLen: out valueLen,
                                                   value: out value);
 
-    return NativeLinux.TXTRecordGetItemAtIndex (txtLen: txtLen,
-                                                txtRecord: txtRecord,
-                                                index: index,
-                                                keyBufLen: keyBufLen,
-                                                key: key,
-                                                valueLen: out valueLen,
-                                                value: out value);
-  }
-
   public static ServiceError TXTRecordSetValue (IntPtr txtRecord,
                                                 byte[] key,
                                                 sbyte  valueSize,
                                                 byte[] value)
-  {
-    if (OperatingSystem.IsWindows ())
-      return NativeWindows.TXTRecordSetValue (txtRecord: txtRecord, key: key, valueSize: valueSize, value: value);
-    if (OperatingSystem.IsMacOS ())
-      return NativeMacOS.TXTRecordSetValue (txtRecord: txtRecord, key: key, valueSize: valueSize, value: value);
-
-    return NativeLinux.TXTRecordSetValue (txtRecord: txtRecord, key: key, valueSize: valueSize, value: value);
-  }
+    => OperatingSystem.IsWindows ()
+         ? NativeWindows.TXTRecordSetValue (txtRecord: txtRecord, key: key, valueSize: valueSize, value: value)
+         : OperatingSystem.IsMacOS ()
+           ? NativeMacOS.TXTRecordSetValue (txtRecord: txtRecord, key: key, valueSize: valueSize, value: value)
+           : NativeLinux.TXTRecordSetValue (txtRecord: txtRecord, key: key, valueSize: valueSize, value: value);
 
   public static ServiceError TXTRecordRemoveValue (IntPtr txtRecord, byte[] key)
-  {
-    if (OperatingSystem.IsWindows ())
-      return NativeWindows.TXTRecordRemoveValue (txtRecord: txtRecord, key: key);
-    if (OperatingSystem.IsMacOS ())
-      return NativeMacOS.TXTRecordRemoveValue (txtRecord: txtRecord, key: key);
-
-    return NativeLinux.TXTRecordRemoveValue (txtRecord: txtRecord, key: key);
-  }
+    => OperatingSystem.IsWindows ()
+         ? NativeWindows.TXTRecordRemoveValue (txtRecord: txtRecord, key: key)
+         : OperatingSystem.IsMacOS ()
+           ? NativeMacOS.TXTRecordRemoveValue (txtRecord: txtRecord, key: key)
+           : NativeLinux.TXTRecordRemoveValue (txtRecord: txtRecord, key: key);
 
   public static ushort TXTRecordGetLength (IntPtr txtRecord)
-  {
-    if (OperatingSystem.IsWindows ())
-      return NativeWindows.TXTRecordGetLength (txtRecord);
-    if (OperatingSystem.IsMacOS ())
-      return NativeMacOS.TXTRecordGetLength (txtRecord);
-
-    return NativeLinux.TXTRecordGetLength (txtRecord);
-  }
+    => OperatingSystem.IsWindows ()
+         ? NativeWindows.TXTRecordGetLength (txtRecord)
+         : OperatingSystem.IsMacOS ()
+           ? NativeMacOS.TXTRecordGetLength (txtRecord)
+           : NativeLinux.TXTRecordGetLength (txtRecord);
 
   public static IntPtr TXTRecordGetBytesPtr (IntPtr txtRecord)
-  {
-    if (OperatingSystem.IsWindows ())
-      return NativeWindows.TXTRecordGetBytesPtr (txtRecord);
-    if (OperatingSystem.IsMacOS ())
-      return NativeMacOS.TXTRecordGetBytesPtr (txtRecord);
-
-    return NativeLinux.TXTRecordGetBytesPtr (txtRecord);
-  }
+    => OperatingSystem.IsWindows ()
+         ? NativeWindows.TXTRecordGetBytesPtr (txtRecord)
+         : OperatingSystem.IsMacOS ()
+           ? NativeMacOS.TXTRecordGetBytesPtr (txtRecord)
+           : NativeLinux.TXTRecordGetBytesPtr (txtRecord);
 
   public static ushort TXTRecordGetCount (ushort txtLen, IntPtr txtRecord)
-  {
-    if (OperatingSystem.IsWindows ())
-      return NativeWindows.TXTRecordGetCount (txtLen: txtLen, txtRecord: txtRecord);
-    if (OperatingSystem.IsMacOS ())
-      return NativeMacOS.TXTRecordGetCount (txtLen: txtLen, txtRecord: txtRecord);
-
-    return NativeLinux.TXTRecordGetCount (txtLen: txtLen, txtRecord: txtRecord);
-  }
+    => OperatingSystem.IsWindows ()
+         ? NativeWindows.TXTRecordGetCount (txtLen: txtLen, txtRecord: txtRecord)
+         : OperatingSystem.IsMacOS ()
+           ? NativeMacOS.TXTRecordGetCount (txtLen: txtLen, txtRecord: txtRecord)
+           : NativeLinux.TXTRecordGetCount (txtLen: txtLen, txtRecord: txtRecord);
 }
