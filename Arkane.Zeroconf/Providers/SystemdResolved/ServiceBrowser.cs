@@ -167,7 +167,13 @@ public sealed class ServiceBrowser : IServiceBrowser
                                          addressProtocol: this.addressProtocol);
 
         if (this.services.TryAdd (key: discoveredService.FullName, value: service))
-          this.ServiceAdded?.Invoke (o: this, args: new ServiceBrowseEventArgs (service));
+        {
+          try { this.ServiceAdded?.Invoke (o: this, args: new ServiceBrowseEventArgs (service)); }
+          catch (Exception ex)
+          {
+            System.Diagnostics.Debug.WriteLine ($"ServiceAdded handler threw: {ex.Message}");
+          }
+        }
       }
 
       foreach (string existing in this.services.Keys.ToList ())
@@ -176,7 +182,13 @@ public sealed class ServiceBrowser : IServiceBrowser
           continue;
 
         if (this.services.TryRemove (key: existing, value: out BrowseService? removed) && (removed != null))
-          this.ServiceRemoved?.Invoke (o: this, args: new ServiceBrowseEventArgs (removed));
+        {
+          try { this.ServiceRemoved?.Invoke (o: this, args: new ServiceBrowseEventArgs (removed)); }
+          catch (Exception ex)
+          {
+            System.Diagnostics.Debug.WriteLine ($"ServiceRemoved handler threw: {ex.Message}");
+          }
+        }
       }
 
       TimeSpan delay;

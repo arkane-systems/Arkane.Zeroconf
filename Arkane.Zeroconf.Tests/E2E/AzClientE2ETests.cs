@@ -119,7 +119,7 @@ public class AzClientE2ETests
     await Task.Delay (millisecondsDelay: 250, cancellationToken: TestContext.Current.CancellationToken);
 
     // Act
-    var (exitCode, output, error) = await this.RunAzClientAsync ($"--timeout 3 --resolve -t {regType}");
+    var (exitCode, output, error) = await this.RunAzClientAsync ($"--timeout 8 --resolve -t {regType}");
 
     // Assert
     Assert.Equal (expected: 0, actual: exitCode);

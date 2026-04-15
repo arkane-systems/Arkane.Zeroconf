@@ -6,6 +6,7 @@
 
 #region using
 
+using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -55,28 +56,39 @@ public sealed class BrowseService : IResolvableService
 
   public event ServiceResolvedEventHandler? Resolved;
 
-  public void Resolve () => this.ResolveAsync ().ConfigureAwait (false).GetAwaiter ().GetResult ();
+  public void Resolve () => _ = Task.Run (() => this.ResolveAsync ());
 
   public async Task ResolveAsync (CancellationToken cancellationToken = default)
   {
     cancellationToken.ThrowIfCancellationRequested ();
 
-    ResolveManagerProxy.ServiceResolveResult? result =
-      await SystemdResolvedClient.ResolveInstanceAsync (name: this.Name,
-                                                        regtype: this.RegType,
-                                                        domain: this.ReplyDomain ?? "local",
-                                                        family: 0,
-                                                        cancellationToken: cancellationToken)
-                                 .ConfigureAwait (false);
+    try
+    {
+      ResolveManagerProxy.ServiceResolveResult? result =
+        await SystemdResolvedClient.ResolveInstanceAsync (name: this.Name,
+                                                          regtype: this.RegType,
+                                                          domain: this.ReplyDomain ?? "local",
+                                                          family: 0,
+                                                          cancellationToken: cancellationToken)
+                                   .ConfigureAwait (false);
 
-    if (result == null)
-      return;
+      if (result == null)
+        return;
 
-    this.HostTarget = result.HostName;
-    this.UPort      = result.Port;
-    this.HostEntry  = new IPHostEntry { HostName = result.HostName ?? string.Empty, AddressList = result.Addresses };
-    this.TxtRecord  = SystemdResolved.TxtRecord.FromEntries (result.TxtItems);
+      this.HostTarget = result.HostName;
+      this.UPort      = result.Port;
+      this.HostEntry  = new IPHostEntry { HostName = result.HostName ?? string.Empty, AddressList = result.Addresses };
+      this.TxtRecord  = SystemdResolved.TxtRecord.FromEntries (result.TxtItems);
 
-    this.Resolved?.Invoke (o: this, args: new ServiceResolvedEventArgs (this));
+      this.Resolved?.Invoke (o: this, args: new ServiceResolvedEventArgs (this));
+    }
+    catch (OperationCanceledException)
+    {
+      throw;
+    }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Debug.WriteLine ($"systemd-resolved service resolve failed for '{this.Name}': {ex.Message}");
+    }
   }
 }
