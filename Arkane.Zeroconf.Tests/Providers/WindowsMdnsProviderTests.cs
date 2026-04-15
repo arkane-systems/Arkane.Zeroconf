@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns;
+using ArkaneSystems.Arkane.Zeroconf.Tests.Helpers;
 
 using Xunit;
 
@@ -41,6 +42,7 @@ public class WindowsMdnsProviderTests
   [Fact]
   public async Task BrowseService_ResolveAsync_WithUnknownService_DoesNotPopulateResolutionData ()
   {
+    ZeroconfTestHelper.SkipIfNotWindows ();
     // Arrange
     var browseService = new ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns.BrowseService (name: "missing-service",
                                                                                                  fullName: "missing-service._no-such-service._tcp.local.",
@@ -76,6 +78,7 @@ public class WindowsMdnsProviderTests
   [Fact]
   public void ServiceBrowser_Browse_WhenAlreadyStarted_ThrowsInvalidOperationException ()
   {
+    ZeroconfTestHelper.SkipIfNotWindows ();
     // Arrange
     var browser = new Zeroconf.Providers.WindowsMdns.ServiceBrowser ();
 

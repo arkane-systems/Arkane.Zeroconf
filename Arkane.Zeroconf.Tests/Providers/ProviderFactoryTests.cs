@@ -9,6 +9,7 @@
 using System;
 
 using ArkaneSystems.Arkane.Zeroconf.Providers;
+using ArkaneSystems.Arkane.Zeroconf.Tests.Helpers;
 
 using Xunit;
 
@@ -42,7 +43,6 @@ public class ProviderFactoryTests
   public void ServiceBrowser_Constructor_Failure_Message_IsSanitized ()
   {
     // Arrange
-    IZeroconfProvider originalProvider = ProviderFactory.SelectedProvider;
     ProviderFactory.SelectedProvider = new InvalidProvider ();
 
     try
@@ -58,14 +58,13 @@ public class ProviderFactoryTests
                        actualString: exception.Message,
                        comparisonType: StringComparison.OrdinalIgnoreCase);
     }
-    finally { ProviderFactory.SelectedProvider = originalProvider; }
+    finally { ProviderFactory.ResetToDefaultProvider (); }
   }
 
   [Fact]
   public void RegisterService_Constructor_Failure_Message_IsSanitized ()
   {
     // Arrange
-    IZeroconfProvider originalProvider = ProviderFactory.SelectedProvider;
     ProviderFactory.SelectedProvider = new InvalidProvider ();
 
     try
@@ -81,14 +80,13 @@ public class ProviderFactoryTests
                        actualString: exception.Message,
                        comparisonType: StringComparison.OrdinalIgnoreCase);
     }
-    finally { ProviderFactory.SelectedProvider = originalProvider; }
+    finally { ProviderFactory.ResetToDefaultProvider (); }
   }
 
   [Fact]
   public void TxtRecord_Constructor_Failure_Message_IsSanitized ()
   {
     // Arrange
-    IZeroconfProvider originalProvider = ProviderFactory.SelectedProvider;
     ProviderFactory.SelectedProvider = new InvalidProvider ();
 
     try
@@ -104,12 +102,14 @@ public class ProviderFactoryTests
                        actualString: exception.Message,
                        comparisonType: StringComparison.OrdinalIgnoreCase);
     }
-    finally { ProviderFactory.SelectedProvider = originalProvider; }
+    finally { ProviderFactory.ResetToDefaultProvider (); }
   }
 
   [Fact]
   public void SelectedProvider_DefaultsToAvailableProvider ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
+
     IZeroconfProvider provider = ProviderFactory.SelectedProvider;
 
     Assert.NotNull (provider);
@@ -119,6 +119,8 @@ public class ProviderFactoryTests
   [Fact]
   public void SelectedProvider_HasValidServiceBrowserType ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
+
     IZeroconfProvider provider = ProviderFactory.SelectedProvider;
 
     Assert.NotNull (provider.ServiceBrowser);
@@ -128,6 +130,8 @@ public class ProviderFactoryTests
   [Fact]
   public void PublicApis_UseProviderFactoryInternally ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
+
     // Arrange
     using var browser   = new ServiceBrowser ();
     using var service   = new RegisterService ();

@@ -9,6 +9,8 @@
 using System;
 using System.Threading;
 
+using ArkaneSystems.Arkane.Zeroconf.Tests.Helpers;
+
 using Xunit;
 
 #endregion
@@ -25,7 +27,11 @@ namespace ArkaneSystems.Arkane.Zeroconf.Tests.Integration;
 /// </summary>
 public class BonjourRegistrationIntegrationTests : IDisposable
 {
-  public BonjourRegistrationIntegrationTests () => this.registerService = new RegisterService ();
+  public BonjourRegistrationIntegrationTests ()
+  {
+    ZeroconfTestHelper.SkipIfNoProvider ();
+    this.registerService = new RegisterService ();
+  }
 
   private readonly RegisterService registerService;
 

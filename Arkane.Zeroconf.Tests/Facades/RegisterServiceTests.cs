@@ -8,6 +8,8 @@
 
 using System;
 
+using ArkaneSystems.Arkane.Zeroconf.Tests.Helpers;
+
 using Xunit;
 
 #endregion
@@ -16,7 +18,11 @@ namespace ArkaneSystems.Arkane.Zeroconf.Tests.Facades;
 
 public class RegisterServiceTests : IDisposable
 {
-  public RegisterServiceTests () => this.registerService = new RegisterService ();
+  public RegisterServiceTests ()
+  {
+    ZeroconfTestHelper.SkipIfNoProvider ();
+    this.registerService = new RegisterService ();
+  }
 
   private readonly RegisterService registerService;
 

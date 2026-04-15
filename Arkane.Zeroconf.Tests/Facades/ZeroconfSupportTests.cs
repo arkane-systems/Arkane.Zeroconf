@@ -6,6 +6,8 @@
 
 #region using
 
+using ArkaneSystems.Arkane.Zeroconf.Tests.Helpers;
+
 using Xunit;
 
 #endregion
@@ -17,12 +19,14 @@ public class ZeroconfSupportTests
   [Fact]
   public void Capabilities_AlwaysIncludeBrowse ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     Assert.True ((ZeroconfSupport.Capabilities & ZeroconfCapability.Browse) == ZeroconfCapability.Browse);
   }
 
   [Fact]
   public void CanPublish_MatchesPublishFlag ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     Assert.Equal (expected: (ZeroconfSupport.Capabilities & ZeroconfCapability.Publish) == ZeroconfCapability.Publish,
                   actual: ZeroconfSupport.CanPublish);
   }

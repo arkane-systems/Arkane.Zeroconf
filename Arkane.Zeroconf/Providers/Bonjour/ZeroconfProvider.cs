@@ -87,6 +87,16 @@ public class ZeroconfProvider : IZeroconfProvider
   {
     try
     {
+      if (OperatingSystem.IsLinux ())
+      {
+        // On Linux, Initialize() returns early without any native calls (Avahi does not support
+        // DNSServiceCreateConnection), so explicitly verify the native library is loadable.
+        if (!NativeLibrary.TryLoad ("libdns_sd.so.1", out IntPtr handle))
+          return false;
+
+        NativeLibrary.Free (handle);
+      }
+
       Zeroconf.Initialize ();
 
       return true;

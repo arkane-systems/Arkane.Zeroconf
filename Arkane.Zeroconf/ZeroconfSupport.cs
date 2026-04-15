@@ -32,9 +32,19 @@ public static class ZeroconfSupport
   public static ZeroconfCapability Capabilities => ProviderFactory.SelectedProvider.Capabilities;
 
   /// <summary>
+  ///   Gets whether any Zeroconf provider is available on the current system.
+  /// </summary>
+  /// <remarks>
+  ///   Returns <see langword="false" /> when no compatible provider (Bonjour, Avahi, or Windows DNS-SD) could be
+  ///   initialized. Use this to guard calls to <see cref="Capabilities" />, <see cref="CanBrowse" />, and
+  ///   <see cref="CanPublish" /> when running in environments where provider availability is uncertain.
+  /// </remarks>
+  public static bool IsAvailable => ProviderFactory.HasAnyProvider;
+
+  /// <summary>
   ///   Gets whether the selected provider supports service browsing and lookup.
   /// </summary>
-  public static bool CanBrowse => (Capabilities & ZeroconfCapability.Browse) == ZeroconfCapability.Browse;
+  public static bool CanBrowse => IsAvailable && (Capabilities & ZeroconfCapability.Browse) == ZeroconfCapability.Browse;
 
   /// <summary>
   ///   Gets whether the selected provider supports service publishing.
@@ -42,5 +52,5 @@ public static class ZeroconfSupport
   /// <remarks>
   ///   This value is <see langword="false" /> when the Windows fallback provider is active.
   /// </remarks>
-  public static bool CanPublish => (Capabilities & ZeroconfCapability.Publish) == ZeroconfCapability.Publish;
+  public static bool CanPublish => IsAvailable && (Capabilities & ZeroconfCapability.Publish) == ZeroconfCapability.Publish;
 }

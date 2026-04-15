@@ -10,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
+using ArkaneSystems.Arkane.Zeroconf.Tests.Helpers;
+
 using Xunit;
 
 #endregion
@@ -26,7 +28,11 @@ namespace ArkaneSystems.Arkane.Zeroconf.Tests.Integration;
 /// </summary>
 public class BonjourBrowserIntegrationTests : IDisposable
 {
-  public BonjourBrowserIntegrationTests () => this.browser = new ServiceBrowser ();
+  public BonjourBrowserIntegrationTests ()
+  {
+    ZeroconfTestHelper.SkipIfNoProvider ();
+    this.browser = new ServiceBrowser ();
+  }
 
   private readonly ServiceBrowser browser;
 

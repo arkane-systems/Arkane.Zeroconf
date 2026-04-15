@@ -9,6 +9,8 @@
 using System;
 using System.Runtime.InteropServices;
 
+using ArkaneSystems.Arkane.Zeroconf.Tests.Helpers;
+
 using Xunit;
 
 #endregion
@@ -35,6 +37,9 @@ public class PlatformSpecificTests
   [Fact]
   public void NativeInitialization_Succeeds ()
   {
+    if (!ZeroconfSupport.IsAvailable)
+      Assert.Skip ("No Zeroconf provider available on this system. Install Avahi (Linux), Bonjour (Windows/macOS), or run on Windows 11+ for the Windows mDNS fallback.");
+
     try
     {
       using var browser = new ServiceBrowser ();
@@ -78,6 +83,9 @@ public class PlatformSpecificTests
   {
     if (!OperatingSystem.IsLinux ())
       return;
+
+    if (!ZeroconfSupport.IsAvailable)
+      Assert.Skip ("Avahi (libdns_sd) is not available on this Linux system. Install libavahi-compat-libdnssd1 and ensure the Avahi daemon is running.");
 
     Assert.True (condition: ZeroconfSupport.CanBrowse,
                  userMessage: "Linux zeroconf browsing is unavailable. Ensure Avahi is installed and running.");

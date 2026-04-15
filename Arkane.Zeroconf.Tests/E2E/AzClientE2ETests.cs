@@ -12,6 +12,8 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
+using ArkaneSystems.Arkane.Zeroconf.Tests.Helpers;
+
 using Xunit;
 
 #endregion
@@ -106,6 +108,7 @@ public class AzClientE2ETests
   [Fact]
   public async Task AzClient_ResolveFlag_ResolvesPublishedService ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     var regType     = "_arkanee2er._tcp";
     var serviceName = $"azclient-resolve-{Guid.NewGuid ():N}";
 
@@ -149,6 +152,7 @@ public class AzClientE2ETests
   [Fact]
   public async Task AzClient_Publish_WithInvalidDescription_Fails ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     // Act
     var (exitCode, output, error) = await this.RunAzClientAsync ("--timeout 1 --publish \"invalid\"");
 
@@ -172,6 +176,7 @@ public class AzClientE2ETests
   [Fact]
   public async Task AzClient_Browse_WithDefaultType_FindsServices ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     var serviceName = $"azclient-default-{Guid.NewGuid ():N}";
 
     using RegisterService service =
@@ -190,6 +195,7 @@ public class AzClientE2ETests
   [Fact]
   public async Task AzClient_Browse_WithCustomType_Works ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     var regType     = "_arkanee2e._tcp";
     var serviceName = $"azclient-custom-{Guid.NewGuid ():N}";
 
@@ -223,6 +229,7 @@ public class AzClientE2ETests
   [Fact]
   public async Task AzClient_WithVerboseFlag_ProducesOutput ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     var regType     = "_arkanee2ev._tcp";
     var serviceName = $"azclient-verbose-{Guid.NewGuid ():N}";
 
@@ -243,6 +250,7 @@ public class AzClientE2ETests
   [Fact]
   public async Task AzClient_WithIPv4Protocol_Works ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     // Act
     var (exitCode, output, error) = await this.RunAzClientAsync ("--timeout 2 -v -a ipv4 -t _workstation._tcp");
 
@@ -254,6 +262,7 @@ public class AzClientE2ETests
   [Fact]
   public async Task AzClient_WithIPv6Protocol_Works ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     // Act
     var (exitCode, output, error) = await this.RunAzClientAsync ("--timeout 2 -v -a ipv6 -t _workstation._tcp");
 

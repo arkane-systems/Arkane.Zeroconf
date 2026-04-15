@@ -10,6 +10,8 @@ using System;
 using System.Collections;
 using System.Text;
 
+using ArkaneSystems.Arkane.Zeroconf.Tests.Helpers;
+
 using Xunit;
 
 #endregion
@@ -18,7 +20,11 @@ namespace ArkaneSystems.Arkane.Zeroconf.Tests.Facades;
 
 public class TxtRecordTests : IDisposable
 {
-  public TxtRecordTests () => this.txtRecord = new TxtRecord ();
+  public TxtRecordTests ()
+  {
+    ZeroconfTestHelper.SkipIfNoProvider ();
+    this.txtRecord = new TxtRecord ();
+  }
 
   private readonly TxtRecord txtRecord;
 

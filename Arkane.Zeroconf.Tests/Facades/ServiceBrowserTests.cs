@@ -9,6 +9,8 @@
 using System;
 using System.Collections.Generic;
 
+using ArkaneSystems.Arkane.Zeroconf.Tests.Helpers;
+
 using Xunit;
 
 #endregion
@@ -17,7 +19,11 @@ namespace ArkaneSystems.Arkane.Zeroconf.Tests.Facades;
 
 public class ServiceBrowserTests : IDisposable
 {
-  public ServiceBrowserTests () => this.browser = new ServiceBrowser ();
+  public ServiceBrowserTests ()
+  {
+    ZeroconfTestHelper.SkipIfNoProvider ();
+    this.browser = new ServiceBrowser ();
+  }
 
   private readonly ServiceBrowser browser;
 

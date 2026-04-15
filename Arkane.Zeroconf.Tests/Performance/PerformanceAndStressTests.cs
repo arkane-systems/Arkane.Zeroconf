@@ -12,6 +12,8 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
+using ArkaneSystems.Arkane.Zeroconf.Tests.Helpers;
+
 using Xunit;
 
 #endregion
@@ -28,6 +30,7 @@ public class PerformanceAndStressTests
   [Fact]
   public async Task WindowsMdnsServiceBrowser_Concurrent_StartAndDispose_DoesNotHang ()
   {
+    ZeroconfTestHelper.SkipIfNotWindows ();
     // Arrange
     const int concurrentTasks = 8;
     var       tasks           = new List<Task> ();
@@ -66,6 +69,7 @@ public class PerformanceAndStressTests
   [Fact]
   public async Task WindowsMdnsServiceBrowser_Concurrent_EnumerationDuringPolling_Completes ()
   {
+    ZeroconfTestHelper.SkipIfNotWindows ();
     // Arrange
     TimeSpan original = ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns.ServiceBrowser.PollingInterval;
     ArkaneSystems.Arkane.Zeroconf.Providers.WindowsMdns.ServiceBrowser.PollingInterval = TimeSpan.FromMilliseconds (50);
@@ -106,6 +110,7 @@ public class PerformanceAndStressTests
   [Fact]
   public void TxtRecord_AddManyItems_Completes ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     // Arrange
     var       txtRecord = new TxtRecord ();
     const int itemCount = 1000;
@@ -128,6 +133,7 @@ public class PerformanceAndStressTests
   [Fact]
   public void TxtRecord_Enumeration_IsEfficient ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     // Arrange
     var txtRecord = new TxtRecord ();
     for (var i = 0; i < 100; i++)
@@ -153,6 +159,7 @@ public class PerformanceAndStressTests
   [Fact]
   public void ServiceBrowser_CreateMultipleInstances_DoesNotLeakResources ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     // Arrange
     const int instances = 100;
     var       stopwatch = Stopwatch.StartNew ();
@@ -176,6 +183,7 @@ public class PerformanceAndStressTests
   [Fact]
   public void RegisterService_CreateMultipleInstances_DoesNotLeakResources ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     // Arrange
     const int instances = 100;
     var       stopwatch = Stopwatch.StartNew ();
@@ -199,6 +207,7 @@ public class PerformanceAndStressTests
   [Fact]
   public void ServiceBrowser_EventSubscription_UnderLoad ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     // Arrange
     var       browser       = new ServiceBrowser ();
     var       eventCount    = 0;
@@ -227,6 +236,7 @@ public class PerformanceAndStressTests
   [Fact]
   public void TxtRecord_RepeatedAddRemove_MaintainsConsistency ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     // Arrange
     var       txtRecord  = new TxtRecord ();
     const int iterations = 100;
@@ -247,6 +257,7 @@ public class PerformanceAndStressTests
   [Fact]
   public async Task ServiceBrowser_Concurrent_CreateAndDispose ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     // Arrange
     const int concurrentTasks = 10;
     var       tasks           = new List<Task> ();
@@ -274,6 +285,7 @@ public class PerformanceAndStressTests
   [Fact]
   public void TxtRecord_LargeValues_HandledCorrectly ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     // Arrange
     var txtRecord  = new TxtRecord ();
     var largeValue = new string (c: 'x', count: 10000);
@@ -290,6 +302,7 @@ public class PerformanceAndStressTests
   [Fact]
   public async Task ServiceBrowser_Enumeration_ThreadSafe ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     // Arrange
     var browser = new ServiceBrowser ();
 
@@ -327,6 +340,7 @@ public class PerformanceAndStressTests
   [Fact]
   public void RegisterService_PropertyAccess_IsHighPerformance ()
   {
+    ZeroconfTestHelper.SkipIfNoProvider ();
     // Arrange
     var       service    = new RegisterService ();
     var       stopwatch  = Stopwatch.StartNew ();

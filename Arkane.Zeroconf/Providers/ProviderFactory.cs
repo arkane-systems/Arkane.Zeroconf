@@ -24,11 +24,27 @@ internal static class ProviderFactory
   {
     get
     {
-      return providers.Value[0];
+      IZeroconfProvider[] available = providers.Value;
+
+      if (available.Length == 0)
+        throw new
+          InvalidOperationException ("No Zeroconf providers could be found or initialized. Necessary daemon may not be running.");
+
+      return available[0];
     }
   }
 
   public static IZeroconfProvider SelectedProvider { get => selectedProvider ?? DefaultProvider; set => selectedProvider = value; }
+
+  /// <summary>
+  /// Gets whether at least one Zeroconf provider was discovered and initialized successfully.
+  /// </summary>
+  internal static bool HasAnyProvider => selectedProvider != null || providers.Value.Length > 0;
+
+  /// <summary>
+  /// Resets the selected provider back to the automatically discovered default.
+  /// </summary>
+  internal static void ResetToDefaultProvider () => selectedProvider = null;
 
   private static IZeroconfProvider[] GetProviders ()
   {
@@ -56,10 +72,6 @@ internal static class ProviderFactory
       candidate.Provider.Initialize ();
       providersList.Add (candidate.Provider);
     }
-
-    if (providersList.Count == 0)
-      throw new
-        InvalidOperationException ("No Zeroconf providers could be found or initialized. Necessary daemon may not be running.");
 
     return providersList.ToArray ();
   }
