@@ -9,13 +9,15 @@
 using System;
 using System.Threading;
 
+using JetBrains.Annotations;
+
 #endregion
 
 namespace ArkaneSystems.Arkane.Zeroconf.Providers.Bonjour;
 
-public struct ServiceRef (IntPtr raw)
+public readonly struct ServiceRef (IntPtr raw)
 {
-  public static readonly ServiceRef Zero;
+  public static readonly ServiceRef Zero = new (IntPtr.Zero);
 
   public void Deallocate () => Native.DNSServiceRefDeallocate (this.Raw);
 
