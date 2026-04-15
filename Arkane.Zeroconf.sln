@@ -5,7 +5,7 @@ VisualStudioVersion = 18.5.11626.173 insiders
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "azclient", "azclient\azclient.csproj", "{F3ECDCA4-7DD3-4A9E-B21E-BA1A4921F469}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arkane.ZeroConf", "Arkane.ZeroConf\Arkane.ZeroConf.csproj", "{4E134AFA-89F4-4A16-ADA6-4FCF52CE9E1C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arkane.Zeroconf", "Arkane.Zeroconf\Arkane.Zeroconf.csproj", "{4E134AFA-89F4-4A16-ADA6-4FCF52CE9E1C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arkane.Zeroconf.Tests", "Arkane.Zeroconf.Tests\Arkane.Zeroconf.Tests.csproj", "{626293A2-90D2-60A0-4A76-7EBF3E8EBADE}"
 EndProject
