@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.5.11626.173 insiders
+VisualStudioVersion = 18.5.11626.173
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "azclient", "azclient\azclient.csproj", "{F3ECDCA4-7DD3-4A9E-B21E-BA1A4921F469}"
 EndProject

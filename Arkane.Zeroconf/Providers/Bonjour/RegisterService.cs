@@ -28,7 +28,8 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
     this.SetupCallback ();
   }
 
-  private readonly CancellationTokenSource cts = new ();
+  private readonly CancellationTokenSource cts      = new ();
+  private readonly object                  syncRoot = new ();
   private          bool                    disposed;
 
   private Native.DNSServiceRegisterReply? registerReplyHandler;
@@ -50,10 +51,25 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
 
     this.cts.Cancel ();
 
-    if (this.sdRef != ServiceRef.Zero)
+    Task? registrationTask;
+
+    lock (this.syncRoot)
+      registrationTask = this.task;
+
+    if (registrationTask != null)
     {
-      this.sdRef.Deallocate ();
-      this.sdRef = ServiceRef.Zero;
+      try { registrationTask.Wait (TimeSpan.FromSeconds (1)); }
+      catch (AggregateException aggregateException) when (aggregateException.InnerException is OperationCanceledException) { }
+      catch (OperationCanceledException) { }
+    }
+
+    lock (this.syncRoot)
+    {
+      if (this.sdRef != ServiceRef.Zero)
+      {
+        this.sdRef.Deallocate ();
+        this.sdRef = ServiceRef.Zero;
+      }
     }
 
     this.cts.Dispose ();
@@ -63,16 +79,28 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
 
   public void Register (bool async)
   {
-    if (this.task != null)
-      throw new InvalidOperationException ("RegisterService registration already in process");
+    lock (this.syncRoot)
+    {
+      if (this.task != null)
+        throw new InvalidOperationException ("RegisterService registration already in process");
 
-    if (this.disposed)
-      throw new ObjectDisposedException (objectName: nameof (RegisterService));
+      if (this.disposed)
+        throw new ObjectDisposedException (objectName: nameof (RegisterService));
 
-    if (async)
-      this.task = Task.Run (() => this.ProcessRegister ())
-                      .ContinueWith (continuationFunction: _ => this.task = null, cancellationToken: this.cts.Token);
-    else
+      if (async)
+        this.task = Task.Run (() =>
+                              {
+                                try { this.ProcessRegister (); }
+                                catch (OperationCanceledException) when (this.cts.IsCancellationRequested) { }
+                                finally
+                                {
+                                  lock (this.syncRoot)
+                                    this.task = null;
+                                }
+                              });
+    }
+
+    if (!async)
       this.ProcessRegister ();
   }
 
@@ -80,6 +108,8 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
 
   public void ProcessRegister ()
   {
+    this.cts.Token.ThrowIfCancellationRequested ();
+
     ushort txtRecLength = 0;
     byte[] txtRec       = Array.Empty<byte> ();
 
@@ -93,7 +123,9 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
                     length: txtRecLength);
     }
 
-    ServiceError error = Native.DNSServiceRegister (sdRef: out this.sdRef,
+    ServiceRef localSdRef;
+
+    ServiceError error = Native.DNSServiceRegister (sdRef: out localSdRef,
                                                     flags: this.AutoRename ? ServiceFlags.None : ServiceFlags.NoAutoRename,
                                                     interfaceIndex: this.InterfaceIndex,
                                                     name: Encoding.UTF8.GetBytes (this.Name),
@@ -111,7 +143,26 @@ public sealed class RegisterService : Service, IRegisterService, IDisposable
     if (error != ServiceError.NoError)
       throw new ServiceErrorException (error);
 
-    this.sdRef.Process ();
+    lock (this.syncRoot)
+    {
+      if (this.disposed)
+      {
+        localSdRef.Deallocate ();
+        return;
+      }
+
+      this.sdRef = localSdRef;
+    }
+
+    try { localSdRef.Process (this.cts.Token); }
+    finally
+    {
+      lock (this.syncRoot)
+      {
+        if (this.sdRef == localSdRef)
+          this.sdRef = ServiceRef.Zero;
+      }
+    }
   }
 
   private void OnRegisterReply (ServiceRef   sdRef,

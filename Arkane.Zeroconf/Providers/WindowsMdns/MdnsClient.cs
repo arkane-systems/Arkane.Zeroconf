@@ -1,6 +1,6 @@
 #region header
 
-// Arkane.ZeroConf - MdnsClient.cs
+// Arkane.Zeroconf - MdnsClient.cs
 
 #endregion
 
@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -25,7 +26,7 @@ internal static class MdnsClient
   {
     public object SyncRoot { get; } = new ();
 
-    public List<DnsRecord> Records { get; } = new ();
+    public List<DnsRecord> Records { get; } = [];
 
     public ManualResetEventSlim WaitHandle { get; } = new (false);
   }
@@ -58,20 +59,15 @@ internal static class MdnsClient
 
   internal sealed class MdnsResolveResult
   {
-    public static readonly MdnsResolveResult Empty = new ()
-                                                     {
-                                                       HostName   = string.Empty,
-                                                       Addresses  = Array.Empty<IPAddress> (),
-                                                       TxtEntries = Array.Empty<TxtRecordItem> ()
-                                                     };
+    public static readonly MdnsResolveResult Empty = new () { HostName = string.Empty, Addresses = [], TxtEntries = [] };
 
     public string HostName { get; init; } = string.Empty;
 
     public ushort Port { get; init; }
 
-    public IPAddress[] Addresses { get; init; } = Array.Empty<IPAddress> ();
+    public IPAddress[] Addresses { get; init; } = [];
 
-    public TxtRecordItem[] TxtEntries { get; init; } = Array.Empty<TxtRecordItem> ();
+    public TxtRecordItem[] TxtEntries { get; init; } = [];
 
     public bool IsResolved => this.Addresses.Length > 0;
   }
@@ -103,9 +99,9 @@ internal static class MdnsClient
 
     public ushort Port { get; init; }
 
-    public List<IPAddress> Addresses { get; init; } = new ();
+    public List<IPAddress> Addresses { get; init; } = [];
 
-    public List<TxtRecordItem> TxtItems { get; init; } = new ();
+    public List<TxtRecordItem> TxtItems { get; init; } = [];
   }
 
   #endregion
@@ -124,32 +120,35 @@ internal static class MdnsClient
   private static readonly TimeSpan DefaultBrowseTimeout  = TimeSpan.FromSeconds (4);
   private static readonly TimeSpan DefaultResolveTimeout = TimeSpan.FromSeconds (4);
 
-  private static TimeSpan browseTimeout  = DefaultBrowseTimeout;
-  private static TimeSpan resolveTimeout = DefaultResolveTimeout;
-  private static readonly object timeoutLock = new ();
+  private static          TimeSpan browseTimeout  = DefaultBrowseTimeout;
+  private static          TimeSpan resolveTimeout = DefaultResolveTimeout;
+  private static readonly Lock     timeoutLock    = new ();
+
+  private static readonly NativeWindowsDns.DnsServiceBrowseCallback  BrowseCallback  = OnBrowseResult;
+  private static readonly NativeWindowsDns.DnsServiceResolveComplete ResolveCallback = OnResolveResult;
 
   /// <summary>
-  /// Gets or sets the timeout for mDNS browse operations.
-  /// Default is 4 seconds.
+  ///   Gets or sets the timeout for mDNS browse operations.
+  ///   Default is 4 seconds.
   /// </summary>
   /// <remarks>
-  /// <para>
-  /// This property is thread-safe and can be configured before using the Zeroconf provider
-  /// to accommodate slow networks or high-latency environments.
-  /// </para>
-  /// <para>
-  /// Changes to this property take effect on the next browse operation. If a browse operation
-  /// is already in progress when the timeout is changed, the current operation will complete
-  /// with the previously read timeout value.
-  /// </para>
-  /// <para>
-  /// Example:
-  /// <code>
+  ///   <para>
+  ///     This property is thread-safe and can be configured before using the Zeroconf provider
+  ///     to accommodate slow networks or high-latency environments.
+  ///   </para>
+  ///   <para>
+  ///     Changes to this property take effect on the next browse operation. If a browse operation
+  ///     is already in progress when the timeout is changed, the current operation will complete
+  ///     with the previously read timeout value.
+  ///   </para>
+  ///   <para>
+  ///     Example:
+  ///     <code>
   /// MdnsClient.BrowseTimeout = TimeSpan.FromSeconds(10);
   /// var browser = new ServiceBrowser();
   /// browser.Browse(0, AddressProtocol.Any, "_http._tcp", "local");
   /// </code>
-  /// </para>
+  ///   </para>
   /// </remarks>
   public static TimeSpan BrowseTimeout
   {
@@ -166,25 +165,25 @@ internal static class MdnsClient
   }
 
   /// <summary>
-  /// Gets or sets the timeout for mDNS resolve operations.
-  /// Default is 4 seconds.
+  ///   Gets or sets the timeout for mDNS resolve operations.
+  ///   Default is 4 seconds.
   /// </summary>
   /// <remarks>
-  /// <para>
-  /// This property is thread-safe and can be configured before using the Zeroconf provider
-  /// to accommodate slow networks or high-latency environments.
-  /// </para>
-  /// <para>
-  /// Changes to this property take effect on the next resolve operation. If a resolve operation
-  /// is already in progress when the timeout is changed, the current operation will complete
-  /// with the previously read timeout value.
-  /// </para>
-  /// <para>
-  /// Example:
-  /// <code>
+  ///   <para>
+  ///     This property is thread-safe and can be configured before using the Zeroconf provider
+  ///     to accommodate slow networks or high-latency environments.
+  ///   </para>
+  ///   <para>
+  ///     Changes to this property take effect on the next resolve operation. If a resolve operation
+  ///     is already in progress when the timeout is changed, the current operation will complete
+  ///     with the previously read timeout value.
+  ///   </para>
+  ///   <para>
+  ///     Example:
+  ///     <code>
   /// MdnsClient.ResolveTimeout = TimeSpan.FromSeconds(10);
   /// </code>
-  /// </para>
+  ///   </para>
   /// </remarks>
   public static TimeSpan ResolveTimeout
   {
@@ -199,9 +198,6 @@ internal static class MdnsClient
         resolveTimeout = value;
     }
   }
-
-  private static readonly NativeWindowsDns.DnsServiceBrowseCallback  BrowseCallback  = OnBrowseResult;
-  private static readonly NativeWindowsDns.DnsServiceResolveComplete ResolveCallback = OnResolveResult;
 
   public static IReadOnlyList<MdnsServiceInfo> Browse (string            regtype,
                                                        string            domain,
@@ -297,7 +293,7 @@ internal static class MdnsClient
       int status = NativeWindowsDns.DnsServiceBrowse (request: ref request, cancel: ref cancel);
 
       if ((status != 0) && (status != NativeWindowsDns.DnsRequestPending))
-        return Array.Empty<DnsRecord> ();
+        return [];
 
       state.WaitHandle.Wait (timeout: BrowseTimeout, cancellationToken: cancellationToken);
 
@@ -359,7 +355,7 @@ internal static class MdnsClient
   {
     try
     {
-      if (!TryGetHandleTarget<BrowseState> (queryContext, out BrowseState? state))
+      if (!TryGetHandleTarget (queryContext: queryContext, target: out BrowseState? state))
         return;
 
       if ((status != 0) || (dnsRecord == IntPtr.Zero))
@@ -367,16 +363,13 @@ internal static class MdnsClient
 
       IReadOnlyList<DnsRecord> records = ProjectBrowseRecords (dnsRecord);
 
-      lock (state.SyncRoot)
+      lock (state!.SyncRoot)
         state.Records.AddRange (records);
 
       if (records.Count > 0)
         state.WaitHandle.Set ();
     }
-    catch (Exception ex)
-    {
-      System.Diagnostics.Debug.WriteLine ($"Error in OnBrowseResult callback: {ex.Message}");
-    }
+    catch (Exception ex) { Debug.WriteLine ($"Error in OnBrowseResult callback: {ex.Message}"); }
     finally
     {
       if (dnsRecord != IntPtr.Zero)
@@ -388,19 +381,16 @@ internal static class MdnsClient
   {
     try
     {
-      if (!TryGetHandleTarget<ResolveState> (queryContext, out ResolveState? state))
+      if (!TryGetHandleTarget (queryContext: queryContext, target: out ResolveState? state))
         return;
 
       if ((status != 0) || (instance == IntPtr.Zero))
         return;
 
-      state.Result = ProjectResolvedInstance (instance);
+      state!.Result = ProjectResolvedInstance (instance);
       state.WaitHandle.Set ();
     }
-    catch (Exception ex)
-    {
-      System.Diagnostics.Debug.WriteLine ($"Error in OnResolveResult callback: {ex.Message}");
-    }
+    catch (Exception ex) { Debug.WriteLine ($"Error in OnResolveResult callback: {ex.Message}"); }
     finally
     {
       if (instance != IntPtr.Zero)
@@ -422,13 +412,11 @@ internal static class MdnsClient
       if (handle.Target is T typedTarget)
       {
         target = typedTarget;
+
         return true;
       }
     }
-    catch (Exception ex)
-    {
-      System.Diagnostics.Debug.WriteLine ($"Error retrieving GCHandle target: {ex.Message}");
-    }
+    catch (Exception ex) { Debug.WriteLine ($"Error retrieving GCHandle target: {ex.Message}"); }
 
     return false;
   }
@@ -450,22 +438,14 @@ internal static class MdnsClient
 
         try
         {
-          string name   = header.pName != IntPtr.Zero ? Marshal.PtrToStringUni (header.pName) ?? string.Empty : string.Empty;
-          string target = Marshal.ReadIntPtr (dataPtr) is { } targetPtr && targetPtr != IntPtr.Zero
-            ? Marshal.PtrToStringUni (targetPtr) ?? string.Empty
-            : string.Empty;
+          string name = header.pName != IntPtr.Zero ? Marshal.PtrToStringUni (header.pName) ?? string.Empty : string.Empty;
+          string target = Marshal.ReadIntPtr (dataPtr) is { } targetPtr && (targetPtr != IntPtr.Zero)
+                            ? Marshal.PtrToStringUni (targetPtr) ?? string.Empty
+                            : string.Empty;
 
-          records.Add (new DnsRecord
-                       {
-                         Name      = name,
-                         Type      = DnsRecordType.Ptr,
-                         PtrTarget = target,
-                       });
+          records.Add (new DnsRecord { Name = name, Type = DnsRecordType.Ptr, PtrTarget = target, });
         }
-        catch (Exception ex)
-        {
-          System.Diagnostics.Debug.WriteLine ($"Failed to parse browse record: {ex.Message}");
-        }
+        catch (Exception ex) { Debug.WriteLine ($"Failed to parse browse record: {ex.Message}"); }
       }
 
       current = header.pNext;
@@ -481,7 +461,6 @@ internal static class MdnsClient
     var addresses = new List<IPAddress> ();
 
     if (instance.Ip4Address != IntPtr.Zero)
-    {
       try
       {
         var    ipv4Raw = (uint)Marshal.ReadInt32 (instance.Ip4Address);
@@ -495,12 +474,10 @@ internal static class MdnsClient
       catch (Exception ex)
       {
         // Log warning but continue - invalid IPv4 record, skip it
-        System.Diagnostics.Debug.WriteLine ($"Failed to parse IPv4 address: {ex.Message}");
+        Debug.WriteLine ($"Failed to parse IPv4 address: {ex.Message}");
       }
-    }
 
     if (instance.Ip6Address != IntPtr.Zero)
-    {
       try
       {
         var bytes = new byte[16];
@@ -510,9 +487,8 @@ internal static class MdnsClient
       catch (Exception ex)
       {
         // Log warning but continue - invalid IPv6 record, skip it
-        System.Diagnostics.Debug.WriteLine ($"Failed to parse IPv6 address: {ex.Message}");
+        Debug.WriteLine ($"Failed to parse IPv6 address: {ex.Message}");
       }
-    }
 
     var txtItems = new List<TxtRecordItem> ();
 
@@ -538,7 +514,7 @@ internal static class MdnsClient
         catch (Exception ex)
         {
           // Log warning but continue - invalid TXT record, skip it
-          System.Diagnostics.Debug.WriteLine ($"Failed to parse TXT record at index {i}: {ex.Message}");
+          Debug.WriteLine ($"Failed to parse TXT record at index {i}: {ex.Message}");
         }
       }
 
@@ -567,11 +543,12 @@ internal static class MdnsClient
     string             normalizedRegType = NormalizeName (regtype);
     ReadOnlySpan<char> fullNameSpan      = fullName.AsSpan ();
     ReadOnlySpan<char> regTypeSpan       = normalizedRegType.AsSpan ();
-    int                searchIndex       = 0;
+    var                searchIndex       = 0;
 
     while (searchIndex < fullNameSpan.Length)
     {
-      int relativeIndex = fullNameSpan[searchIndex..].IndexOf (value: regTypeSpan, comparisonType: StringComparison.OrdinalIgnoreCase);
+      int relativeIndex = fullNameSpan[searchIndex..]
+       .IndexOf (value: regTypeSpan, comparisonType: StringComparison.OrdinalIgnoreCase);
 
       if (relativeIndex < 0)
         break;
@@ -579,12 +556,13 @@ internal static class MdnsClient
       int regTypeIndex = searchIndex + relativeIndex;
 
       if ((regTypeIndex > 0) && (fullNameSpan[regTypeIndex - 1] == '.'))
-        return fullName[..(regTypeIndex - 1)];
+        return fullName[..(regTypeIndex                    - 1)];
 
       searchIndex = regTypeIndex + regTypeSpan.Length;
     }
 
     int firstDotIndex = fullName.IndexOf ('.');
+
     return firstDotIndex > 0 ? fullName[..firstDotIndex] : fullName.TrimEnd ('.');
   }
 }
