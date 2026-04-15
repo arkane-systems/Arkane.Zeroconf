@@ -6,6 +6,6 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Arkane.ZeroConf\Arkane.ZeroConf.csproj" />
+    <ProjectReference Include="..\Arkane.Zeroconf\Arkane.Zeroconf.csproj" />
   </ItemGroup>
 </Project>
